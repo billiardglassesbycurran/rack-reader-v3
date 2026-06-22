@@ -1,0 +1,3562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Curran's Rack Reader</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500&display=swap');
+
+:root {
+  --felt:        #0e2118;
+  --felt-mid:    #122a1e;
+  --felt-bright: #1a3d29;
+  --rail:        #1c0e04;
+  --ivory:       #f0e8d5;
+  --ivory-dim:   #c8baa0;
+  --gold:        #c8972e;
+  --gold-bright: #f0b840;
+  --gold-dim:    #8a6820;
+  --cream:       #ede0c4;
+  --green-neon:  #2dff8a;
+  --green-soft:  #3ddd7a;
+  --green-dim:   #1a5c38;
+  --red-ball:    #cc2222;
+  --amber:       #e08820;
+  --text:        #eef6f0;
+  --text-dim:    #7ab898;
+  --text-muted:  #4d7a62;
+  --border:      #1e3d2a;
+  --border-mid:  #2a5838;
+  --surface:     #0b1a10;
+  --surface2:    #101f16;
+  --r:           10px;
+  --r-sm:        7px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--rail);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.012) 2px, rgba(255,255,255,.012) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,.008) 2px, rgba(255,255,255,.008) 8px);
+  pointer-events: none; z-index: 0;
+}
+
+#app {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  min-height: 100%;
+  max-width: 600px; margin: 0 auto;
+  background: var(--felt);
+  box-shadow: 0 0 60px rgba(0,0,0,.8);
+}
+
+.hdr {
+  background: var(--rail);
+  padding: 13px 16px 11px;
+  border-bottom: 2px solid var(--gold-dim);
+  flex-shrink: 0; position: relative; overflow: hidden;
+}
+.hdr::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.hdr-inner { display: flex; align-items: center; gap: 12px; }
+.hdr-emblem {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--gold-dim);
+  background: radial-gradient(circle at 38% 35%, #2a2a2a, #080808);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(200,151,46,.3), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.hdr-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 900;
+  color: var(--ivory); letter-spacing: .3px; line-height: 1.1;
+}
+.hdr-name span { color: var(--gold); }
+.hdr-sub {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--text-dim); margin-top: 1px;
+}
+
+/* MODEL STATUS BANNER */
+.model-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .5px;
+  flex-shrink: 0;
+  background: rgba(200,151,46,.08);
+  border-bottom: 1px solid rgba(200,151,46,.2);
+  color: var(--gold);
+}
+.model-banner.ready {
+  background: rgba(52,201,106,.08);
+  border-bottom-color: rgba(52,201,106,.2);
+  color: var(--green-soft);
+}
+.model-banner.err {
+  background: rgba(204,34,34,.08);
+  border-bottom-color: rgba(204,34,34,.2);
+  color: #e07070;
+}
+.model-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+  animation: blink 1.4s infinite;
+}
+.model-dot.ready { background: var(--green-neon); }
+.model-dot.err   { background: var(--red-ball); animation: none; }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+/* LIVE SECTION */
+.live-section { position: relative; background: #000; flex-shrink: 0; }
+#live-video {
+  display: block; width: 100%;
+  max-height: 52vw; min-height: 180px;
+  object-fit: cover; background: #000;
+}
+.scan-overlay { position: absolute; inset: 0; pointer-events: none; display: none; }
+.scan-overlay.active { display: block; }
+.scan-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--green-neon) 40%, var(--green-neon) 60%, transparent 100%);
+  box-shadow: 0 0 10px var(--green-neon), 0 0 20px rgba(45,255,138,.4);
+  animation: scanMove 1.2s linear infinite;
+}
+@keyframes scanMove { 0%{top:0%;opacity:1} 85%{opacity:1} 100%{top:100%;opacity:0} }
+.corner { position: absolute; width: 22px; height: 22px; border-color: var(--gold); border-style: solid; opacity: .7; }
+.corner.tl { top:8px;left:8px;  border-width:2px 0 0 2px; }
+.corner.tr { top:8px;right:8px; border-width:2px 2px 0 0; }
+.corner.bl { bottom:8px;left:8px;  border-width:0 0 2px 2px; }
+.corner.br { bottom:8px;right:8px; border-width:0 2px 2px 0; }
+.cam-off-msg {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; min-height: 180px;
+  background: var(--surface);
+  color: var(--text-dim); font-size: 13px; font-weight: 500;
+  text-align: center; padding: 20px;
+}
+.cam-off-icon { font-size: 36px; opacity: .4; }
+
+/* MOTION BAR */
+.motion-bar-wrap {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 7px 14px; display: flex; align-items: center;
+  gap: 10px; flex-shrink: 0;
+}
+.motion-label {
+  font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim);
+  white-space:nowrap; width:52px;
+}
+.motion-track {
+  flex:1; height:6px; background:var(--surface2);
+  border-radius:3px; border:1px solid var(--border); overflow:hidden;
+}
+.motion-fill { height:100%; border-radius:3px; transition:width .15s ease, background .3s; width:0%; }
+.motion-fill.low    { background: var(--green-soft); }
+.motion-fill.medium { background: var(--amber); }
+.motion-fill.high   { background: var(--red-ball); }
+.motion-val { font-family:'Barlow Condensed',monospace; font-size:11px; color:var(--text-dim); width:30px; text-align:right; }
+.still-badge {
+  font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase; padding:3px 8px;
+  border-radius:4px; background:var(--green-dim); color:var(--green-neon);
+  border:1px solid var(--green-soft); opacity:0; transition:opacity .3s; white-space:nowrap;
+}
+.still-badge.show { opacity:1; }
+
+/* CAM CONTROLS */
+.cam-controls {
+  display:flex; gap:8px; padding:10px 14px;
+  background:var(--felt-mid); border-bottom:1px solid var(--border);
+  flex-shrink:0; flex-wrap:wrap;
+}
+
+/* STATUS */
+.status-strip {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 14px; background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0; min-height:32px;
+}
+.s-pip {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--text-muted); flex-shrink:0; transition:background .3s;
+}
+.s-pip.live { background:var(--green-neon); animation:blink 1.4s infinite; }
+.s-pip.warn { background:var(--amber); }
+.s-pip.err  { background:var(--red-ball); }
+.s-pip.gold { background:var(--gold); animation:blink 1.4s infinite; }
+.s-text {
+  font-family:'Barlow Condensed',sans-serif; font-size:12px;
+  font-weight:500; letter-spacing:.5px; color:var(--text-dim); flex:1;
+}
+
+/* BODY */
+.body {
+  flex:1; overflow-y:visible; overflow-x:hidden;
+  padding:12px 14px 28px;
+  display:flex; flex-direction:column; gap:10px;
+}
+
+/* CANVAS */
+.canvas-card {
+  background:#000; border-radius:var(--r); overflow:hidden;
+  position:relative; border:1px solid var(--border-mid);
+}
+#main-canvas { display:block; max-width:100%; touch-action:none; cursor:crosshair; }
+.body { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+.canvas-placeholder {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; min-height:140px; color:var(--text-muted); font-size:12px; font-weight:500;
+}
+.canvas-placeholder .big { font-size:34px; opacity:.3; }
+.canvas-top-btns {
+  position:absolute; top:8px; right:8px;
+  display:flex; gap:5px; z-index:5;
+}
+.icon-btn {
+  height:32px; min-width:32px; background:rgba(0,0,0,.75);
+  border:1px solid rgba(255,255,255,.2); border-radius:7px;
+  color:#fff; font-size:13px; padding: 0 8px;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .15s;
+  font-family: 'Barlow', sans-serif; font-weight: 600; white-space: nowrap;
+}
+.icon-btn:hover { background:rgba(45,255,138,.3); }
+.undo-btn {
+  background: rgba(200,151,46,0.25);
+  border-color: rgba(200,151,46,0.5);
+  color: #f0b840;
+  font-size: 12px;
+  padding: 0 10px;
+}
+@keyframes flashIn { 0%{opacity:0} 30%{opacity:.7} 100%{opacity:0} }
+.capture-flash {
+  position:absolute; inset:0; background:#fff;
+  pointer-events:none; opacity:0; border-radius:var(--r);
+}
+.capture-flash.flash { animation:flashIn .35s ease-out forwards; }
+
+/* UPLOAD */
+.upload-zone {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; border:1.5px dashed var(--border-mid);
+  border-radius:var(--r); cursor:pointer;
+  color:var(--text-dim); font-size:12px; font-weight:500;
+  transition:all .18s; -webkit-tap-highlight-color:transparent;
+}
+.upload-zone:hover, .upload-zone.drag {
+  border-color:var(--gold); color:var(--gold);
+  background:rgba(200,151,46,.04);
+}
+.upload-zone .uz-icon { font-size:18px; flex-shrink:0; }
+
+/* CARDS */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:12px 13px;
+}
+.card-label {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px; font-weight:700; letter-spacing:2px;
+  text-transform:uppercase; color:var(--text-dim); margin-bottom:10px;
+}
+
+/* BUTTONS */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:5px; padding:9px 13px; border:none; border-radius:var(--r-sm);
+  font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  font-size:13px; letter-spacing:.5px; cursor:pointer;
+  transition:transform .1s, opacity .1s, box-shadow .15s;
+  -webkit-tap-highlight-color:transparent; user-select:none; white-space:nowrap; flex-shrink:0;
+}
+.btn:active { transform:scale(.94); }
+.btn:disabled { opacity:.3; cursor:not-allowed; transform:none; box-shadow:none !important; }
+.btn-green { background:var(--green-soft); color:var(--felt); box-shadow:0 2px 12px rgba(52,201,106,.25); }
+.btn-green:hover:not(:disabled) { background:#3de07a; }
+.btn-gold  { background:var(--gold); color:var(--felt); box-shadow:0 2px 12px rgba(200,151,46,.3); }
+.btn-gold:hover:not(:disabled)  { background:var(--gold-bright); }
+.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border-mid); }
+.btn-ghost:hover:not(:disabled) { border-color:var(--ivory-dim); color:var(--ivory); }
+.btn-red   { background:var(--red-ball); color:#fff; }
+.btn-scan {
+  background:linear-gradient(135deg, var(--felt-bright) 0%, var(--green-dim) 100%);
+  color:var(--green-neon); border:1.5px solid var(--green-dim);
+  font-size:14px; letter-spacing:1px;
+  box-shadow:0 0 16px rgba(45,255,138,.15), inset 0 1px 0 rgba(45,255,138,.1);
+}
+.btn-scan:hover:not(:disabled) { box-shadow:0 0 24px rgba(45,255,138,.3); border-color:var(--green-neon); }
+.row { display:flex; gap:7px; flex-wrap:wrap; }
+.row .btn { flex:1; min-width:60px; }
+
+/* AUTO DETECT BUTTON */
+.btn-ai {
+  background: linear-gradient(135deg, #1a0a3a, #3a1a6a);
+  color: #c084fc;
+  border: 1.5px solid #6b21a8;
+  font-size: 13px;
+  box-shadow: 0 0 16px rgba(168,85,247,.2);
+}
+.btn-ai:hover:not(:disabled) { box-shadow:0 0 24px rgba(168,85,247,.4); border-color:#a855f7; }
+.btn-ai.ready {
+  background: linear-gradient(135deg, #0a2a14, #1a5030);
+  color: var(--green-neon);
+  border-color: var(--green-dim);
+}
+
+/* AUTOSCAN */
+.autoscan-row { display:flex; align-items:center; gap:10px; }
+.autoscan-label { font-family:'Barlow',sans-serif; font-size:14px; font-weight:600; color:var(--text); flex:1; }
+.autoscan-desc { font-size:12px; color:var(--text-dim); margin-top:2px; line-height:1.5; }
+.toggle { position:relative; width:42px; height:23px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; position:absolute; }
+.toggle-track {
+  position:absolute; inset:0; background:var(--surface2);
+  border:1px solid var(--border-mid); border-radius:12px;
+  cursor:pointer; transition:background .2s, border-color .2s;
+}
+.toggle-track::after {
+  content:''; position:absolute; left:3px; top:3px;
+  width:15px; height:15px; background:var(--text-muted);
+  border-radius:50%; transition:all .2s;
+}
+.toggle input:checked + .toggle-track { background:var(--green-dim); border-color:var(--green-soft); }
+.toggle input:checked + .toggle-track::after { left:calc(100% - 18px); background:var(--green-neon); }
+.sens-row {
+  display:flex; align-items:center; gap:10px;
+  margin-top:8px; padding-top:8px; border-top:1px solid var(--border);
+}
+.sens-label {
+  font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:1px; color:var(--text-muted); text-transform:uppercase;
+  width:70px; flex-shrink:0;
+}
+input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:pointer; }
+.sens-val { font-family:'Barlow Condensed',monospace; font-size:11px; color:var(--text-dim); width:34px; text-align:right; }
+
+/* MARK CHIPS */
+.mark-row { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; }
+.mark-chip {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:8px 4px 7px; border-radius:var(--r-sm);
+  border:1.5px solid var(--border); background:var(--surface2);
+  cursor:pointer; font-family:'Barlow Condensed',sans-serif;
+  font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+  color:var(--text-muted); transition:all .15s; -webkit-tap-highlight-color:transparent; user-select:none;
+}
+.mark-chip:hover { border-color:rgba(255,255,255,.2); color:var(--text); }
+.chip-ball {
+  width:22px; height:22px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.1);
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.4), 0 2px 6px rgba(0,0,0,.4); flex-shrink:0;
+}
+.mark-chip.active { border-width:2px; }
+.mark-chip[data-mode="cue"].active    { border-color:var(--ivory);       color:var(--ivory);      background:rgba(240,232,213,.08); }
+.mark-chip[data-mode="obj"].active    { border-color:#e04040;             color:#e07070;            background:rgba(204,34,34,.1); }
+.mark-chip[data-mode="eight"].active  { border-color:#aaa;                color:var(--text);        background:rgba(100,100,100,.12); }
+.mark-chip[data-mode="pocket"].active { border-color:var(--gold);         color:var(--gold-bright); background:rgba(200,151,46,.1); }
+.mark-chip[data-mode="stripe"].active { border-color:#f4a261;             color:#f4a261;            background:rgba(244,162,97,.1); }
+
+/* PILLS */
+.pills { display:flex; gap:6px; }
+.pill {
+  flex:1; padding:8px 4px; border-radius:var(--r-sm);
+  border:1.5px solid var(--border); background:var(--surface2);
+  color:var(--text-muted); font-family:'Barlow Condensed',sans-serif;
+  font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+  text-align:center; cursor:pointer; transition:all .15s; -webkit-tap-highlight-color:transparent;
+}
+.pill:hover { border-color:rgba(255,255,255,.2); }
+.pill.active { background:var(--gold-dim); border-color:var(--gold); color:var(--gold-bright); box-shadow:0 0 12px rgba(200,151,46,.2); }
+
+/* SUGGESTION */
+.suggestion {
+  display:none; border-radius:var(--r);
+  border:1px solid var(--green-dim);
+  background:linear-gradient(145deg,var(--surface) 0%,rgba(26,92,56,.25) 100%);
+  padding:13px 14px; margin-top:4px; position:relative; overflow:hidden;
+}
+.suggestion::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--green-soft),transparent);
+}
+.suggestion.show { display:block; }
+.sug-title {
+  font-family:'Playfair Display',serif; font-size:17px; font-weight:700;
+  color:var(--green-soft); margin-bottom:8px; display:flex; align-items:center; gap:7px;
+}
+.sug-body { font-size:14.5px; color:var(--cream); line-height:1.75; }
+
+/* GEO BADGES */
+.geo-badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.geo-badge {
+  font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:.8px; padding:3px 9px; border-radius:4px; text-transform:uppercase;
+}
+.geo-badge.angle  { background:rgba(200,151,46,.18); color:var(--gold-bright); border:1px solid var(--gold-dim); }
+.geo-badge.diff   { background:rgba(204,34,34,.15);  color:#e07070;             border:1px solid #6a1010; }
+.geo-badge.diff.easy { background:rgba(52,201,106,.15); color:var(--green-soft); border:1px solid var(--green-dim); }
+.geo-badge.diff.medium { background:rgba(224,136,32,.15); color:#e0a050; border:1px solid #7a4a10; }
+.geo-badge.pocket-type { background:rgba(200,151,46,.1); color:var(--ivory-dim); border:1px solid var(--gold-dim); }
+
+/* AI DETECTIONS BOX */
+.detections-box {
+  background: var(--surface2);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  margin-top: 8px;
+  display: none;
+}
+.detections-box.show { display: block; }
+.det-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.det-list {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.det-chip {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 4px;
+  background: rgba(45,255,138,.1);
+  border: 1px solid rgba(45,255,138,.2);
+  color: var(--green-soft);
+}
+
+.div { height:1px; background:var(--border); margin:8px 0; }
+
+
+/* ── LANDSCAPE MODE ── */
+@media screen and (orientation: landscape) {
+  #app { max-width: 100%; }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 12px 24px;
+  }
+
+  /* Canvas takes full width at top */
+  .canvas-card {
+    width: 100%;
+    max-height: 60vw;
+  }
+
+  #main-canvas {
+    max-height: 60vw;
+    width: 100% !important;
+    object-fit: contain;
+  }
+
+  /* Live video also full width */
+  .live-section { max-height: 55vw; }
+  #live-video { max-height: 55vw; width: 100%; }
+
+  /* Everything else stacks below at full width */
+  .card, .upload-zone, .detections-box, #history-panel,
+  #view-mode-card, #english-panel, #suggestion-card {
+    width: 100%;
+  }
+
+  /* Two-column layout for settings cards below canvas */
+  .below-canvas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Larger suggestion text in landscape */
+  .sug-body { font-size: 15px; line-height: 1.8; }
+  .sug-title { font-size: 17px; }
+}
+
+/* ── LARGER SUGGESTION TEXT for tripod readability ── */
+@media screen and (min-width: 600px) {
+  .sug-body  { font-size: 15px; line-height: 1.8; }
+  .sug-title { font-size: 17px; }
+  .geo-badge { font-size: 13px; padding: 4px 12px; }
+}
+
+
+
+/* ── ENGLISH / SPIN CONTROL ── */
+.english-panel {
+  display: none;
+  padding-top: 10px;
+}
+.english-panel.show { display: block; }
+
+.english-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.english-ball-wrap {
+  position: relative;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #e0d8c0 50%, #c0b080);
+  border: 2px solid rgba(200,180,100,.4);
+  box-shadow: 0 4px 16px rgba(0,0,0,.5), inset 0 -3px 8px rgba(0,0,0,.3);
+  flex-shrink: 0;
+}
+
+.english-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.english-zone {
+  cursor: pointer;
+  background: transparent;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.english-zone:hover { background: rgba(255,255,255,.2); }
+.english-zone.active { background: rgba(45,255,138,.45); }
+
+.english-dot {
+  position: absolute;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--green-neon);
+  box-shadow: 0 0 10px var(--green-neon), 0 0 20px rgba(45,255,138,.5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: left .2s, top .2s;
+  top: 50%; left: 50%;
+  z-index: 3;
+}
+
+.english-info { flex: 1; }
+
+.english-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--gold-bright);
+  margin-bottom: 3px;
+}
+
+.english-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.english-reset {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-muted);
+  background: none; border: none;
+  cursor: pointer; padding: 0;
+  text-decoration: underline;
+  margin-top: 4px;
+  display: block;
+}
+
+/* ── HELP MODAL ── */
+.help-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(200,151,46,.15);
+  border: 1.5px solid var(--gold-dim);
+  color: var(--gold);
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.help-btn:hover { background: rgba(200,151,46,.3); border-color: var(--gold); }
+
+.help-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 100;
+  display: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.help-overlay.show {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.help-modal {
+  background: var(--felt);
+  border-radius: 20px 20px 0 0;
+  border-top: 2px solid var(--gold-dim);
+  width: 100%;
+  max-width: 600px;
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 40px;
+  animation: slideUp .3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.help-handle {
+  width: 40px; height: 4px;
+  background: var(--border-mid);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.help-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ivory);
+}
+.help-title span { color: var(--gold); }
+
+.help-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.help-section {
+  padding: 16px 18px 0;
+}
+
+.help-section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gold-dim);
+  opacity: .4;
+}
+
+.help-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.help-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 26px;
+  text-align: center;
+  margin-top: 1px;
+}
+
+.help-item-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: .3px;
+  margin-bottom: 2px;
+}
+
+.help-item-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+
+.help-tip {
+  background: rgba(200,151,46,.08);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 10px 18px 0;
+  font-size: 13px;
+  color: var(--cream);
+  line-height: 1.65;
+}
+
+.help-tip strong { color: var(--gold-bright); }
+
+.help-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 18px 0;
+}
+
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border-mid); border-radius:2px; }
+
+/* ── VIEW MODE SELECTOR ── */
+.view-mode-bar {
+  display: flex;
+  gap: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 3px;
+  margin-bottom: 10px;
+}
+.view-mode-pill {
+  flex: 1;
+  text-align: center;
+  padding: 7px 6px;
+  border-radius: calc(var(--r-sm) - 2px);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: .8px; text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .18s, color .18s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.view-mode-pill.active {
+  background: var(--gold);
+  color: #1a1200;
+}
+.view-mode-pill .vmp-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 3px;
+  height: 22px;
+}
+.view-mode-pill .vmp-label { font-size: 10px; letter-spacing: 1px; }
+
+.view-mode-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .3px;
+  min-height: 16px;
+  transition: opacity .2s;
+}
+.history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--r-sm);
+  background: var(--surface2); border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.history-item:hover { border-color: var(--gold-dim); }
+.history-thumb {
+  width: 52px; height: 38px; border-radius: 5px;
+  object-fit: cover; flex-shrink: 0;
+  border: 1px solid var(--border-mid);
+}
+.history-info { flex: 1; min-width: 0; }
+.history-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.history-meta {
+  font-size: 10px; color: var(--text-muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .5px; margin-top: 2px;
+}
+.history-diff {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+
+/* ── HISTORY RESTORE POPUP ── */
+.history-restore-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.history-restore-overlay.show { display: flex; }
+.history-restore-popup {
+  background: var(--felt);
+  border: 1.5px solid var(--gold-dim);
+  border-radius: 16px;
+  width: 300px; max-width: 92vw;
+  padding: 18px 18px 16px;
+  box-shadow: 0 8px 48px rgba(0,0,0,.9);
+  animation: popIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+.history-restore-thumb {
+  width: 100%; height: 120px;
+  object-fit: cover; border-radius: 8px;
+  border: 1px solid var(--border-mid);
+  margin-bottom: 12px; display: block;
+}
+.history-restore-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--gold-bright); margin-bottom: 3px;
+}
+.history-restore-meta {
+  font-size: 12px; color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .4px; margin-bottom: 12px;
+}
+.history-restore-question {
+  font-size: 14px; color: var(--text);
+  margin-bottom: 14px; line-height: 1.5;
+}
+.history-restore-btns { display: flex; gap: 8px; }
+.history-restore-btns button {
+  flex: 1; padding: 10px; border-radius: 8px; border: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; font-weight: 700; letter-spacing: .5px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.history-restore-yes { background: var(--gold); color: #1a1200; }
+.history-restore-no {
+  background: var(--surface2);
+  border: 1px solid var(--border-mid) !important;
+  color: var(--text-dim);
+}
+
+/* ── COACHING MODE ── */
+.coaching-box {
+  display: none;
+  background: rgba(200,151,46,.06);
+  border: 1px solid var(--gold-dim);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--cream);
+  line-height: 1.75;
+}
+.coaching-box.show { display: block; }
+.coaching-box strong { color: var(--gold-bright); }
+
+/* ── CUE BALL SPIN POPUP ── */
+.spin-popup-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.72);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.spin-popup-overlay.show { display: flex; }
+
+.spin-popup {
+  background: var(--felt);
+  border: 1.5px solid var(--gold-dim);
+  border-radius: 18px;
+  padding: 16px 16px 20px;
+  width: 320px;
+  max-width: 94vw;
+  box-shadow: 0 8px 48px rgba(0,0,0,.85), 0 0 0 1px rgba(200,151,46,.12);
+  animation: popIn .22s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+}
+
+@keyframes popIn {
+  from { transform: scale(.82); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.spin-popup-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.spin-popup-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-dim); font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+
+.spin-ball-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.spin-svg-wrap {
+  position: relative;
+  width: 220px; height: 220px;
+  flex-shrink: 0;
+}
+
+.spin-svg-wrap svg {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.spin-zone {
+  cursor: pointer;
+  transition: opacity .12s;
+}
+.spin-zone:hover { opacity: .85; }
+
+.spin-info-panel {
+  width: 100%;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.spin-info-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px; font-weight: 700; letter-spacing: .3px;
+  color: var(--gold-bright);
+  margin-bottom: 5px;
+}
+
+.spin-info-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+.spin-reset-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-muted);
+  background: none; border: none;
+  cursor: pointer; padding: 0;
+  text-decoration: underline;
+  margin-top: 6px;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.spin-cue-hint {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .5px;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="hdr">
+    <div class="hdr-inner">
+      <div class="hdr-emblem">🎱</div>
+      <div style="flex:1">
+        <div class="hdr-name">Curran's <span>Rack Reader</span></div>
+        <div class="hdr-sub">Custom AI · Live Shot Intelligence <span style="color:var(--gold-dim);opacity:.7">· v5</span></div>
+      </div>
+      <button class="help-btn" onclick="toggleHelp()" title="Help">?</button>
+    </div>
+  </header>
+
+  <!-- MODEL STATUS -->
+  <div class="model-banner" id="model-banner">
+    <div class="model-dot" id="model-dot"></div>
+    <span id="model-msg">Loading your custom trained model...</span>
+  </div>
+
+  <!-- LIVE VIEW -->
+  <div class="live-section" id="live-section">
+    <div class="cam-off-msg" id="cam-off-msg">
+      <div class="cam-off-icon">📷</div>
+      <div>Camera off — press <strong>Start Camera</strong> or upload a photo</div>
+    </div>
+    <video id="live-video" autoplay playsinline muted style="display:none"></video>
+    <div class="scan-overlay" id="scan-overlay">
+      <div class="scan-line"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+    </div>
+  </div>
+
+  <!-- MOTION BAR -->
+  <div class="motion-bar-wrap" id="motion-bar-wrap" style="display:none">
+    <div class="motion-label">Motion</div>
+    <div class="motion-track"><div class="motion-fill" id="motion-fill"></div></div>
+    <div class="motion-val" id="motion-val">0%</div>
+    <div class="still-badge" id="still-badge">STILL</div>
+  </div>
+
+  <!-- CAMERA CONTROLS -->
+  <div class="cam-controls">
+    <button class="btn btn-green" id="cam-btn" onclick="toggleCamera()" style="flex:1.1">📷 Start Camera</button>
+    <button class="btn btn-scan"  id="scan-btn" onclick="triggerManualScan()" disabled style="flex:1.3">⚡ SCAN NOW</button>
+    <button class="btn btn-ai"    id="ai-btn"   onclick="runDetection()" disabled style="flex:1.3">🤖 AI Detect</button>
+    <button class="btn btn-ghost" onclick="triggerUpload()" style="flex:.7">📁</button>
+  </div>
+  <input type="file" id="file-input" accept="image/*" style="display:none">
+  <div id="upload-zone" style="display:none"></div>
+
+  <!-- STATUS -->
+  <div class="status-strip">
+    <div class="s-pip" id="s-pip"></div>
+    <div class="s-text" id="s-text">Loading AI model...</div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- AUTO-SCAN SETTINGS -->
+    <div class="card">
+      <div class="card-label">Auto-Scan Settings</div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">Auto-scan when table goes still</div>
+          <div class="autoscan-desc">Captures + AI detects automatically</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="autoscan-toggle" checked onchange="autoScan=this.checked">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="sens-row">
+        <div class="sens-label">Sensitivity</div>
+        <input type="range" id="sens-slider" min="1" max="10" value="5"
+          oninput="document.getElementById('sens-val').textContent=this.value;updateSensitivity()">
+        <div class="sens-val" id="sens-val">5</div>
+      </div>
+      <div class="sens-row">
+        <div class="sens-label">Still delay</div>
+        <input type="range" id="delay-slider" min="5" max="150" value="15"
+          oninput="document.getElementById('delay-val').textContent=(this.value/10).toFixed(1)+'s';updateDelay()">
+        <div class="sens-val" id="delay-val">1.5s</div>
+      </div>
+      <div class="div"></div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">🔔 Sound chime alerts</div>
+          <div class="autoscan-desc">Soft chime on scan · louder tone when suggestion ready</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chime-toggle" checked>
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="div"></div>
+      <div class="sens-row">
+        <div class="sens-label">AI Confidence</div>
+        <input type="range" id="conf-slider" min="10" max="80" value="35"
+          oninput="document.getElementById('conf-val').textContent=this.value+'%';CONF_THRESHOLD=parseInt(this.value)/100">
+        <div class="sens-val" id="conf-val">35%</div>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:3px;padding-left:80px">
+        Low = more detections · High = precise only
+      </div>
+      <div class="div"></div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">&#127979; Coaching Mode</div>
+          <div class="autoscan-desc">Explains why a shot has that difficulty rating</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="coaching-toggle">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div"></div>
+      <div class="autoscan-row" style="align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div class="autoscan-label">🎱 English / Spin Control</div>
+          <div class="autoscan-desc">Tap cue ball to set contact point — affects shot advice</div>
+        </div>
+        <!-- Mini tappable ball — always visible when toggle is on -->
+        <div id="settings-spin-ball" onclick="openSpinPopup()"
+          style="display:none;width:44px;height:44px;flex-shrink:0;cursor:pointer;border-radius:50%;
+                 box-shadow:0 0 0 2px rgba(200,151,46,0.4);transition:box-shadow .2s"
+          title="Tap to change spin"></div>
+        <label class="toggle" style="flex-shrink:0">
+          <input type="checkbox" id="english-toggle" onchange="toggleEnglish(true)">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div"></div>
+      <!-- AIMING AIDS -->
+      <div class="card-label" style="margin-top:4px">🎯 Aiming Aids</div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">🟡 Target Line</div>
+          <div class="autoscan-desc">Aim line from cue tip through contact point to pocket</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aim-targetline" checked onchange="renderCanvas()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div"></div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">🎱 Contact Point</div>
+          <div class="autoscan-desc">Crosshair on the exact hit point of the object ball</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aim-contactpoint" checked onchange="renderCanvas()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div"></div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">🔵 Shaft Edge Guide</div>
+          <div class="autoscan-desc">Shows which cue shaft edge to align for the cut angle</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aim-shaftedge" onchange="renderCanvas()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div"></div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">📐 Double-the-Distance</div>
+          <div class="autoscan-desc">DTD aim point marker for precise cut angle targeting</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aim-dtd" onchange="renderCanvas()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- CANVAS -->
+    <div class="canvas-card" id="canvas-card">
+      <canvas id="main-canvas" style="display:none"></canvas>
+      <div class="canvas-placeholder" id="canvas-placeholder">
+        <div class="big">🎯</div>
+        <div>Captured frame appears here</div>
+      </div>
+      <div class="canvas-top-btns">
+        <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
+        <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
+        <div class="icon-btn" title="Discard frame" onclick="discardFrame()">✕</div>
+      </div>
+      <div class="capture-flash" id="capture-flash"></div>
+    </div>
+
+    <!-- AI DETECTIONS -->
+    <div class="detections-box" id="detections-box">
+      <div class="det-title">🤖 AI Detected</div>
+      <div class="det-list" id="det-list"></div>
+      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
+    </div>
+
+    <!-- SHOT HISTORY -->
+    <div class="card" id="history-panel" style="display:none">
+      <div class="card-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>&#128248; Shot History</span>
+        <button onclick="clearHistory()" style="background:none;border:none;color:var(--text-muted);font-size:10px;font-family:'Barlow Condensed',sans-serif;cursor:pointer;letter-spacing:.5px">CLEAR</button>
+      </div>
+      <div id="history-list" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
+    <!-- VIEW MODE -->
+    <div class="card" id="view-mode-card">
+      <div class="card-label">📐 Perspective Mode</div>
+      <div class="view-mode-bar">
+        <div class="view-mode-pill active" id="vmp-player" onclick="setViewMode('player')">
+          <span class="vmp-icon">
+            <!-- Cue stick at playing angle -->
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="2" y1="20" x2="18" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="19" cy="3" r="2" fill="currentColor" opacity=".6"/>
+              <circle cx="7" cy="16" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <circle cx="7" cy="16" r="1" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="vmp-label">Player View</span>
+        </div>
+        <div class="view-mode-pill" id="vmp-overhead" onclick="setViewMode('overhead')">
+          <span class="vmp-icon">
+            <!-- Pool table from above -->
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <rect x="4" y="6" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1" fill="none" opacity=".5"/>
+              <!-- Corner pockets -->
+              <circle cx="4" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="18" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="4" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="18" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
+              <!-- Side pockets -->
+              <circle cx="11" cy="4" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="11" cy="18" r="1.2" fill="currentColor" opacity=".8"/>
+              <!-- Ball -->
+              <circle cx="11" cy="11" r="2" fill="currentColor" opacity=".6"/>
+            </svg>
+          </span>
+          <span class="vmp-label">Overhead View</span>
+        </div>
+      </div>
+      <div class="view-mode-hint" id="view-mode-hint">Natural playing angle · geometry is advisory</div>
+    </div>
+
+    <!-- MARK BALLS -->
+    <div class="card">
+      <div class="card-label">Manual Mark — select type, tap canvas</div>
+      <div class="mark-row">
+        <div class="mark-chip active" data-mode="cue" onclick="setMode('cue')">
+          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#ffffff,#e8e0cc 50%,#c8b890);border:2px solid rgba(200,190,160,.5)"></div>Cue
+        </div>
+        <div class="mark-chip" data-mode="obj" onclick="setMode('obj')">
+          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#f07070,#cc1111 55%,#880000);border:2px solid #aa0000"></div>Solid
+        </div>
+        <div class="mark-chip" data-mode="stripe" onclick="setMode('stripe')">
+          <!-- Stripe ball: white with colored stripe through middle -->
+          <div class="chip-ball" style="
+            background: linear-gradient(
+              to bottom,
+              #f0e8d8 0%, #f0e8d8 30%,
+              #e07020 30%, #e07020 70%,
+              #f0e8d8 70%, #f0e8d8 100%
+            );
+            border:2px solid #c06010;
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.4), inset -2px -2px 4px rgba(0,0,0,0.3);
+          "></div>Stripe
+        </div>
+        <div class="mark-chip" data-mode="eight" onclick="setMode('eight')">
+          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#444,#111 55%,#000);border:2px solid #444;position:relative">
+            <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#fff;line-height:1">8</span>
+          </div>8-Ball
+        </div>
+        <div class="mark-chip" data-mode="pocket" onclick="setMode('pocket')" style="grid-column:span 4">
+          <!-- Pocket icon - dark circle like a table pocket -->
+          <div style="
+            width:22px;height:22px;border-radius:50%;
+            background:radial-gradient(circle at 40% 35%, #1a1a1a, #000000);
+            border:2px solid #4a3a20;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.9), 0 0 8px rgba(200,151,46,0.3);
+            flex-shrink:0;
+          "></div>Target Pocket
+        </div>
+      </div>
+    </div>
+
+    <!-- ENGLISH PANEL -->
+    <div class="english-panel card" id="english-panel" style="display:none">
+      <div class="card-label">&#127506; Cue Ball Contact Point</div>
+      <div class="english-wrap">
+        <div id="english-svg-wrap" onclick="openSpinPopup()" style="width:88px;height:88px;flex-shrink:0;cursor:pointer;border-radius:50%;transition:box-shadow .2s;box-shadow:0 0 0 2px rgba(200,151,46,0.3);" title="Tap to set spin"></div>
+        <div class="english-info">
+          <div class="english-name" id="english-name">Center Ball</div>
+          <div class="english-desc" id="english-desc">No spin — most accurate. Best for long shots and thin cuts.</div>
+          <button class="english-reset" onclick="openSpinPopup()">Tap to change spin &#8250;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME MODE + SUGGEST -->
+    <div class="card">
+      <div class="card-label">Game Mode</div>
+      <div class="pills">
+        <div class="pill active" onclick="setGame('8ball',this)">8-Ball</div>
+        <div class="pill"        onclick="setGame('9ball',this)">9-Ball</div>
+        <div class="pill"        onclick="setGame('straight',this)">Straight</div>
+      </div>
+      <div class="div"></div>
+      <button class="btn btn-gold" onclick="suggestShot()" style="width:100%;font-size:14px;padding:11px">
+        🔍 Suggest Best Shot
+      </button>
+      <div class="suggestion" id="suggestion">
+        <div class="geo-badges" id="geo-badges"></div>
+        <div class="sug-title"  id="sug-title"></div>
+        <div class="sug-body"   id="sug-body"></div>
+        <div class="coaching-box" id="coaching-box"></div>
+      </div>
+    </div>
+
+
+
+
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   CUSTOM MODEL CONFIG
+   Your model hosted on Netlify
+═══════════════════════════════════════════ */
+const MODEL_URL = 'https://billiardglassesbycurran.github.io/rack-reader-v3/model.json';
+
+// Class definitions from your trained model
+const CLASSES = [
+  { id: 0, name: 'cue-ball',   label: 'C', color: '#f5f0e8', markType: 'cue'    },
+  { id: 1, name: 'solid',      label: 'S', color: '#e63946', markType: 'obj'    },
+  { id: 2, name: 'stripe',     label: 'T', color: '#f4a261', markType: 'stripe' },
+  { id: 3, name: 'eight-ball', label: '8', color: '#222222', markType: 'eight'  },
+  { id: 4, name: 'pocket',     label: 'P', color: '#c9a84c', markType: 'pocket' },
+];
+
+let CONF_THRESHOLD = 0.35;
+let NMS_THRESHOLD = 0.45;
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const video       = document.getElementById('live-video');
+const canvas      = document.getElementById('main-canvas');
+const ctx         = canvas.getContext('2d');
+const placeholder = document.getElementById('canvas-placeholder');
+const camBtn      = document.getElementById('cam-btn');
+const scanBtn     = document.getElementById('scan-btn');
+const aiBtn       = document.getElementById('ai-btn');
+
+let mediaStream   = null;
+let cameraOn      = false;
+let sourceImg     = null;
+let marks         = [];
+let markMode      = 'cue';
+let gameMode      = '8ball';
+let viewMode      = 'player'; // 'player' | 'overhead'
+let autoScan      = true;
+let tfModel       = null;
+let modelReady    = false;
+
+// Motion
+let motionRAF     = null;
+let prevFrame     = null;
+let motionBuffer  = [];
+let stillCounter  = 0;
+let lastScanTime  = 0;
+let motionThreshold   = 3.5;
+let stillFramesNeeded = 12;
+const MOTION_HIST = 6;
+
+const motionW = 80, motionH = 45;
+const motionCvs = document.createElement('canvas');
+motionCvs.width = motionW; motionCvs.height = motionH;
+const motionCtx = motionCvs.getContext('2d', { willReadFrequently: true });
+
+/* ═══════════════════════════════════════════
+   LOAD CUSTOM MODEL
+═══════════════════════════════════════════ */
+async function loadModel() {
+  setModelStatus('Loading your custom trained model...', 'loading');
+  setStatus('Loading AI model...', '');
+
+  try {
+    // Load TF.js first
+    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
+    await tf.ready();
+    setModelStatus('TensorFlow ready — fetching model...', 'loading');
+
+    // Load with custom fetch to rewrite .bin file URLs to jsDelivr
+    const BASE = 'https://billiardglassesbycurran.github.io/rack-reader-v3/';
+    tfModel = await tf.loadGraphModel(MODEL_URL, {
+      fetchFunc: async (url, init) => {
+        // Rewrite relative .bin URLs to jsDelivr absolute URLs
+        if (!url.startsWith('http')) {
+          url = BASE + url;
+        } else if (url.includes('.bin') && !url.includes('github.io')) {
+          const filename = url.split('/').pop();
+          url = BASE + filename;
+        }
+        return fetch(url, init);
+      }
+    });
+
+    modelReady = true;
+    setModelStatus('✅ Custom model ready — AI detect enabled', 'ready');
+    setStatus('Your trained model loaded — start camera or upload photo', 'live');
+    aiBtn.disabled = false;
+    aiBtn.classList.add('ready');
+    aiBtn.textContent = '🤖 AI Detect';
+
+  } catch (err) {
+    console.warn('Custom model failed:', err.message);
+    // Try COCO-SSD fallback
+    tryCocoFallback();
+  }
+}
+
+async function tryCocoFallback() {
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js');
+    tfModel = await cocoSsd.load({ base: 'mobilenet_v2' });
+    modelReady = true;
+    setModelStatus('Using COCO-SSD fallback — AI detect enabled (limited classes)', 'ready');
+    aiBtn.disabled = false;
+    aiBtn.classList.add('ready');
+  } catch (e) {
+    console.warn('COCO fallback also failed');
+  }
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function setModelStatus(msg, state) {
+  const banner = document.getElementById('model-banner');
+  const dot    = document.getElementById('model-dot');
+  const text   = document.getElementById('model-msg');
+  text.textContent = msg;
+  banner.className = 'model-banner' + (state === 'ready' ? ' ready' : state === 'err' ? ' err' : '');
+  dot.className    = 'model-dot'   + (state === 'ready' ? ' ready' : state === 'err' ? ' err' : '');
+}
+
+/* ═══════════════════════════════════════════
+   AI DETECTION
+═══════════════════════════════════════════ */
+async function runDetection() {
+  if (!modelReady || !sourceImg) {
+    setStatus(!modelReady ? 'AI model not ready yet' : 'Capture a frame first', 'warn');
+    return;
+  }
+
+  aiBtn.disabled = true;
+  aiBtn.textContent = '🤖 Detecting...';
+  setStatus('AI scanning for balls...', 'gold');
+
+  try {
+    let detections = [];
+
+    // Always run inference on a clean 640x640 offscreen canvas
+    // This prevents size/format issues with uploaded photos
+    const inferCanvas = document.createElement('canvas');
+    inferCanvas.width = 640; inferCanvas.height = 640;
+    const inferCtx = inferCanvas.getContext('2d');
+    inferCtx.drawImage(canvas, 0, 0, 640, 640);
+
+    if (tfModel.detect) {
+      // COCO-SSD style
+      const preds = await tfModel.detect(inferCanvas);
+      const ballPreds = preds.filter(p =>
+        ['sports ball','frisbee','orange','apple'].includes(p.class) && p.score > CONF_THRESHOLD
+      );
+      // COCO bbox is in inferCanvas coords (640x640), scale to main canvas
+      const scaleX = canvas.width / 640, scaleY = canvas.height / 640;
+      detections = ballPreds.map(p => ({
+        class: 1,
+        score: p.score,
+        bbox: [p.bbox[0]*scaleX, p.bbox[1]*scaleY, p.bbox[2]*scaleX, p.bbox[3]*scaleY]
+      }));
+    } else {
+      // Custom YOLOv8 — returns bboxFrac (0-1 fractions), scale to main canvas
+      const W = canvas.width, H = canvas.height;
+      const rawDets = await runYOLOInference(inferCanvas);
+      detections = rawDets.map(d => ({
+        class: d.class,
+        score: d.score,
+        bbox: [d.bboxFrac[0]*W, d.bboxFrac[1]*H, d.bboxFrac[2]*W, d.bboxFrac[3]*H]
+      }));
+    }
+
+    if (detections.length === 0) {
+      const imgData = ctx.getImageData(0, 0, Math.min(canvas.width,100), Math.min(canvas.height,100)).data;
+      let brightness = 0;
+      for (let i = 0; i < imgData.length; i += 4) brightness += imgData[i];
+      brightness = brightness / (imgData.length / 4);
+      let reason = '';
+      if (brightness < 40) reason = 'Image too dark — try better lighting';
+      else if (brightness > 215) reason = 'Image too bright — reduce exposure';
+      else if (canvas.width < 300) reason = 'Image too small — move camera closer';
+      else reason = 'No balls detected — try lowering AI Confidence or mark balls manually';
+      setStatus('⚠️ ' + reason, 'warn');
+      aiBtn.disabled = false;
+      aiBtn.textContent = '🤖 AI Detect';
+      return;
+    }
+
+    // Place marks from detections
+    const W = canvas.width, H = canvas.height;
+    let added = 0;
+    const detList = document.getElementById('det-list');
+    detList.innerHTML = '';
+
+    // Remove previous AI marks
+    marks = marks.filter(m => !m.aiDetected);
+
+    detections.forEach(det => {
+      const [x, y, w, h] = det.bbox;
+      const fx = (x + w / 2) / W;
+      const fy = (y + h / 2) / H;
+
+      const tooClose = marks.some(m => Math.hypot(m.fx - fx, m.fy - fy) < 0.04);
+      if (tooClose) return;
+
+      const cls = CLASSES[det.class] || CLASSES[1];
+      marks.push({ type: cls.markType, fx, fy, aiDetected: true, className: cls.name });
+
+      const chip = document.createElement('div');
+      chip.className = 'det-chip';
+      chip.textContent = `${cls.name} ${Math.round(det.score * 100)}%`;
+      detList.appendChild(chip);
+      added++;
+    });
+
+    document.getElementById('detections-box').classList.toggle('show', added > 0);
+    if (added > 0) document.getElementById('redetect-btn').style.display = 'block';
+    renderCanvas();
+    setStatus(`🤖 AI placed ${added} marker(s) — review and tap Suggest Best Shot`, 'live');
+
+    // Auto-suggest if we have enough info
+    const hasCue = marks.some(m => m.type === 'cue');
+    const hasTarget = marks.some(m => m.type === 'obj' || m.type === 'stripe' || m.type === 'eight');
+    if (hasCue && hasTarget) {
+      setTimeout(() => {
+        setStatus('🤖 AI detected balls — auto-calculating best shot…', 'gold');
+        suggestShot();
+      }, 600);
+    }
+
+  } catch (err) {
+    console.error('Detection error:', err);
+    // Give a more helpful message based on error type
+    const msg = err.message || '';
+    if (msg.includes('memory') || msg.includes('tensor')) {
+      setStatus('⚠️ AI memory error — try Re-detect or mark balls manually', 'err');
+    } else if (msg.includes('network') || msg.includes('fetch')) {
+      setStatus('⚠️ Model not loaded — check connection and reload', 'err');
+    } else {
+      setStatus('⚠️ Detection failed — mark balls manually or try again', 'err');
+    }
+  }
+
+  aiBtn.disabled = false;
+  aiBtn.textContent = '🤖 AI Detect';
+}
+
+function reDetect() {
+  marks = marks.filter(m => !m.aiDetected);
+  document.getElementById('detections-box').classList.remove('show');
+  document.getElementById('redetect-btn').style.display = 'none';
+  renderCanvas();
+  runDetection();
+}
+
+async function runYOLOInference(canvasEl) {
+  // canvasEl is already 640x640 — output bbox as fractions (0-1) for caller to scale
+  let inputTensor;
+  try {
+    inputTensor = tf.tidy(() => {
+      const img = tf.browser.fromPixels(canvasEl);
+      const normalized = img.div(255.0);
+      return normalized.expandDims(0);
+    });
+  } catch(e) {
+    throw new Error('tensor_create_failed: ' + e.message);
+  }
+
+  const output = await tfModel.executeAsync(inputTensor);
+  inputTensor.dispose();
+
+  // Parse YOLOv8 output [1, 9, 8400] → [cx, cy, w, h, class_scores...]
+  const data = await output[0].data();
+  output.forEach(t => t.dispose());
+
+  const detections = [];
+  const numBoxes = 8400;
+  const numClasses = 5;
+
+  for (let i = 0; i < numBoxes; i++) {
+    let bestScore = 0, bestClass = 0;
+    for (let c = 0; c < numClasses; c++) {
+      const score = data[(4 + c) * numBoxes + i];
+      if (score > bestScore) { bestScore = score; bestClass = c; }
+    }
+    if (bestScore < CONF_THRESHOLD) continue;
+
+    // YOLOv8 outputs cx,cy,w,h normalized to input size (640)
+    // Return as fractions (0-1) so caller can scale to any canvas size
+    const cx = data[0 * numBoxes + i] / 640;
+    const cy = data[1 * numBoxes + i] / 640;
+    const bw = data[2 * numBoxes + i] / 640;
+    const bh = data[3 * numBoxes + i] / 640;
+
+    detections.push({
+      class: bestClass,
+      score: bestScore,
+      // bbox as fractions — caller multiplies by actual W/H
+      bboxFrac: [cx - bw/2, cy - bh/2, bw, bh]
+    });
+  }
+
+  return applyNMS(detections);
+}
+
+function applyNMS(dets) {
+  dets.sort((a,b) => b.score - a.score);
+  const kept = [];
+  const suppressed = new Set();
+  for (let i = 0; i < dets.length; i++) {
+    if (suppressed.has(i)) continue;
+    kept.push(dets[i]);
+    for (let j = i+1; j < dets.length; j++) {
+      if (iou(dets[i].bboxFrac, dets[j].bboxFrac) > NMS_THRESHOLD) suppressed.add(j);
+    }
+  }
+  return kept;
+}
+
+function iou(a, b) {
+  const ax1=a[0],ay1=a[1],ax2=a[0]+a[2],ay2=a[1]+a[3];
+  const bx1=b[0],by1=b[1],bx2=b[0]+b[2],by2=b[1]+b[3];
+  const ix = Math.max(0, Math.min(ax2,bx2)-Math.max(ax1,bx1));
+  const iy = Math.max(0, Math.min(ay2,by2)-Math.max(ay1,by1));
+  const inter = ix*iy;
+  return inter / (a[2]*a[3] + b[2]*b[3] - inter);
+}
+
+/* ═══════════════════════════════════════════
+   STATUS
+═══════════════════════════════════════════ */
+function setStatus(msg, state) {
+  document.getElementById('s-text').textContent = msg;
+  document.getElementById('s-pip').className = 's-pip ' + (state || '');
+}
+
+
+/* ═══════════════════════════════════════════
+   SOUND CHIMES (Web Audio API - no files needed)
+═══════════════════════════════════════════ */
+function playChime(type) {
+  if (!document.getElementById('chime-toggle').checked) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'scan') {
+      // Soft click - short low tone
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.2);
+    } else if (type === 'suggestion') {
+      // Two-tone slightly louder - billiards ball click feel
+      osc.frequency.setValueAtTime(523, ctx.currentTime);
+      osc.frequency.setValueAtTime(659, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    }
+  } catch(e) {
+    console.warn('Chime failed:', e.message);
+  }
+}
+
+
+
+/* ═══════════════════════════════════════════
+   ENGLISH / SPIN CONTROL
+═══════════════════════════════════════════ */
+var currentEnglish = 'c';
+
+var ENGLISH_DATA = {
+  'tl': { name: 'Top-Left (Running)',     dot: ['33%','33%'], desc: 'Running english — cue ball accelerates off the left rail. Extends position reach.' },
+  't':  { name: 'Top Spin (Follow)',       dot: ['50%','18%'], desc: 'Follow shot — cue ball rolls forward after contact. Use to chase position up the table.' },
+  'tr': { name: 'Top-Right (Running)',     dot: ['67%','33%'], desc: 'Running english — cue ball accelerates off the right rail. Extends position reach.' },
+  'l':  { name: 'Left English',            dot: ['18%','50%'], desc: 'Left spin — widens the angle off the left rail. Aim slightly right to compensate for throw.' },
+  'c':  { name: 'Center Ball',             dot: ['50%','50%'], desc: 'No spin — most accurate contact. Best for long shots, thin cuts, and precision.' },
+  'r':  { name: 'Right English',           dot: ['82%','50%'], desc: 'Right spin — widens angle off right rail. Aim slightly left to compensate for throw.' },
+  'bl': { name: 'Bottom-Left (Reverse)',   dot: ['33%','67%'], desc: 'Reverse english — slows and shortens rebound off the left rail. Good for tight position.' },
+  'b':  { name: 'Draw (Backspin)',          dot: ['50%','82%'], desc: 'Draw shot — cue ball pulls back after contact. Use to control position and avoid scratches.' },
+  'br': { name: 'Bottom-Right (Reverse)',  dot: ['67%','67%'], desc: 'Reverse english — slows rebound off right rail. Use when you need a short controlled leave.' }
+};
+
+function toggleEnglish(fromUser) {
+  var on = document.getElementById('english-toggle').checked;
+  var panel = document.getElementById('english-panel');
+  var settingsBall = document.getElementById('settings-spin-ball');
+  if (on) {
+    panel.style.display = '';
+    if (settingsBall) settingsBall.style.display = 'block';
+    drawEnglishSVG(currentEnglish);
+    // Only open popup on real user tap, not programmatic restore
+    if (fromUser) setTimeout(openSpinPopup, 150);
+  } else {
+    panel.style.display = 'none';
+    if (settingsBall) settingsBall.style.display = 'none';
+  }
+}
+
+function setEnglish(pos) {
+  currentEnglish = pos;
+  var data = ENGLISH_DATA[pos];
+  document.getElementById('english-name').textContent = data.name;
+  document.getElementById('english-desc').textContent = data.desc;
+  drawEnglishBall(pos);
+  if (sourceImg) renderCanvas();
+}
+
+function drawEnglishBall(pos) {
+  // Legacy canvas function — now replaced by SVG. Draw mini SVG into english-svg-wrap instead.
+  drawEnglishSVG(pos);
+}
+
+function drawEnglishSVG(pos) {
+  _drawMiniSpinBall('english-svg-wrap', pos);
+  _drawMiniSpinBall('settings-spin-ball', pos);
+}
+
+function _drawMiniSpinBall(wrapId, pos) {
+  var wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  // Mini 72px version — same ball, smaller, no labels
+  var S = 72, CX = 36, CY = 36, R = 33;
+  var activeId = pos;
+  if (pos === 'tl' || pos === 'tr') activeId = 't';
+  if (pos === 'bl' || pos === 'br') activeId = 'b';
+
+  // Mini zones scaled to 72px viewBox
+  var zones = [
+    { id:'t',    x:30, y:5,  w:12, h:22, rx:6,  dot:[36,14], shape:'rect' },
+    { id:'stun', x:30, y:38, w:12, h:14, rx:6,  dot:[36,44], shape:'rect' },
+    { id:'b',    x:30, y:54, w:12, h:18, rx:6,  dot:[36,61], shape:'rect' },
+    { id:'l',    x:5,  y:30, w:22, h:12, rx:6,  dot:[14,36], shape:'rect' },
+    { id:'r',    x:45, y:30, w:22, h:12, rx:6,  dot:[58,36], shape:'rect' },
+    { id:'c',    cx:36, cy:36, cr:9,             dot:[36,36], shape:'circle' }
+  ];
+
+  var zoneColors = {
+    't':    ['rgba(52,201,106,0.5)','rgba(52,201,106,0.9)'],
+    'stun': ['rgba(224,136,32,0.5)','rgba(224,136,32,0.9)'],
+    'b':    ['rgba(100,149,255,0.5)','rgba(100,149,255,0.9)'],
+    'l':    ['rgba(255,200,50,0.5)','rgba(255,200,50,0.9)'],
+    'r':    ['rgba(255,200,50,0.5)','rgba(255,200,50,0.9)'],
+    'c':    ['rgba(240,232,213,0.35)','rgba(240,232,213,0.85)']
+  };
+
+  var svg = '<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs>' +
+    '<radialGradient id="mg_ball" cx="35%" cy="30%" r="70%">' +
+    '<stop offset="0%" stop-color="#ffffff"/>' +
+    '<stop offset="35%" stop-color="#f0e8d5"/>' +
+    '<stop offset="70%" stop-color="#d8c890"/>' +
+    '<stop offset="100%" stop-color="#a88840"/>' +
+    '</radialGradient>' +
+    '<clipPath id="mg_clip"><circle cx="36" cy="36" r="32"/></clipPath>' +
+    '<filter id="mg_glow" x="-80%" y="-80%" width="260%" height="260%">' +
+    '<feGaussianBlur stdDeviation="2" result="b"/>' +
+    '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+    '</filter>' +
+    '</defs>';
+
+  svg += '<circle cx="36" cy="36" r="33" fill="url(#mg_ball)"/>';
+  // Curved dividers
+  svg += '<g clip-path="url(#mg_clip)" fill="none" stroke="rgba(160,140,90,0.35)" stroke-width="0.8">' +
+         '<ellipse cx="36" cy="36" rx="12" ry="32"/>' +
+         '<ellipse cx="36" cy="36" rx="32" ry="12"/>' +
+         '</g>';
+
+  // Zones
+  svg += '<g clip-path="url(#mg_clip)">';
+  zones.forEach(function(z) {
+    var isActive = (z.id === activeId);
+    var cols = zoneColors[z.id] || zoneColors['c'];
+    var fill   = isActive ? cols[0] : 'rgba(50,50,45,0.5)';
+    var stroke = isActive ? cols[1] : 'rgba(110,100,70,0.55)';
+    var sw = isActive ? '1.5' : '0.8';
+    if (z.shape === 'circle') {
+      svg += '<circle cx="' + z.cx + '" cy="' + z.cy + '" r="' + z.cr + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>';
+    } else {
+      svg += '<rect x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" rx="' + z.rx + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>';
+    }
+    // Dot
+    var dotC = isActive ? '#2dff8a' : 'rgba(15,15,10,0.65)';
+    var dotR = isActive ? 3 : 2;
+    if (isActive) {
+      svg += '<circle cx="' + z.dot[0] + '" cy="' + z.dot[1] + '" r="5" fill="rgba(45,255,138,0.2)" filter="url(#mg_glow)"/>';
+    }
+    svg += '<circle cx="' + z.dot[0] + '" cy="' + z.dot[1] + '" r="' + dotR + '" fill="' + dotC + '"' + (isActive ? ' filter="url(#mg_glow)"' : '') + '/>';
+    if (isActive) {
+      svg += '<circle cx="' + z.dot[0] + '" cy="' + z.dot[1] + '" r="1.2" fill="#fff"/>';
+    }
+  });
+  svg += '</g>';
+
+  // Rim + specular
+  svg += '<circle cx="36" cy="36" r="33" fill="none" stroke="rgba(150,120,50,0.5)" stroke-width="1.5"/>';
+  svg += '<ellipse cx="27" cy="23" rx="7" ry="4" fill="rgba(255,255,255,0.2)" transform="rotate(-25,27,23)"/>';
+  svg += '</svg>';
+
+  wrap.innerHTML = svg;
+}
+
+function handleEnglishClick(event) {
+  // Legacy — now handled by popup. Open popup instead.
+  openSpinPopup();
+}
+
+function getEnglishAdvice(cutAngle) {
+  var toggle = document.getElementById('english-toggle');
+  if (!toggle || !toggle.checked) return '';
+  var e = currentEnglish;
+  var ca = cutAngle || 0;
+  var advice = '';
+
+  if (e === 'c') {
+    if (ca < 15) advice = 'Center ball — straight shot. Cue ball continues forward along the shot line.';
+    else if (ca < 45) advice = 'Center ball (stun): cue ball deflects ~' + Math.round(90-ca) + '° from shot line. See the white path line on canvas.';
+    else advice = 'Center ball on a hard cut — cue ball deflects sharply. Watch the path line for position.';
+  } else if (e === 't') {
+    if (ca < 20) advice = 'Follow shot: cue ball chases the object ball forward. Great for running position.';
+    else if (ca < 50) advice = 'Follow on a ' + Math.round(ca) + '° cut — reduces deflection angle. Cue ball travels more forward than stun.';
+    else advice = 'Follow on steep cut — be careful, cue ball may travel far. Consider draw instead.';
+  } else if (e === 'b') {
+    if (ca < 20) advice = 'Draw shot: cue ball reverses back toward you. Perfect for avoiding scratches on straight shots.';
+    else if (ca < 50) advice = 'Draw on ' + Math.round(ca) + '° cut — increases deflection. Cue ball pulls back and wide. Good for shape.';
+    else advice = 'Draw on steep cut — cue ball kicks back sharply. Aim slightly fuller to compensate for reduced cut efficiency.';
+  } else if (e === 'l') {
+    var throwAdj = Math.round(ca * 0.05 * 10) / 10;
+    advice = 'Left english throws object ball RIGHT by ~' + throwAdj + '°. Aim ' + throwAdj + '° left to compensate. Widens left rail rebound.';
+  } else if (e === 'r') {
+    var throwAdj = Math.round(ca * 0.05 * 10) / 10;
+    advice = 'Right english throws object ball LEFT by ~' + throwAdj + '°. Aim ' + throwAdj + '° right to compensate. Widens right rail rebound.';
+  } else if (e === 'stun') {
+    if (ca < 20) advice = 'Stun shot: cue ball stops dead on contact. Zero deflection — stays exactly where it hits. Best for straight and near-straight shots.';
+    else advice = 'Stun on a cut — cue ball deflects at roughly 90° from the shot line. Hit firmly just below center for maximum stop effect.';
+  } else if (e === 'tl') {
+    advice = 'Running english (top-left): cue ball accelerates off left rail. Use 10-15% softer stroke — ball travels further than expected.';
+  } else if (e === 'tr') {
+    advice = 'Running english (top-right): cue ball accelerates off right rail. Use 10-15% softer stroke for position control.';
+  } else if (e === 'bl') {
+    advice = 'Reverse english (bottom-left): cue ball slows and shortens left rail rebound by ~30%. Good for tight position near left rail.';
+  } else if (e === 'br') {
+    advice = 'Reverse english (bottom-right): cue ball slows and shortens right rail rebound by ~30%. Good for precise short leaves.';
+  }
+
+  return advice ? ' SPIN PHYSICS: ' + advice : '';
+}
+
+/* ═══════════════════════════════════════════
+   CAMERA
+═══════════════════════════════════════════ */
+async function toggleCamera() {
+  cameraOn ? stopCamera() : await startCamera();
+}
+
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setStatus('Camera not supported — use photo upload', 'err'); return;
+  }
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, frameRate: { ideal: 15 } }
+    });
+    video.srcObject = mediaStream;
+    video.style.display = 'block';
+    document.getElementById('cam-off-msg').style.display = 'none';
+    document.getElementById('motion-bar-wrap').style.display = 'flex';
+    cameraOn = true;
+    camBtn.textContent = '⏹ Stop'; camBtn.className = 'btn btn-red';
+    scanBtn.disabled = false;
+    prevFrame = null; stillCounter = 0; motionBuffer = [];
+    setStatus('Camera live — point at table, auto-scan fires when still', 'live');
+    startMotionLoop();
+  } catch (err) {
+    const why = err.name === 'NotAllowedError' ? 'permission denied'
+              : err.name === 'NotFoundError'   ? 'no camera found' : err.message;
+    setStatus('Camera unavailable — ' + why + '. Use photo upload.', 'err');
+    document.getElementById('cam-off-msg').style.display = '';
+  }
+}
+
+function stopCamera() {
+  stopMotionLoop();
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  video.style.display = 'none'; video.srcObject = null;
+  document.getElementById('cam-off-msg').style.display = '';
+  document.getElementById('motion-bar-wrap').style.display = 'none';
+  document.getElementById('still-badge').classList.remove('show');
+  document.getElementById('scan-overlay').classList.remove('active');
+  cameraOn = false;
+  camBtn.textContent = '📷 Start Camera'; camBtn.className = 'btn btn-green';
+  scanBtn.disabled = true;
+  setMotionBar(0);
+  setStatus('Camera stopped', '');
+}
+
+/* ═══════════════════════════════════════════
+   MOTION DETECTION
+═══════════════════════════════════════════ */
+function updateSensitivity() { motionThreshold = 1.0 + (10 - parseInt(document.getElementById('sens-slider').value)) * 1.2; }
+function updateDelay()       { stillFramesNeeded = parseInt(document.getElementById('delay-slider').value); }
+
+function startMotionLoop() {
+  let lastCheck = 0;
+  function loop(ts) {
+    motionRAF = requestAnimationFrame(loop);
+    if (!cameraOn || video.readyState < 2) return;
+    if (ts - lastCheck < 200) return;
+    lastCheck = ts;
+    analyzeMotion();
+  }
+  motionRAF = requestAnimationFrame(loop);
+}
+
+function stopMotionLoop() {
+  if (motionRAF) { cancelAnimationFrame(motionRAF); motionRAF = null; }
+}
+
+function analyzeMotion() {
+  motionCtx.drawImage(video, 0, 0, motionW, motionH);
+  const curr = motionCtx.getImageData(0, 0, motionW, motionH).data;
+  if (!prevFrame) { prevFrame = curr.slice(); return; }
+  let diff = 0;
+  for (let i = 0; i < curr.length; i += 4) {
+    diff += Math.abs(curr[i]-prevFrame[i]) + Math.abs(curr[i+1]-prevFrame[i+1]) + Math.abs(curr[i+2]-prevFrame[i+2]);
+  }
+  diff /= (motionW * motionH * 3);
+  prevFrame = curr.slice();
+  motionBuffer.push(diff);
+  if (motionBuffer.length > MOTION_HIST) motionBuffer.shift();
+  const avg = motionBuffer.reduce((a,b)=>a+b,0) / motionBuffer.length;
+  setMotionBar(Math.min(100, Math.round(avg * 6)), avg);
+  if (avg < motionThreshold) {
+    stillCounter++;
+    document.getElementById('still-badge').classList.add('show');
+    if (stillCounter >= stillFramesNeeded && autoScan && Date.now() - lastScanTime > 2500) {
+      lastScanTime = Date.now(); stillCounter = 0;
+      captureFrame('auto');
+    }
+  } else {
+    stillCounter = 0;
+    document.getElementById('still-badge').classList.remove('show');
+    document.getElementById('scan-overlay').classList.remove('active');
+  }
+}
+
+function setMotionBar(pct) {
+  document.getElementById('motion-fill').style.width = pct + '%';
+  document.getElementById('motion-val').textContent  = pct + '%';
+  document.getElementById('motion-fill').className = 'motion-fill ' + (pct < 25 ? 'low' : pct < 60 ? 'medium' : 'high');
+}
+
+/* ═══════════════════════════════════════════
+   CAPTURE
+═══════════════════════════════════════════ */
+function triggerManualScan() { if (cameraOn) captureFrame('manual'); }
+
+function captureFrame(mode) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) { setStatus('Video not ready — wait a moment', 'warn'); return; }
+  document.getElementById('scan-overlay').classList.add('active');
+  setTimeout(() => document.getElementById('scan-overlay').classList.remove('active'), 900);
+  const flash = document.getElementById('capture-flash');
+  flash.classList.remove('flash'); void flash.offsetWidth; flash.classList.add('flash');
+  const tmp = document.createElement('canvas');
+  tmp.width = vw; tmp.height = vh;
+  tmp.getContext('2d').drawImage(video, 0, 0, vw, vh);
+  const img = new Image();
+  img.onload = () => {
+    sourceImg = img; marks = [];
+    renderCanvas();
+    placeholder.style.display = 'none'; canvas.style.display = 'block';
+    hideSuggestion();
+    document.getElementById('detections-box').classList.remove('show');
+    document.getElementById('redetect-btn').style.display = 'none';
+    // Pause auto-scan so it doesn't keep re-firing while user marks balls
+    stillCounter = 0;
+    lastScanTime = Date.now() + 8000; // 8s cooldown after capture
+    // Show english panel if toggle is on
+    if (document.getElementById('english-toggle').checked) {
+      document.getElementById('english-panel').style.display = '';
+    }
+    // Auto-scroll to canvas
+    setTimeout(() => document.getElementById('canvas-card').scrollIntoView({behavior:'smooth', block:'start'}), 120);
+    playChime('scan');
+    const label = mode === 'auto' ? '⚡ Frame captured' : '📸 Frame captured';
+    setStatus(label + (modelReady ? ' — running AI detection…' : ' — mark balls manually'), 'gold');
+    if (modelReady && autoScan) setTimeout(() => runDetection(), 300);
+  };
+  img.src = tmp.toDataURL('image/jpeg', 0.92);
+}
+
+/* ═══════════════════════════════════════════
+   UPLOAD
+═══════════════════════════════════════════ */
+function triggerUpload() { document.getElementById('file-input').click(); }
+
+document.getElementById('file-input').addEventListener('change', function() {
+  if (this.files[0]) { loadImageFile(this.files[0]); this.value = ''; }
+});
+
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadImageFile(f);
+});
+
+function loadImageFile(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    stopCamera(); sourceImg = img; marks = [];
+    renderCanvas();
+    placeholder.style.display = 'none'; canvas.style.display = 'block';
+    hideSuggestion();
+    document.getElementById('detections-box').classList.remove('show');
+    document.getElementById('redetect-btn').style.display = 'none';
+    if (document.getElementById('english-toggle').checked) {
+      document.getElementById('english-panel').style.display = '';
+    }
+    setTimeout(() => document.getElementById('canvas-card').scrollIntoView({behavior:'smooth', block:'start'}), 120);
+    setStatus('Photo loaded' + (modelReady ? ' — tap AI Detect' : ' — mark balls manually'), 'gold');
+    URL.revokeObjectURL(url);
+  };
+  img.onerror = () => { setStatus('Could not load image', 'err'); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+
+/* ═══════════════════════════════════════════
+   CANVAS RENDER
+═══════════════════════════════════════════ */
+function renderCanvas() {
+  if (!sourceImg) return;
+  const card = document.getElementById('canvas-card');
+  const maxW = card.clientWidth || 560;
+  const ratio = sourceImg.naturalWidth / sourceImg.naturalHeight;
+  canvas.width  = maxW;
+  canvas.height = Math.round(maxW / ratio);
+  const W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(sourceImg, 0, 0, W, H);
+  if (!marks.length) return;
+
+  const R    = Math.max(9, Math.min(W,H) * 0.027);
+  const cue  = marks.find(m => m.type === 'cue');
+  const objs = marks.filter(m => m.type === 'obj' || m.type === 'eight' || m.type === 'stripe');
+  const pkt  = marks.find(m => m.type === 'pocket');
+
+  if (cue) {
+    objs.forEach(ob => {
+      const cx = cue.fx*W, cy = cue.fy*H;
+      const ox = ob.fx*W,  oy = ob.fy*H;
+      // Aim line: cue → object ball (always shown)
+      ctx.save();
+      ctx.setLineDash([8,5]); ctx.strokeStyle='rgba(200,151,46,0.8)';
+      ctx.lineWidth=2.2; ctx.shadowColor='rgba(200,151,46,0.5)'; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ox,oy); ctx.stroke();
+      ctx.restore();
+      if (pkt) {
+        const px = pkt.fx*W, py = pkt.fy*H;
+        const cutAngle = computeCutAngle(cue, ob, pkt);
+        // Object ball → pocket line (always shown)
+        ctx.save();
+        ctx.setLineDash([5,7]);
+        ctx.strokeStyle = cutAngle < 30 ? 'rgba(52,201,106,0.7)' : cutAngle < 55 ? 'rgba(224,136,32,0.7)' : 'rgba(204,34,34,0.7)';
+        ctx.lineWidth=1.8; ctx.shadowColor='rgba(45,255,138,0.4)'; ctx.shadowBlur=6;
+        ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(px,py); ctx.stroke();
+        ctx.restore();
+        // Cut angle arc — overhead only (meaningless at playing angle)
+        if (cutAngle !== null && viewMode === 'overhead') {
+          const inAngle  = Math.atan2(cy-oy, cx-ox);
+          const outAngle = Math.atan2(py-oy, px-ox);
+          ctx.save();
+          ctx.beginPath(); ctx.arc(ox, oy, R*1.6, inAngle, outAngle, false);
+          ctx.strokeStyle = cutAngle < 30 ? 'rgba(52,201,106,0.6)' : cutAngle < 55 ? 'rgba(224,136,32,0.6)' : 'rgba(204,34,34,0.6)';
+          ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke(); ctx.restore();
+        }
+      }
+      // Ghost ball — overhead only (perspective distorts its position)
+      if (viewMode === 'overhead') {
+        const ang = Math.atan2(cy-oy, cx-ox);
+        const gx  = ox + Math.cos(ang) * R*2.3;
+        const gy  = oy + Math.sin(ang) * R*2.3;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(gx, gy, R, 0, Math.PI*2);
+        ctx.strokeStyle='rgba(240,232,213,0.5)'; ctx.lineWidth=1.5;
+        ctx.setLineDash([3,3]); ctx.stroke(); ctx.restore();
+      }
+    });
+  }
+
+  // ── AIMING AIDS ──
+  drawAimingAids(ctx, cue, objs, pkt, R, W, H);
+
+  // ── CUE BALL PATH AFTER CONTACT (Spin Physics) ──
+  // Only shown in Overhead View — perspective distortion makes it wrong in Player View
+  if (cue && objs.length > 0 && viewMode === 'overhead') {
+    const englishToggle = document.getElementById('english-toggle');
+    const spinOn = englishToggle && englishToggle.checked;
+    const spin = spinOn ? (currentEnglish === 'stun' ? 'c' : currentEnglish) : 'c';
+
+    const cx = cue.fx*W, cy = cue.fy*H;
+    const ox = objs[0].fx*W, oy = objs[0].fy*H;
+    // If no pocket, use a perpendicular default for stun/center
+    const px = pkt ? pkt.fx*W : ox + (oy - cy); // fallback: perpendicular to shot
+    const py = pkt ? pkt.fy*H : oy - (ox - cx);
+
+    // Shot direction vector (cue to object)
+    const shotDx = ox - cx, shotDy = oy - cy;
+    const shotLen = Math.hypot(shotDx, shotDy);
+    const shotNx = shotDx/shotLen, shotNy = shotDy/shotLen;
+
+    // Cut angle in radians
+    const outDx = px - ox, outDy = py - oy;
+    const outLen = Math.hypot(outDx, outDy);
+    const outNx = outDx/outLen, outNy = outDy/outLen;
+    const dotProd = Math.max(-1, Math.min(1, shotNx*outNx + shotNy*outNy));
+    const cutRad = Math.acos(dotProd);
+    const cutDeg = cutRad * 180 / Math.PI;
+
+    // Natural deflection angle (90° - cut angle for stun)
+    // Cross product to determine left/right deflection
+    const cross = shotNx * outNy - shotNy * outNx;
+    const deflSign = cross > 0 ? 1 : -1;
+
+    // Base deflection angle from shot line (perpendicular for stun)
+    let deflAngle = Math.PI/2 * deflSign;
+
+    // Adjust deflection based on spin
+    if (spin === 't') {
+      // Follow: cue ball continues more forward, less deflection
+      deflAngle = deflSign * (Math.PI/2 - cutRad * 0.6);
+    } else if (spin === 'b') {
+      // Draw: cue ball reverses back toward shooter
+      deflAngle = deflSign * (Math.PI/2 + cutRad * 0.8);
+    } else if (spin === 'tl') {
+      deflAngle = deflSign * (Math.PI/2 - cutRad * 0.5) - 0.3;
+    } else if (spin === 'tr') {
+      deflAngle = deflSign * (Math.PI/2 - cutRad * 0.5) + 0.3;
+    } else if (spin === 'bl') {
+      deflAngle = deflSign * (Math.PI/2 + cutRad * 0.6) - 0.3;
+    } else if (spin === 'br') {
+      deflAngle = deflSign * (Math.PI/2 + cutRad * 0.6) + 0.3;
+    } else if (spin === 'l') {
+      deflAngle = deflSign * Math.PI/2 - 0.25;
+    } else if (spin === 'r') {
+      deflAngle = deflSign * Math.PI/2 + 0.25;
+    }
+
+    // Calculate cue ball direction after contact
+    const shotAngle = Math.atan2(shotDy, shotDx);
+    const cueBallAngle = shotAngle + deflAngle;
+
+    // Draw cue ball path line
+    const pathLen = Math.min(W, H) * 0.45;
+    const endX = ox + Math.cos(cueBallAngle) * pathLen;
+    const endY = oy + Math.sin(cueBallAngle) * pathLen;
+
+    // Color based on spin type
+    const spinColors = {
+      'c': 'rgba(240,232,213,0.7)',
+      't': 'rgba(52,201,106,0.8)',
+      'b': 'rgba(100,149,255,0.8)',
+      'l': 'rgba(255,200,50,0.8)',
+      'r': 'rgba(255,200,50,0.8)',
+      'tl': 'rgba(52,201,106,0.7)',
+      'tr': 'rgba(52,201,106,0.7)',
+      'bl': 'rgba(100,149,255,0.7)',
+      'br': 'rgba(100,149,255,0.7)',
+    };
+    const pathColor = spinColors[spin] || 'rgba(240,232,213,0.7)';
+
+    // Draw the cue ball path
+    ctx.save();
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = pathColor;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = pathColor;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+
+    // Draw arrowhead at end
+    const arrowSize = R * 0.9;
+    const arrowAngle1 = cueBallAngle + Math.PI * 0.8;
+    const arrowAngle2 = cueBallAngle - Math.PI * 0.8;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX + Math.cos(arrowAngle1)*arrowSize, endY + Math.sin(arrowAngle1)*arrowSize);
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX + Math.cos(arrowAngle2)*arrowSize, endY + Math.sin(arrowAngle2)*arrowSize);
+    ctx.stroke();
+
+    // Draw destination circle (where cue ball ends up approximately)
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = pathColor.replace('0.7', '0.4').replace('0.8', '0.4');
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(endX, endY, R * 1.1, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  marks.forEach(m => {
+    const x = m.fx*W, y = m.fy*H;
+    ctx.save();
+    // Pocket gets a larger tap target in Player View
+    const mR = (m.type === 'pocket' && viewMode === 'player') ? R * 1.4 : R;
+    ctx.beginPath(); ctx.arc(x, y, mR, 0, Math.PI*2);
+    ctx.shadowBlur=12; ctx.shadowColor='rgba(0,0,0,0.65)';
+    if (m.type === 'cue') {
+      const g = ctx.createRadialGradient(x-R*.32,y-R*.32,R*.08,x,y,R);
+      g.addColorStop(0,'#fff'); g.addColorStop(1,'#c8bea8');
+      ctx.fillStyle=g; ctx.strokeStyle='rgba(180,170,150,.7)';
+    } else if (m.type === 'eight') {
+      const g = ctx.createRadialGradient(x-R*.28,y-R*.28,R*.06,x,y,R);
+      g.addColorStop(0,'#3a3a3a'); g.addColorStop(1,'#060606');
+      ctx.fillStyle=g; ctx.strokeStyle='#555';
+    } else if (m.type === 'obj') {
+      const g = ctx.createRadialGradient(x-R*.28,y-R*.28,R*.06,x,y,R);
+      g.addColorStop(0,'#f07070'); g.addColorStop(1,'#8a0808');
+      ctx.fillStyle=g; ctx.strokeStyle='#c02020';
+    } else if (m.type === 'stripe') {
+      const g = ctx.createRadialGradient(x-R*.28,y-R*.28,R*.06,x,y,R);
+      g.addColorStop(0,'#f4c261'); g.addColorStop(1,'#a05010');
+      ctx.fillStyle=g; ctx.strokeStyle='#c07030';
+    } else {
+      ctx.fillStyle='rgba(200,151,46,.22)'; ctx.strokeStyle='#c8972e';
+      ctx.setLineDash([3,2]);
+    }
+    ctx.lineWidth=2.5; ctx.fill(); ctx.stroke();
+    ctx.shadowBlur=0; ctx.setLineDash([]);
+    // Tap-hint ring on cue ball
+    if (m.type === 'cue') {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(x, y, R*1.7, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(200,151,46,0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([3,3]);
+      ctx.stroke();
+      ctx.restore();
+    }
+    // Label — explicitly reset dash so ring above doesn't bleed
+    ctx.setLineDash([]);
+    ctx.font=`bold ${Math.round(R*.75)}px Barlow Condensed,sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    const lbl = {cue:'C',obj:'S',eight:'8',stripe:'T',pocket:'P'}[m.type];
+    const lc  = {cue:'#1a1508',obj:'#fff',eight:'#fff',stripe:'#1a0808',pocket:'#c8972e'}[m.type];
+    ctx.fillStyle=lc; ctx.fillText(lbl, x, y+.5);
+    if (m.aiDetected) {
+      ctx.font=`bold 8px Barlow Condensed,sans-serif`;
+      ctx.fillStyle='rgba(168,85,247,0.9)';
+      ctx.fillText('AI', x, y + R + 7);
+    }
+    ctx.restore();
+  });
+}
+
+/* ═══════════════════════════════════════════
+   GEOMETRY
+═══════════════════════════════════════════ */
+function computeCutAngle(cue, obj, pocket) {
+  if (!cue || !obj || !pocket) return null;
+  const dxIn = obj.fx-cue.fx, dyIn = obj.fy-cue.fy;
+  const dxOut= pocket.fx-obj.fx, dyOut= pocket.fy-obj.fy;
+  const lenIn = Math.hypot(dxIn,dyIn), lenOut = Math.hypot(dxOut,dyOut);
+  if (!lenIn || !lenOut) return null;
+  const dot = (dxIn*dxOut+dyIn*dyOut)/(lenIn*lenOut);
+  return Math.min(Math.round(Math.acos(Math.max(-1,Math.min(1,dot)))*180/Math.PI), 90);
+}
+
+function getPocketType(pocket) {
+  const x=pocket.fx, y=pocket.fy;
+  if ((x<.25||x>.75)&&(y<.25||y>.75)) return {label:'Corner Pocket',corner:true};
+  if ((x<.25||x>.75)&&y>=.25&&y<=.75)  return {label:'Side Pocket',corner:false};
+  return {label:'Pocket',corner:false};
+}
+
+function dist(a,b) { return Math.hypot(a.fx-b.fx, a.fy-b.fy); }
+function closestTo(origin, pool) { return pool.reduce((best,b)=>dist(origin,b)<dist(origin,best)?b:best,pool[0]); }
+function rangeWord(d) { return d<.22?'close-range':d<.5?'mid-range':'long-range'; }
+
+/* ═══════════════════════════════════════════
+   AIMING AIDS
+═══════════════════════════════════════════ */
+function aimToggle(id) {
+  var el = document.getElementById(id);
+  return el && el.checked;
+}
+
+function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
+  if (!cue || objs.length === 0) return;
+
+  const cx = cue.fx * W, cy = cue.fy * H;
+  const obj = objs[0];
+  const ox = obj.fx * W, oy = obj.fy * H;
+  const px = pkt ? pkt.fx * W : null;
+  const py = pkt ? pkt.fy * H : null;
+
+  // Shot direction vector (cue → object ball)
+  const shotDx = ox - cx, shotDy = oy - cy;
+  const shotDist = Math.hypot(shotDx, shotDy);
+  const shotNx = shotDx / shotDist, shotNy = shotDy / shotDist; // normalized
+
+  // Contact point on object ball surface (where cue ball touches it)
+  // = center of object ball minus R*2 along shot direction
+  const contactX = ox - shotNx * R * 2;
+  const contactY = oy - shotNy * R * 2;
+
+  // Cut angle for shaft edge / DTD calculations
+  const cutAngle = (px !== null) ? (computeCutAngle(cue, obj, pkt) || 0) : null;
+
+  // ── 1. TARGET LINE ──
+  if (aimToggle('aim-targetline') && px !== null) {
+    ctx.save();
+    // Full aim line: from cue ball back through contact point to pocket
+    // Extended back behind cue ball
+    const backX = cx - shotNx * R * 4;
+    const backY = cy - shotNy * R * 4;
+    // Object ball → pocket line (yellow target line)
+    ctx.beginPath();
+    ctx.moveTo(backX, backY);
+    ctx.lineTo(contactX, contactY);
+    ctx.strokeStyle = 'rgba(255, 220, 0, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.shadowColor = 'rgba(255, 220, 0, 0.5)';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+
+    // Pocket direction line (from object ball to pocket)
+    if (pkt) {
+      const toPktDx = px - ox, toPktDy = py - oy;
+      const toPktDist = Math.hypot(toPktDx, toPktDy);
+      const toPktNx = toPktDx / toPktDist, toPktNy = toPktDy / toPktDist;
+      ctx.beginPath();
+      ctx.moveTo(ox + toPktNx * R, oy + toPktNy * R); // start from ball edge
+      ctx.lineTo(px, py);
+      ctx.strokeStyle = 'rgba(255, 220, 0, 0.7)';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ── 2. CONTACT POINT CROSSHAIR ──
+  if (aimToggle('aim-contactpoint')) {
+    ctx.save();
+    const cr = R * 0.55;
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(contactX, contactY, cr, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 80, 80, 0.9)';
+    ctx.lineWidth = 1.8;
+    ctx.setLineDash([]);
+    ctx.shadowColor = 'rgba(255, 80, 80, 0.6)';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+
+    // Inner dot
+    ctx.beginPath();
+    ctx.arc(contactX, contactY, cr * 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 80, 80, 0.95)';
+    ctx.fill();
+
+    // Crosshair lines
+    const arm = cr * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(contactX - arm, contactY);
+    ctx.lineTo(contactX + arm, contactY);
+    ctx.moveTo(contactX, contactY - arm);
+    ctx.lineTo(contactX, contactY + arm);
+    ctx.strokeStyle = 'rgba(255, 80, 80, 0.75)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 3. SHAFT EDGE GUIDE ──
+  if (aimToggle('aim-shaftedge') && cutAngle !== null) {
+    ctx.save();
+    // Shaft width approximation — about 1.5x ball radius visually
+    const shaftW = R * 0.6;
+    // Perpendicular to shot direction
+    const perpX = -shotNy, perpY = shotNx;
+
+    // For cuts ≤ 13°: edge of shaft points AT contact point
+    // For cuts > 13°: edge points OUTSIDE contact point
+    // For cuts < 13° (very straight): edge points INSIDE
+    let edgeOffset = 0;
+    if (cutAngle <= 13) {
+      edgeOffset = shaftW * 0.5; // edge inside
+    } else {
+      edgeOffset = -shaftW * 0.5; // edge outside
+    }
+
+    // Draw shaft rectangle behind cue ball
+    const shaftLen = shotDist * 0.6;
+    const shaftStartX = cx - shotNx * shaftLen;
+    const shaftStartY = cy - shotNy * shaftLen;
+    const edgeShiftX = perpX * edgeOffset;
+    const edgeShiftY = perpY * edgeOffset;
+
+    // Draw two shaft edge lines
+    const e1x = edgeShiftX + perpX * shaftW / 2;
+    const e1y = edgeShiftY + perpY * shaftW / 2;
+    const e2x = edgeShiftX - perpX * shaftW / 2;
+    const e2y = edgeShiftY - perpY * shaftW / 2;
+
+    // Shaft fill
+    ctx.beginPath();
+    ctx.moveTo(shaftStartX + e1x, shaftStartY + e1y);
+    ctx.lineTo(cx + e1x, cy + e1y);
+    ctx.lineTo(cx + e2x, cy + e2y);
+    ctx.lineTo(shaftStartX + e2x, shaftStartY + e2y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(205, 160, 80, 0.2)';
+    ctx.strokeStyle = 'rgba(205, 160, 80, 0.7)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([]);
+    ctx.fill();
+    ctx.stroke();
+
+    // Highlight the active edge (the one that points at contact)
+    const activeEdgeX = cx + (cutAngle <= 13 ? e1x : e2x);
+    const activeEdgeY = cy + (cutAngle <= 13 ? e1y : e2y);
+    const startEdgeX = shaftStartX + (cutAngle <= 13 ? e1x : e2x);
+    const startEdgeY = shaftStartY + (cutAngle <= 13 ? e1y : e2y);
+    ctx.beginPath();
+    ctx.moveTo(startEdgeX, startEdgeY);
+    ctx.lineTo(activeEdgeX, activeEdgeY);
+    ctx.strokeStyle = 'rgba(100, 180, 255, 0.95)';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = 'rgba(100, 180, 255, 0.6)';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+
+    // Label
+    const labelText = cutAngle <= 13 ? 'Edge → Contact' : cutAngle > 13 ? 'Edge Outside' : 'Edge Inside';
+    ctx.font = `bold ${Math.round(R * 0.7)}px Barlow Condensed, sans-serif`;
+    ctx.fillStyle = 'rgba(100, 180, 255, 0.9)';
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'center';
+    ctx.fillText(labelText, (shaftStartX + cx) / 2 + perpX * shaftW * 2, (shaftStartY + cy) / 2 + perpY * shaftW * 2);
+    ctx.restore();
+  }
+
+  // ── 4. DOUBLE-THE-DISTANCE (DTD) ──
+  if (aimToggle('aim-dtd') && cutAngle !== null && px !== null) {
+    ctx.save();
+
+    // Contact point vector from object ball center
+    const cpDx = contactX - ox, cpDy = contactY - oy;
+    const cpDist = Math.hypot(cpDx, cpDy);
+
+    let dtdX, dtdY;
+    if (cutAngle <= 45) {
+      // Up to half ball: DTD from OB CENTER to contact point, doubled
+      dtdX = ox + cpDx * 2;
+      dtdY = oy + cpDy * 2;
+    } else {
+      // Thinner than half ball: DTD from OB EDGE to contact point, doubled
+      const edgeX = ox + (cpDx / cpDist) * R;
+      const edgeY = oy + (cpDy / cpDist) * R;
+      dtdX = edgeX + (contactX - edgeX) * 2;
+      dtdY = edgeY + (contactY - edgeY) * 2;
+    }
+
+    // Draw DTD aim point marker
+    const dtdR = R * 0.7;
+    ctx.beginPath();
+    ctx.arc(dtdX, dtdY, dtdR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(45, 255, 138, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.shadowColor = 'rgba(45, 255, 138, 0.5)';
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+
+    // Inner plus
+    ctx.beginPath();
+    ctx.moveTo(dtdX - dtdR * 0.5, dtdY);
+    ctx.lineTo(dtdX + dtdR * 0.5, dtdY);
+    ctx.moveTo(dtdX, dtdY - dtdR * 0.5);
+    ctx.lineTo(dtdX, dtdY + dtdR * 0.5);
+    ctx.strokeStyle = 'rgba(45, 255, 138, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Line from cue ball center to DTD point
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(dtdX, dtdY);
+    ctx.strokeStyle = 'rgba(45, 255, 138, 0.4)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]);
+    ctx.shadowBlur = 0;
+    ctx.stroke();
+
+    // DTD label
+    const dtdLabel = cutAngle <= 45 ? 'DTD Aim Point' : 'DTD (thin cut)';
+    ctx.font = `bold ${Math.round(R * 0.7)}px Barlow Condensed, sans-serif`;
+    ctx.fillStyle = 'rgba(45, 255, 138, 0.9)';
+    ctx.textAlign = 'center';
+    ctx.setLineDash([]);
+    ctx.fillText(dtdLabel, dtdX, dtdY - dtdR - 4);
+    ctx.restore();
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SHOT SUGGESTION
+═══════════════════════════════════════════ */
+function suggestShot() {
+  const cue   = marks.find(m=>m.type==='cue');
+  const objs  = marks.filter(m=>m.type==='obj'||m.type==='stripe');
+  const eight = marks.find(m=>m.type==='eight');
+  const pkt   = marks.find(m=>m.type==='pocket');
+
+  const sug=document.getElementById('suggestion');
+  const titl=document.getElementById('sug-title');
+  const body=document.getElementById('sug-body');
+  const geo=document.getElementById('geo-badges');
+  geo.innerHTML=''; hideSuggestion();
+
+  if (!cue) {
+    titl.textContent='Mark the Cue Ball First';
+    body.textContent='Tap the canvas to place the cue ball marker (C) — the app needs to know where you\'re shooting from before it can read the shot.';
+    sug.classList.add('show'); return;
+  }
+
+  const allTargets=[...objs,...(eight?[eight]:[])];
+  let targetBall=null,cutAngle=null,pocketInfo=null,cueToTarget=null;
+
+  if (allTargets.length>0) {
+    targetBall=closestTo(cue,allTargets);
+    cueToTarget=dist(cue,targetBall);
+    if (pkt) { cutAngle=computeCutAngle(cue,targetBall,pkt); pocketInfo=getPocketType(pkt); }
+  }
+
+  if (pocketInfo) addBadge(geo,pocketInfo.label,'pocket-type');
+  if (cutAngle!==null) {
+    if (viewMode === 'overhead') {
+      addBadge(geo,`Cut: ${cutAngle}°`,'angle');
+    } else {
+      const approxLabel = cutAngle<15?'Straight':cutAngle<35?'Moderate cut':cutAngle<55?'Hard cut':'Extreme cut';
+      addBadge(geo, approxLabel, 'angle');
+    }
+    const diff=cutAngle<25?'Easy':cutAngle<50?'Medium':cutAngle<70?'Hard':'Very Hard';
+    const cls=cutAngle<25?'easy':cutAngle<50?'medium':'';
+    addBadge(geo,diff,'diff'+(cls?' '+cls:''));
+  }
+  if (cueToTarget!==null) addBadge(geo,rangeWord(cueToTarget),'angle');
+
+  let title='',advice='';
+
+  if (gameMode==='8ball') {
+    title='🎱 8-Ball';
+    if (objs.length===0&&!eight) { advice='Mark your object balls so the app knows which group you\'re shooting. Drop the 8-ball marker too if it\'s in play.'; }
+    else if (eight&&objs.length===0) {
+      const d=dist(cue,eight);
+      advice=`You're on the 8 — ${rangeWord(d)} shot. `;
+      advice+=pkt?`Cut angle is ~${computeCutAngle(cue,eight,pkt)||'?'}°. Play center-ball, stay down through the shot, and pick your pocket before you step in.`:'Mark your target pocket (P) to see the aim line and cut angle.';
+    } else {
+      advice=buildObjectAdvice(cue,targetBall,pkt,cutAngle,pocketInfo,cueToTarget,objs.length);
+    }
+  } else if (gameMode==='9ball') {
+    title='🔢 9-Ball';
+    if (!allTargets.length) { advice='Mark the lowest ball on the table — in 9-ball you must contact it first. The app will read the angle and suggest how to play position for the next ball.'; }
+    else { advice=build9BallAdvice(cue,targetBall,pkt,cutAngle,pocketInfo,cueToTarget); }
+  } else {
+    title='🎯 Straight Pool';
+    if (!allTargets.length) { advice='Mark the ball you intend to call. In straight pool every shot is a call-shot — choose the one that not only pots the ball but leaves you with a makeable next shot.'; }
+    else { advice=buildStraightAdvice(cue,targetBall,pkt,cutAngle,pocketInfo,cueToTarget,allTargets); }
+  }
+
+  // ── 3. DIFFICULTY RATING 1-10
+  let difficulty = 5;
+  if (cutAngle !== null) difficulty = Math.round(1 + (cutAngle / 90) * 6);
+  if (cueToTarget !== null) {
+    if (cueToTarget > 0.6) difficulty = Math.min(10, difficulty + 2);
+    else if (cueToTarget < 0.2) difficulty = Math.max(1, difficulty - 1);
+  }
+
+  var toggle = document.getElementById('english-toggle');
+  if (toggle && toggle.checked && currentEnglish !== 'c') {
+    difficulty = Math.min(10, difficulty + 1);
+  }
+  const diffColor = difficulty <= 3 ? '#34c96a' : difficulty <= 6 ? '#e08820' : '#cc2222';
+  const diffLabel = difficulty <= 3 ? 'Easy' : difficulty <= 5 ? 'Moderate' : difficulty <= 7 ? 'Difficult' : 'Very Difficult';
+
+  // ── 4. SAFETY SUGGESTION for hard shots
+  let safetyNote = '';
+  if (difficulty >= 7) {
+    safetyNote = ' 🛡️ At difficulty ' + difficulty + '/10, seriously weigh a safety — drive your ball to the rail and leave your opponent without an easy look. Making this shot requires near-perfect execution.';
+  }
+
+  // Remove old badge if exists
+  const oldBadge = document.getElementById('diff-badge');
+  if (oldBadge) oldBadge.remove();
+
+  // Add difficulty badge
+  const badge = document.createElement('div');
+  badge.id = 'diff-badge';
+  badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.3);border:1px solid ' + diffColor + ';border-radius:6px;padding:4px 10px;margin-bottom:8px;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;color:' + diffColor + ';letter-spacing:1px';
+  badge.textContent = 'DIFFICULTY ' + difficulty + '/10 · ' + diffLabel;
+  document.getElementById('sug-title').after(badge);
+
+  titl.textContent = title;
+  var englishAdvice = getEnglishAdvice(cutAngle);
+  body.textContent = advice + englishAdvice + safetyNote;
+  sug.classList.add('show');
+
+  // Coaching mode
+  var coachBox = document.getElementById('coaching-box');
+  var coachOn = document.getElementById('coaching-toggle').checked;
+  if (coachOn && coachBox) {
+    var spinState = document.getElementById('english-toggle').checked ? currentEnglish : 'c';
+    coachBox.innerHTML = buildCoachingText(cutAngle, difficulty, cueToTarget, spinState);
+    coachBox.classList.add('show');
+  } else if (coachBox) {
+    coachBox.classList.remove('show');
+  }
+
+  playChime('suggestion');
+  if (sourceImg) renderCanvas();
+  setStatus('Difficulty ' + difficulty + '/10 · ' + diffLabel, 'gold');
+
+  // Save to shot history
+  saveToHistory(title, difficulty, cutAngle, gameMode);
+  saveSettings();
+}
+
+function addBadge(parent,text,cls) {
+  const b=document.createElement('div'); b.className='geo-badge '+cls; b.textContent=text; parent.appendChild(b);
+}
+
+function buildGeometryLine(cutAngle,pocketInfo) {
+  if (cutAngle===null) return '';
+
+  if (viewMode === 'player') {
+    // Perspective-distorted — advisory language only, no degree claims
+    if (cutAngle<15) return 'Looks like a straight or near-straight shot from this angle — aim at the center of the ball. ';
+    if (cutAngle<35) return 'Looks like a moderate cut from this angle — aim off-center toward the pocket side. '+(pocketInfo?.corner?'Corner pocket gives you room. ':'Side pocket — be precise. ');
+    if (cutAngle<55) return 'Looks like a significant cut from this angle — aim toward the far edge of the object ball. '+(pocketInfo?.corner?'Corner pocket helps. ':'Side pocket — thin hit needed. ');
+    return 'Looks like a hard cut from this angle — very thin contact required. Seriously consider a safety. ';
+  }
+
+  // Overhead — precise degrees
+  if (cutAngle<8)  return 'Dead straight — hit the center of the ball and let it run. Don\'t overthink it. ';
+  if (cutAngle<20) return `Slight cut at ${cutAngle}° — aim just a hair off center toward the pocket side. Very makeable. `;
+  if (cutAngle<35) {
+    let l=`${cutAngle}° cut — use the ghost-ball method. Visualize an imaginary ball sitting against the object ball on the line to the pocket, and aim at its center. `;
+    l+=pocketInfo?.corner?'Corner pocket gives you a little room to work with. ':'Side pocket is tighter — pick a jaw and commit. ';
+    return l;
+  }
+  if (cutAngle<50) {
+    let l=`${cutAngle}° is a meaningful cut — aim for the far edge of the object ball. `;
+    l+=pocketInfo?.corner?'Corner pocket: a touch of low inside english can help hold the line. ':'Side pocket: dead-center aim, no extras. ';
+    return l;
+  }
+  if (cutAngle<65) return `Hard cut at ${cutAngle}° — you\'re barely grazing the object ball. Any unwanted spin or miscue will throw it offline. Stay smooth and stay down. `+(pocketInfo?.corner?'Running english off the corner can save position. ':'Consider whether a safety gives you more. ');
+  return `${cutAngle}° is an extreme cut — very low percentage. The contact point is almost at the edge of the ball. Unless you\'re desperate, a well-played safety is the smarter call here. `;
+}
+
+function buildRangeLine(d) {
+  if (d<.15) return 'Very close — a soft touch is all you need. Resist the urge to hit it hard. ';
+  if (d<.3)  return 'Short range shot — controlled, medium-slow stroke. Let the cue do the work. ';
+  if (d<.5)  return 'Mid-table distance — one smooth, even backswing. Accelerate through the cue ball. ';
+  return 'Long-range shot — slow your backswing right down, pause at the back, and stay completely still through contact. Speed kills accuracy at this distance. ';
+}
+
+function buildPositionLine(cutAngle) {
+  if (cutAngle===null) return 'Mark a pocket to unlock position advice.';
+  if (cutAngle<15) return 'Position tip: follow shot sends the cue ball straight up the table. Draw brings it back toward you. Pick your next ball first.';
+  if (cutAngle<35) return 'Position tip: a touch of follow narrows your angle off the rail. Stun keeps you closer to the center of the table.';
+  if (cutAngle<55) return 'Position tip: stun or soft draw gives you the most control over where the cue ball lands. Avoid running english here — too unpredictable.';
+  return 'Position tip: draw shot will kick the cue ball back sharply after contact. Be careful — at this angle it can travel further than expected.';
+}
+
+function buildObjectAdvice(cue,target,pkt,cutAngle,pocketInfo,d,totalObjs) {
+  let a='';
+  if (pkt) {
+    a+=buildGeometryLine(cutAngle,pocketInfo);
+    a+=buildRangeLine(d);
+    a+=buildPositionLine(cutAngle);
+    if (totalObjs>1) a+=` You have ${totalObjs} balls on the table — after this shot, think one ahead.`;
+  } else {
+    a+=buildRangeLine(d);
+    a+='Tap the canvas to mark your target pocket (P) — that unlocks the cut angle, aim line, and position advice. ';
+    if (totalObjs>1) a+=`${totalObjs} balls marked — pick the one with the best angle to a pocket.`;
+  }
+  return a;
+}
+
+function build9BallAdvice(cue,target,pkt,cutAngle,pocketInfo,d) {
+  let a='Contact the lowest ball first — that\'s the rule, no exceptions. ';
+  if (pkt) {
+    a+=buildGeometryLine(cutAngle,pocketInfo);
+    a+=buildRangeLine(d);
+    a+=buildPositionLine(cutAngle);
+    a+=' In 9-ball, position for the next ball is everything — the shot you make matters less than where the cue ball stops.';
+  } else {
+    a+=buildRangeLine(d);
+    a+='Mark a target pocket to see the angle. And remember — in 9-ball a good safety on a tough shot is a strong play, not a surrender.';
+  }
+  return a;
+}
+
+function buildStraightAdvice(cue,target,pkt,cutAngle,pocketInfo,d,allTargets) {
+  let a='';
+  const clusters=allTargets.filter(b=>dist(target,b)<.14&&b!==target).length;
+  if (pkt) {
+    a+=buildGeometryLine(cutAngle,pocketInfo);
+    a+=buildRangeLine(d);
+    if (clusters>0) a+=`There\'s a cluster of ${clusters+1} balls nearby — weigh whether breaking it open now sets up a better run than potting the single. `;
+    a+=buildPositionLine(cutAngle);
+    a+=' Straight pool is won by leaving yourself in position, not just pocketing balls.';
+  } else {
+    a+=buildRangeLine(d);
+    if (clusters>0) a+='There\'s a cluster nearby — a well-aimed break shot could open several balls at once. ';
+    a+='Mark a target pocket for full geometry analysis. In straight pool, the shot you don\'t take is often your best weapon.';
+  }
+  return a;
+}
+
+/* ═══════════════════════════════════════════
+   INTERACTIONS
+═══════════════════════════════════════════ */
+canvas.addEventListener('pointerdown', function(e) {
+  if (!sourceImg) return;
+  e.preventDefault();
+  const rect=canvas.getBoundingClientRect();
+  const fx=((e.clientX-rect.left)*(canvas.width/rect.width))/canvas.width;
+  const fy=((e.clientY-rect.top)*(canvas.height/rect.height))/canvas.height;
+
+  // Check if tapping an existing cue ball marker → open spin popup
+  // Only intercept if NOT in cue-placement mode (so you can still re-place the cue)
+  const cueMark = marks.find(m => m.type === 'cue');
+  if (cueMark && markMode !== 'cue') {
+    const R = Math.max(9, Math.min(canvas.width, canvas.height) * 0.027);
+    const tapX = fx * canvas.width;
+    const tapY = fy * canvas.height;
+    const markX = cueMark.fx * canvas.width;
+    const markY = cueMark.fy * canvas.height;
+    if (Math.hypot(tapX - markX, tapY - markY) < R * 2.2) {
+      openSpinPopup();
+      return;
+    }
+  }
+
+  if (markMode==='cue')    marks=marks.filter(m=>m.type!=='cue');
+  if (markMode==='eight')  marks=marks.filter(m=>m.type!=='eight');
+  if (markMode==='pocket') marks=marks.filter(m=>m.type!=='pocket');
+  marks.push({type:markMode,fx,fy});
+  renderCanvas(); hideSuggestion();
+  const names={cue:'Cue ball',obj:'Solid ball',eight:'8-ball',stripe:'Stripe ball',pocket:'Target pocket'};
+  const pktCount = marks.filter(m=>m.type==='pocket').length;
+  const pktMsg = pktCount > 0 ? ' · ' + pktCount + ' pocket(s) marked' : '';
+  setStatus(names[markMode]+' placed — '+marks.length+' mark(s)'+pktMsg+(markMode==='cue'?' · tap ⚪ to set spin':''),'gold');
+});
+
+function setMode(mode) {
+  markMode=mode;
+  document.querySelectorAll('.mark-chip').forEach(c=>c.classList.toggle('active',c.dataset.mode===mode));
+}
+
+function setGame(mode,el) {
+  gameMode=mode;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); hideSuggestion();
+  saveSettings();
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('vmp-player').classList.toggle('active', mode === 'player');
+  document.getElementById('vmp-overhead').classList.toggle('active', mode === 'overhead');
+  const hint = document.getElementById('view-mode-hint');
+  if (mode === 'player') {
+    hint.textContent = 'Natural playing angle · geometry is advisory';
+  } else {
+    hint.textContent = 'Phone held above table · precise geometry & cut angles';
+  }
+  hideSuggestion();
+  if (sourceImg) renderCanvas();
+  saveSettings();
+}
+
+function undoMark() {
+  if (!marks.length) return;
+  marks.pop(); if (sourceImg) renderCanvas(); hideSuggestion();
+  setStatus(marks.length?marks.length+' mark(s) remaining':'All marks removed','');
+}
+
+function clearMarks() {
+  marks=[]; if (sourceImg) renderCanvas(); hideSuggestion();
+  document.getElementById('detections-box').classList.remove('show');
+  setStatus('Marks cleared','');
+}
+
+function discardFrame() {
+  marks=[]; sourceImg=null;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  canvas.style.display='none'; placeholder.style.display='';
+  document.getElementById('detections-box').classList.remove('show');
+  hideSuggestion(); setStatus('Frame discarded — scan again or upload','');
+  lastScanTime = 0; stillCounter = 0; // resume auto-scan
+}
+
+function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); }
+
+let resizeTimer;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{if(sourceImg)renderCanvas();},120);
+});
+
+
+/* ── MOBILE SCROLL FIX ── */
+// Allow scrolling anywhere except on the canvas itself
+document.addEventListener('touchstart', function(e) {
+  if (e.target === canvas) return; // canvas handles its own touch
+  // Allow default scroll behavior everywhere else
+}, { passive: true });
+
+document.addEventListener('touchmove', function(e) {
+  if (e.target === canvas) {
+    e.preventDefault(); // prevent scroll on canvas
+  }
+}, { passive: false });
+
+
+/* ═══════════════════════════════════════════
+   ADD TO HOME SCREEN PROMPT (feature 6)
+═══════════════════════════════════════════ */
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show the banner after 3 seconds
+  setTimeout(showInstallBanner, 3000);
+});
+
+function showInstallBanner() {
+  if (!deferredPrompt) return;
+  if (localStorage.getItem('installDismissed')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--rail);border:1.5px solid var(--gold);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:999;box-shadow:0 4px 24px rgba(0,0,0,.7);max-width:320px;width:90%;font-family:Barlow,sans-serif';
+  banner.innerHTML = '<div style="font-size:28px">🎱</div><div style="flex:1"><div style="font-weight:700;font-size:13px;color:var(--ivory)">Add to Home Screen</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">Use like a real app — no browser needed</div></div><button onclick="installApp()" style="background:var(--gold);color:var(--felt);border:none;border-radius:7px;padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">Add</button><button onclick="dismissInstall()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px">✕</button>';
+  document.body.appendChild(banner);
+}
+
+// iOS Safari specific - show manual instructions
+window.addEventListener('load', () => {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  const dismissed = localStorage.getItem('iosDismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    setTimeout(() => {
+      const b = document.createElement('div');
+      b.id = 'ios-banner';
+      b.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--rail);border:1.5px solid var(--gold);border-radius:12px;padding:12px 16px;z-index:999;box-shadow:0 4px 24px rgba(0,0,0,.7);max-width:300px;width:90%;text-align:center;font-family:Barlow,sans-serif';
+      b.innerHTML = [
+        '<div style="font-size:24px;margin-bottom:6px">&#127922;</div>',
+        '<div style="font-weight:700;font-size:13px;color:#f0e8d5;margin-bottom:4px">Add to Home Screen</div>',
+        '<div style="font-size:11px;color:#5a8068;line-height:1.5">Tap <strong style="color:#e0ab38">Share</strong> then <strong style="color:#e0ab38">Add to Home Screen</strong></div>',
+        '<button onclick="document.getElementById(String.fromCharCode(105,111,115,45,98,97,110,110,101,114)).remove();localStorage.setItem(String.fromCharCode(105,111,115,68,105,115,109,105,115,115,101,100),String.fromCharCode(49))" style="margin-top:8px;background:none;border:1px solid #234830;color:#3a5545;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">Dismiss</button>'
+      ].join('');
+      document.body.appendChild(b);
+    }, 4000);
+  }
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    const b = document.getElementById('install-banner');
+    if (b) b.remove();
+  });
+}
+
+function dismissInstall() {
+  localStorage.setItem('installDismissed', '1');
+  const b = document.getElementById('install-banner');
+  if (b) b.remove();
+}
+
+/* ═══════════════════════════════════════════
+   HELP MODAL
+═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   CUE BALL SPIN POPUP
+═══════════════════════════════════════════ */
+
+function buildSpinSVG(activePosId) {
+  var wrap = document.getElementById('spin-svg-wrap');
+
+  function resolveActive(posId) {
+    if (posId === 'tl' || posId === 'tr') return 't';
+    if (posId === 'bl' || posId === 'br') return 'b';
+    return posId;
+  }
+  var activeId = resolveActive(activePosId);
+
+  // ViewBox = 200x200, ball fills it entirely, center=100,100, radius=98
+  var CX = 100, CY = 100, R = 98;
+
+  // Zone shapes — proportional to reference image
+  // All coordinates relative to 200x200 viewBox
+  var zones = [
+    // Follow — tall vertical pill, upper center
+    { id:'t',    shape:'rect', x:86, y:5,   w:28, h:58, rx:14, dot:[100,30] },
+    // Draw — tall vertical pill, lower center
+    { id:'b',    shape:'rect', x:86, y:148, w:28, h:48, rx:14, dot:[100,168] },
+    // Stun — short pill, between center and draw, clearly separated
+    { id:'stun', shape:'rect', x:86, y:120, w:28, h:26, rx:13, dot:[100,132] },
+    // Left English — wide horizontal pill, left
+    { id:'l',    shape:'rect', x:5,  y:86,  w:58, h:28, rx:14, dot:[30,100] },
+    // Right English — wide horizontal pill, right
+    { id:'r',    shape:'rect', x:137,y:86,  w:58, h:28, rx:14, dot:[170,100] },
+    // Center — small circle, sits between follow and stun with clear gap
+    { id:'c',    shape:'circle', cx:100, cy:100, cr:16,  dot:[100,100] }
+  ];
+
+  var zoneColors = {
+    't':    { bf:'rgba(50,48,42,0.65)', af:'rgba(52,201,106,0.55)',  bs:'rgba(100,90,60,0.7)', as:'rgba(52,201,106,1)'   },
+    'stun': { bf:'rgba(50,48,42,0.65)', af:'rgba(224,136,32,0.55)',  bs:'rgba(100,90,60,0.7)', as:'rgba(224,136,32,1)'   },
+    'b':    { bf:'rgba(50,48,42,0.65)', af:'rgba(100,149,255,0.55)', bs:'rgba(100,90,60,0.7)', as:'rgba(100,149,255,1)'  },
+    'l':    { bf:'rgba(50,48,42,0.65)', af:'rgba(255,200,50,0.55)',  bs:'rgba(100,90,60,0.7)', as:'rgba(255,200,50,1)'   },
+    'r':    { bf:'rgba(50,48,42,0.65)', af:'rgba(255,200,50,0.55)',  bs:'rgba(100,90,60,0.7)', as:'rgba(255,200,50,1)'   },
+    'c':    { bf:'rgba(50,48,42,0.65)', af:'rgba(240,232,213,0.45)', bs:'rgba(100,90,60,0.7)', as:'rgba(240,232,213,0.95)'}
+  };
+
+  var svg = '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><defs>';
+
+  // Ball gradient
+  svg += '<radialGradient id="sg_ball" cx="37%" cy="31%" r="68%">' +
+         '<stop offset="0%" stop-color="#ffffff"/>' +
+         '<stop offset="28%" stop-color="#f5ede0"/>' +
+         '<stop offset="62%" stop-color="#ddd0aa"/>' +
+         '<stop offset="100%" stop-color="#a88840"/>' +
+         '</radialGradient>';
+
+  // Inset sheen on zones
+  svg += '<linearGradient id="sg_sheen" x1="0" y1="0" x2="0" y2="1">' +
+         '<stop offset="0%" stop-color="rgba(255,255,255,0.22)"/>' +
+         '<stop offset="100%" stop-color="rgba(0,0,0,0.28)"/>' +
+         '</linearGradient>';
+
+  // Clip to exact ball circle — zones that extend outside get clipped cleanly
+  svg += '<clipPath id="sg_clip"><circle cx="' + CX + '" cy="' + CY + '" r="' + R + '"/></clipPath>';
+
+  // Green glow for active dot
+  svg += '<filter id="sg_glow" x="-100%" y="-100%" width="300%" height="300%">' +
+         '<feGaussianBlur stdDeviation="4" result="b"/>' +
+         '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+         '</filter>';
+
+  svg += '</defs>';
+
+  // Ball base
+  svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R + '" fill="url(#sg_ball)"/>';
+
+  // Curved surface lines — clipped to ball
+  svg += '<g clip-path="url(#sg_clip)" fill="none" stroke="rgba(140,120,72,0.3)" stroke-width="1.5">';
+  svg += '<ellipse cx="100" cy="100" rx="30" ry="97"/>';   // vertical oval
+  svg += '<ellipse cx="100" cy="100" rx="97" ry="30"/>';   // horizontal oval
+  svg += '</g>';
+
+  // Zones — clipped so they never bleed outside the ball
+  svg += '<g clip-path="url(#sg_clip)">';
+  zones.forEach(function(z) {
+    var isActive = (z.id === activeId);
+    var c = zoneColors[z.id];
+    var fill   = isActive ? c.af : c.bf;
+    var stroke = isActive ? c.as : c.bs;
+    var sw = isActive ? '2.5' : '1';
+
+    if (z.shape === 'circle') {
+      svg += '<circle cx="' + z.cx + '" cy="' + z.cy + '" r="' + z.cr + '"' +
+             ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"' +
+             ' class="spin-zone" onclick="selectSpinZone(\'' + z.id + '\')" style="cursor:pointer"/>';
+      // Sheen overlay
+      svg += '<circle cx="' + z.cx + '" cy="' + (z.cy - 3) + '" r="' + (z.cr - 5) + '"' +
+             ' fill="url(#sg_sheen)" pointer-events="none"/>';
+    } else {
+      svg += '<rect x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" rx="' + z.rx + '"' +
+             ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"' +
+             ' class="spin-zone" onclick="selectSpinZone(\'' + z.id + '\')" style="cursor:pointer"/>';
+      // Sheen overlay inside pill
+      svg += '<rect x="' + (z.x+3) + '" y="' + (z.y+3) + '" width="' + (z.w-6) + '" height="' + (z.h-6) + '" rx="' + (z.rx-2) + '"' +
+             ' fill="url(#sg_sheen)" pointer-events="none"/>';
+    }
+
+    // Contact dot — black when inactive, glowing green when active
+    if (isActive) {
+      svg += '<circle cx="' + z.dot[0] + '" cy="' + z.dot[1] + '" r="10"' +
+             ' fill="rgba(45,255,138,0.2)" pointer-events="none"/>';
+      svg += '<circle cx="' + z.dot[0] + '" cy="' + z.dot[1] + '" r="6"' +
+             ' fill="#2dff8a" filter="url(#sg_glow)" pointer-events="none"/>';
+      svg += '<circle cx="' + z.dot[0] + '" cy="' + z.dot[1] + '" r="2.5"' +
+             ' fill="#fff" pointer-events="none"/>';
+    } else {
+      svg += '<circle cx="' + z.dot[0] + '" cy="' + z.dot[1] + '" r="5"' +
+             ' fill="rgba(10,8,5,0.8)" pointer-events="none"/>';
+    }
+  });
+  svg += '</g>';
+
+  // Ball rim
+  svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R + '"' +
+         ' fill="none" stroke="rgba(140,115,50,0.6)" stroke-width="2"/>';
+  // Specular highlight
+  svg += '<ellipse cx="82" cy="68" rx="18" ry="11"' +
+         ' fill="rgba(255,255,255,0.18)" transform="rotate(-30,82,68)" pointer-events="none"/>';
+
+  svg += '</svg>';
+  wrap.innerHTML = svg;
+}
+
+function openSpinPopup() {
+  // Auto-enable english toggle if not on
+  var toggle = document.getElementById('english-toggle');
+  if (toggle && !toggle.checked) {
+    toggle.checked = true;
+    // Show panel without re-triggering this popup
+    document.getElementById('english-panel').style.display = '';
+    drawEnglishSVG(currentEnglish);
+  }
+  buildSpinSVG(currentEnglish);
+  updateSpinPopupInfo(currentEnglish);
+  document.getElementById('spin-popup-overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSpinPopup() {
+  document.getElementById('spin-popup-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+  drawEnglishSVG(currentEnglish); // keep panel in sync
+}
+
+function closeSpinPopupOnOverlay(e) {
+  if (e.target === document.getElementById('spin-popup-overlay')) closeSpinPopup();
+}
+
+function selectSpinZone(posId) {
+  // Haptic feedback
+  if (navigator.vibrate) navigator.vibrate(18);
+  // Map 'stun' to center-bottom area — use 'b' with a note, or treat as a named position
+  // We'll add 'stun' as a real entry mapped to a slightly-below-center hit
+  if (posId === 'stun') {
+    currentEnglish = 'stun';
+    updateSpinPopupInfo('stun');
+    buildSpinSVG('stun');
+    document.getElementById('english-name').textContent = 'Stun Shot';
+    document.getElementById('english-desc').textContent = 'Cue ball stops dead on contact (or near-stop). Hit just below center with a firm stroke.';
+    drawEnglishSVG('stun');
+    if (sourceImg) renderCanvas();
+    return;
+  }
+  setEnglish(posId); // uses existing logic
+  buildSpinSVG(posId);
+  updateSpinPopupInfo(posId);
+  drawEnglishSVG(posId);
+}
+
+function updateSpinPopupInfo(posId) {
+  var stunData = { name: 'Stun Shot', desc: 'Cue ball stops dead on contact (or near-stop). Hit just below center with a firm stroke.' };
+  var data = posId === 'stun' ? stunData : (ENGLISH_DATA[posId] || ENGLISH_DATA['c']);
+  document.getElementById('spin-popup-name').textContent = data.name;
+  document.getElementById('spin-popup-desc').textContent = data.desc;
+}
+
+function toggleHelp() {
+  var el = document.getElementById('help-overlay');
+  if (!el) { alert('Help not found'); return; }
+  if (el.style.display === 'flex') {
+    el.style.display = 'none';
+    document.body.style.overflow = '';
+  } else {
+    el.style.display = 'flex';
+    el.style.alignItems = 'flex-end';
+    el.style.justifyContent = 'center';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('help-modal').scrollTop = 0;
+  }
+}
+
+function closeHelpOnOverlay(e) {
+  if (e.target === document.getElementById('help-overlay')) {
+    toggleHelp();
+  }
+}
+
+/* ═══════════════════════════════════════════
+   LOCALSTORAGE — PERSIST SETTINGS
+═══════════════════════════════════════════ */
+function saveSettings() {
+  try {
+    localStorage.setItem('rr_settings', JSON.stringify({
+      autoscan:  document.getElementById('autoscan-toggle').checked,
+      sens:      document.getElementById('sens-slider').value,
+      delay:     document.getElementById('delay-slider').value,
+      chime:     document.getElementById('chime-toggle').checked,
+      conf:      document.getElementById('conf-slider').value,
+      english:   document.getElementById('english-toggle').checked,
+      coaching:  document.getElementById('coaching-toggle').checked,
+      gameMode:  gameMode,
+      viewMode:  viewMode,
+      spin:      currentEnglish,
+      aimTarget: document.getElementById('aim-targetline').checked,
+      aimContact:document.getElementById('aim-contactpoint').checked,
+      aimShaft:  document.getElementById('aim-shaftedge').checked,
+      aimDtd:    document.getElementById('aim-dtd').checked
+    }));
+  } catch(e) {}
+}
+
+function loadSettings() {
+  try {
+    var s = JSON.parse(localStorage.getItem('rr_settings') || 'null');
+    if (!s) return;
+    if (s.autoscan !== undefined) { document.getElementById('autoscan-toggle').checked = s.autoscan; autoScan = s.autoscan; }
+    if (s.sens) { document.getElementById('sens-slider').value = s.sens; document.getElementById('sens-val').textContent = s.sens; updateSensitivity(); }
+    if (s.delay) { document.getElementById('delay-slider').value = s.delay; document.getElementById('delay-val').textContent = (s.delay/10).toFixed(1)+'s'; updateDelay(); }
+    if (s.chime !== undefined) document.getElementById('chime-toggle').checked = s.chime;
+    if (s.conf) { document.getElementById('conf-slider').value = s.conf; document.getElementById('conf-val').textContent = s.conf+'%'; CONF_THRESHOLD = parseInt(s.conf)/100; }
+    if (s.english !== undefined) {
+      document.getElementById('english-toggle').checked = s.english;
+      if (s.english) {
+        var sb = document.getElementById('settings-spin-ball');
+        if (sb) sb.style.display = 'block';
+      }
+    }
+    if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
+    if (s.gameMode) {
+      gameMode = s.gameMode;
+      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.textContent.toLowerCase().replace('-','').includes(s.gameMode.replace('ball',''))));
+    }
+    if (s.viewMode) { viewMode = s.viewMode; setViewMode(s.viewMode); }
+    if (s.spin) { currentEnglish = s.spin; }
+    if (s.aimTarget  !== undefined) document.getElementById('aim-targetline').checked   = s.aimTarget;
+    if (s.aimContact !== undefined) document.getElementById('aim-contactpoint').checked = s.aimContact;
+    if (s.aimShaft   !== undefined) document.getElementById('aim-shaftedge').checked    = s.aimShaft;
+    if (s.aimDtd     !== undefined) document.getElementById('aim-dtd').checked          = s.aimDtd;
+  } catch(e) {}
+}
+
+// Auto-save settings on any change — deferred so all functions are defined
+window.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input[type=checkbox], input[type=range]').forEach(function(el) {
+    el.addEventListener('change', saveSettings);
+    el.addEventListener('input', saveSettings);
+  });
+});
+
+/* ═══════════════════════════════════════════
+   SHOT HISTORY
+═══════════════════════════════════════════ */
+var shotHistory = [];
+try { shotHistory = JSON.parse(localStorage.getItem('rr_history') || '[]'); } catch(e) {}
+
+function saveToHistory(title, difficulty, cutAngle, gameModeName) {
+  if (!sourceImg || !canvas) return;
+  try {
+    // Thumbnail from canvas
+    var thumb = document.createElement('canvas');
+    thumb.width = 104; thumb.height = 76;
+    thumb.getContext('2d').drawImage(canvas, 0, 0, 104, 76);
+    var dataUrl = thumb.toDataURL('image/jpeg', 0.6);
+    var entry = {
+      id: Date.now(),
+      title: title,
+      difficulty: difficulty,
+      cutAngle: cutAngle,
+      game: gameModeName,
+      thumb: dataUrl,
+      time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    };
+    shotHistory.unshift(entry);
+    if (shotHistory.length > 5) shotHistory.pop();
+    localStorage.setItem('rr_history', JSON.stringify(shotHistory));
+    renderHistory();
+  } catch(e) {}
+}
+
+var _historyRestoreEntry = null;
+
+function openHistoryRestore(entryId) {
+  var entry = shotHistory.find(function(e) { return e.id === entryId; });
+  if (!entry) return;
+  _historyRestoreEntry = entry;
+  document.getElementById('history-restore-thumb').src = entry.thumb;
+  document.getElementById('history-restore-title').textContent = entry.title;
+  var diffColor = entry.difficulty <= 3 ? '#3ddd7a' : entry.difficulty <= 6 ? '#e08820' : '#cc2222';
+  document.getElementById('history-restore-meta').innerHTML =
+    entry.game + ' &middot; ' +
+    (entry.cutAngle ? entry.cutAngle + '° cut &middot; ' : '') +
+    entry.time + ' &middot; <span style="color:' + diffColor + ';font-weight:700">' + entry.difficulty + '/10</span>';
+  document.getElementById('history-restore-overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHistoryRestore() {
+  document.getElementById('history-restore-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+  _historyRestoreEntry = null;
+}
+
+function closeHistoryRestoreOnOverlay(e) {
+  if (e.target === document.getElementById('history-restore-overlay')) closeHistoryRestore();
+}
+
+function confirmHistoryRestore() {
+  if (!_historyRestoreEntry) return;
+  var entry = _historyRestoreEntry;
+  closeHistoryRestore();
+
+  // Load the thumbnail image back onto the canvas
+  var img = new Image();
+  img.onload = function() {
+    sourceImg = img;
+    marks = [];
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    renderCanvas();
+    placeholder.style.display = 'none';
+    canvas.style.display = 'block';
+    hideSuggestion();
+    document.getElementById('detections-box').classList.remove('show');
+    document.getElementById('redetect-btn').style.display = 'none';
+    if (document.getElementById('english-toggle').checked) {
+      document.getElementById('english-panel').style.display = '';
+    }
+    setTimeout(function() {
+      document.getElementById('canvas-card').scrollIntoView({behavior:'smooth', block:'start'});
+    }, 120);
+    setStatus('📸 Shot restored from history — re-mark balls and suggest again', 'gold');
+  };
+  img.src = entry.thumb;
+}
+
+function renderHistory() {
+  var list = document.getElementById('history-list');
+  var panel = document.getElementById('history-panel');
+  if (!list || !shotHistory.length) { if (panel) panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  list.innerHTML = shotHistory.map(function(e) {
+    var diffColor = e.difficulty <= 3 ? '#3ddd7a' : e.difficulty <= 6 ? '#e08820' : '#cc2222';
+    return '<div class="history-item" onclick="openHistoryRestore(' + e.id + ')" style="cursor:pointer">' +
+      '<img class="history-thumb" src="' + e.thumb + '" alt="shot"/>' +
+      '<div class="history-info">' +
+        '<div class="history-title">' + e.title + '</div>' +
+        '<div class="history-meta">' + e.game + ' · ' + (e.cutAngle !== null ? e.cutAngle + '° cut · ' : '') + e.time + '</div>' +
+      '</div>' +
+      '<div class="history-diff" style="color:' + diffColor + '">' + e.difficulty + '/10</div>' +
+    '</div>';
+  }).join('');
+}
+
+function clearHistory() {
+  shotHistory = [];
+  localStorage.removeItem('rr_history');
+  renderHistory();
+}
+
+/* ═══════════════════════════════════════════
+   COACHING MODE
+═══════════════════════════════════════════ */
+function buildCoachingText(cutAngle, difficulty, cueToTarget, spin) {
+  var lines = [];
+
+  // Player view disclaimer
+  if (viewMode === 'player') {
+    lines.push('<strong>Player View mode:</strong> Angles shown are approximate — perspective distortion affects accuracy. Switch to Overhead View with phone held above the table for precise geometry.');
+  }
+
+  if (cutAngle !== null) {
+    if (cutAngle < 10) lines.push('<strong>Straight shot:</strong> Aim directly at the center of the object ball. The cue ball will follow through along the shot line.');
+    else if (cutAngle < 30) lines.push('<strong>Thin cut (' + cutAngle + '°):</strong> Use the ghost-ball method — imagine a ghost ball touching the object ball on the line to the pocket, aim the cue ball at that ghost ball\'s center.');
+    else if (cutAngle < 55) lines.push('<strong>Moderate cut (' + cutAngle + '°):</strong> The object ball travels roughly perpendicular to your cue stick angle. Visualize where the contact point is on the object ball, not the pocket itself.');
+    else lines.push('<strong>Hard cut (' + cutAngle + '°):</strong> You\'re hitting near the edge of the object ball. Very thin contact — your cue tip barely grazes it. Any miscue or unintended spin will throw the ball offline.');
+  }
+
+  if (cueToTarget !== null) {
+    if (cueToTarget > 0.55) lines.push('<strong>Long distance:</strong> Speed control is critical. Use a slow, smooth backswing — rushing long shots is the #1 cause of misses.');
+    else if (cueToTarget < 0.2) lines.push('<strong>Short distance:</strong> Don\'t rush — short shots are often missed due to overconfidence. Slow down, stay down on the shot.');
+  }
+
+  if (spin && spin !== 'c') {
+    var spinTips = {
+      't': '<strong>Follow (top spin):</strong> Strike above center. The cue ball will roll forward after contact — useful for chasing position up the table.',
+      'b': '<strong>Draw (back spin):</strong> Strike below center with a firm stroke. The cue ball reverses direction after contact — great for avoiding scratches.',
+      'stun': '<strong>Stun shot:</strong> Strike just below center on a firm stroke. The cue ball stops dead or near-dead — gives you the most control over cue ball position.',
+      'l': '<strong>Left english:</strong> Causes throw — the object ball deflects slightly right. Aim a little left to compensate.',
+      'r': '<strong>Right english:</strong> Causes throw — the object ball deflects slightly left. Aim a little right to compensate.'
+    };
+    if (spinTips[spin]) lines.push(spinTips[spin]);
+  }
+
+  if (difficulty >= 7) lines.push('<strong>Safety option:</strong> At difficulty ' + difficulty + '/10, consider whether a safety play leaves your opponent in a worse position than a low-percentage shot attempt.');
+
+  return lines.join('<br><br>');
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+console.log('DEBUG: Starting init...');
+try {
+  loadSettings();
+  updateSensitivity();
+  console.log('DEBUG: updateSensitivity OK');
+  updateDelay();
+  console.log('DEBUG: updateDelay OK');
+  loadModel();
+  console.log('DEBUG: loadModel called');
+  drawEnglishSVG(currentEnglish);
+  renderHistory();
+} catch(e) {
+  console.error('DEBUG: Init crashed:', e.message, e.stack);
+  document.getElementById('model-msg').textContent = 'Init error: ' + e.message;
+}
+</script>
+<!-- HISTORY RESTORE POPUP -->
+<div class="history-restore-overlay" id="history-restore-overlay" onclick="closeHistoryRestoreOnOverlay(event)">
+  <div class="history-restore-popup">
+    <img class="history-restore-thumb" id="history-restore-thumb" src="" alt="shot"/>
+    <div class="history-restore-title" id="history-restore-title"></div>
+    <div class="history-restore-meta" id="history-restore-meta"></div>
+    <div class="history-restore-question">Load this shot's image back onto the canvas?</div>
+    <div class="history-restore-btns">
+      <button class="history-restore-yes" onclick="confirmHistoryRestore()">&#10003; Yes, Load It</button>
+      <button class="history-restore-no" onclick="closeHistoryRestore()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPIN POPUP -->
+<div class="spin-popup-overlay" id="spin-popup-overlay" onclick="closeSpinPopupOnOverlay(event)">
+  <div class="spin-popup" id="spin-popup">
+    <div class="spin-popup-title">Cue Ball Contact Point</div>
+    <button class="spin-popup-close" onclick="closeSpinPopup()">&#10005;</button>
+    <div class="spin-ball-container">
+      <div class="spin-svg-wrap" id="spin-svg-wrap"></div>
+      <div class="spin-info-panel">
+        <div class="spin-info-name" id="spin-popup-name">Center Ball</div>
+        <div class="spin-info-desc" id="spin-popup-desc">No spin — most accurate. Best for long shots and thin cuts.</div>
+        <button class="spin-reset-btn" onclick="selectSpinZone('c')">Reset to center</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+  <div class="help-overlay" id="help-overlay" onclick="closeHelpOnOverlay(event)">
+    <div class="help-modal" id="help-modal">
+      <div class="help-handle"></div>
+      <div class="help-header">
+        <div class="help-title">How to Use <span>Rack Reader</span></div>
+        <button class="help-close" onclick="toggleHelp()">✕</button>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📷 Camera & Scanning</div>
+        <div class="help-item">
+          <div class="help-icon">📷</div>
+          <div><div class="help-item-title">Start Camera</div><div class="help-item-desc">Activates your camera. Point at the pool table from above or at a playing angle.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">⚡</div>
+          <div><div class="help-item-title">Auto-Scan</div><div class="help-item-desc">When enabled, captures automatically when balls stop moving. Perfect for tripod use.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎯</div>
+          <div><div class="help-item-title">Scan Now</div><div class="help-item-desc">Manually captures the current camera frame instantly.</div></div>
+        </div>
+      </div>
+      <div class="help-tip">💡 <strong>Tripod tip:</strong> Mount phone overhead, set sensitivity to 5, still delay to 1.2s. App scans automatically every time balls stop.</div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">🤖 AI Detection</div>
+        <div class="help-item">
+          <div class="help-icon">🤖</div>
+          <div><div class="help-item-title">AI Detect Button</div><div class="help-item-desc">After capturing a frame, tap to automatically find and mark balls. AI markers show a purple "AI" label.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📊</div>
+          <div><div class="help-item-title">AI Confidence Slider</div><div class="help-item-desc">Low (10-30%) detects more balls. High (60%+) only places very confident markers.</div></div>
+        </div>
+      </div>
+      <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good lighting. If AI misses balls, lower the confidence slider or mark manually.</div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">🎱 Marking Balls</div>
+        <div class="help-item">
+          <div class="help-icon">⚪</div>
+          <div><div class="help-item-title">Cue Ball</div><div class="help-item-desc">Mark the white ball first. The app draws aim lines FROM the cue ball to your target.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔴</div>
+          <div><div class="help-item-title">Solid & Stripe</div><div class="help-item-desc">Mark your object balls. The app picks the closest one to the cue ball as primary target.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🕳️</div>
+          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc">Mark where you want to pocket the ball. Unlocks cut angle, aim lines and ghost ball.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">↩</div>
+          <div><div class="help-item-title">Undo & Clear</div><div class="help-item-desc">Undo removes last marker. Clear removes all markers. X discards the frame entirely.</div></div>
+        </div>
+      </div>
+      <div class="help-tip">💡 <strong>Workflow:</strong> Mark Cue Ball → Target Ball → Target Pocket → Suggest Best Shot.</div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">🎱 English / Spin Control</div>
+        <div class="help-item">
+          <div class="help-icon">🔛</div>
+          <div><div class="help-item-title">Enable in Settings</div><div class="help-item-desc">Toggle on English/Spin Control — the popup opens immediately so you can set your contact point right away.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎱</div>
+          <div><div class="help-item-title">Tap the Cue Ball Diagram</div><div class="help-item-desc">A cue ball diagram pops up with 6 zones: Follow (top), Draw (bottom), Stun (just below center), Left English, Right English, and Center Ball. Tap any zone to select it.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">⚪</div>
+          <div><div class="help-item-title">Tap On Canvas Too</div><div class="help-item-desc">Once you've placed the cue ball marker on the canvas, tap it (while in any mode other than Cue) to reopen the spin popup anytime.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">➡️</div>
+          <div><div class="help-item-title">Path Line on Canvas</div><div class="help-item-desc">After marking cue ball and target, a colored path line shows where the cue ball will travel after contact based on your spin selection.</div></div>
+        </div>
+      </div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">🔍 Shot Suggestions</div>
+        <div class="help-item">
+          <div class="help-icon">📐</div>
+          <div><div class="help-item-title">Cut Angle</div><div class="help-item-desc">0° = straight in (easiest). 90° = maximum cut (hardest). Color coded green/amber/red.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎯</div>
+          <div><div class="help-item-title">Difficulty Rating</div><div class="help-item-desc">1-10 score combining cut angle, distance and spin. 1-3 Easy · 4-6 Moderate · 7-10 Difficult.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🛡️</div>
+          <div><div class="help-item-title">Safety Suggestion</div><div class="help-item-desc">When difficulty hits 7+, the app automatically suggests a defensive safety play.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎮</div>
+          <div><div class="help-item-title">Game Modes</div><div class="help-item-desc">8-Ball targets your group. 9-Ball always hits lowest ball first. Straight Pool focuses on cluster control.</div></div>
+        </div>
+      </div>
+      <div class="help-tip">💡 <strong>Pro tip:</strong> Always mark the Target Pocket for the most accurate advice.</div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">🔔 Sound Chimes</div>
+        <div class="help-item">
+          <div class="help-icon">🔔</div>
+          <div><div class="help-item-title">Two-Chime System</div><div class="help-item-desc">Soft click = table scanned. Louder two-tone = suggestion ready. Designed for tripod use so you hear when to look up.</div></div>
+        </div>
+      </div>
+      <div style="height:20px"></div>
+    </div>
+  </div>
+
+  </div>
+
+</body>
+</html>
