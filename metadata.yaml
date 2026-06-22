@@ -1,0 +1,26 @@
+description: Ultralytics best model trained on /content/dataset_v3/data.yaml
+author: Ultralytics
+date: '2026-06-13T05:13:01.037110'
+version: 8.4.66
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: cue_ball
+  1: solid
+  2: stripe
+  3: eight_ball
+args:
+  data: null
+  batch: 1
+  fraction: 1.0
+  half: false
+  int8: false
+  nms: false
+channels: 3
+end2end: false
