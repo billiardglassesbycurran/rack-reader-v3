@@ -1622,13 +1622,17 @@ async function runYOLOInference(canvasEl) {
     throw new Error('tensor_create_failed: ' + e.message);
   }
 
-  const output = await tfModel.executeAsync(inputTensor);
+  const rawOutput = await tfModel.executeAsync(inputTensor);
   inputTensor.dispose();
 
+  // executeAsync may return a single tensor OR an array of tensors
+  const outTensor = Array.isArray(rawOutput) ? rawOutput[0] : rawOutput;
+
   // Parse YOLOv8 output — auto-detect orientation [1,8,8400] vs [1,8400,8]
-  const data = await output[0].data();
-  const outShape = output[0].shape;
-  output.forEach(t => t.dispose());
+  const data = await outTensor.data();
+  const outShape = outTensor.shape;
+  if (Array.isArray(rawOutput)) rawOutput.forEach(t => t.dispose());
+  else rawOutput.dispose();
 
   const detections = [];
   const numBoxes = 8400;
