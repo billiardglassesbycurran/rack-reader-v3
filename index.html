@@ -1365,7 +1365,6 @@ const CLASSES = [
   { id: 1, name: 'solid',      label: 'S', color: '#e63946', markType: 'obj'    },
   { id: 2, name: 'stripe',     label: 'T', color: '#f4a261', markType: 'stripe' },
   { id: 3, name: 'eight-ball', label: '8', color: '#222222', markType: 'eight'  },
-  { id: 4, name: 'pocket',     label: 'P', color: '#c9a84c', markType: 'pocket' },
 ];
 
 let CONF_THRESHOLD = 0.35;
@@ -1627,13 +1626,13 @@ async function runYOLOInference(canvasEl) {
   const output = await tfModel.executeAsync(inputTensor);
   inputTensor.dispose();
 
-  // Parse YOLOv8 output [1, 9, 8400] → [cx, cy, w, h, class_scores...]
+  // Parse YOLOv8 output [1, 8, 8400] → [cx, cy, w, h, class_scores...]
   const data = await output[0].data();
   output.forEach(t => t.dispose());
 
   const detections = [];
   const numBoxes = 8400;
-  const numClasses = 5;
+  const numClasses = 4;
 
   for (let i = 0; i < numBoxes; i++) {
     let bestScore = 0, bestClass = 0;
