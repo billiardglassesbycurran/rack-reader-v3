@@ -1609,7 +1609,6 @@ function reDetect() {
   renderCanvas();
   runDetection();
 }
-
 async function runYOLOInference(canvasEl) {
   // canvasEl is already 640x640 — output bbox as fractions (0-1) for caller to scale
   let inputTensor;
@@ -1626,38 +1625,42 @@ async function runYOLOInference(canvasEl) {
   const output = await tfModel.executeAsync(inputTensor);
   inputTensor.dispose();
 
-  // Parse YOLOv8 output [1, 8, 8400] → [cx, cy, w, h, class_scores...]
+  // Parse YOLOv8 output — auto-detect orientation [1,8,8400] vs [1,8400,8]
   const data = await output[0].data();
+  const outShape = output[0].shape;
   output.forEach(t => t.dispose());
 
   const detections = [];
   const numBoxes = 8400;
   const numClasses = 4;
+  // transposed = true means [1, 8400, 8] layout
+  const transposed = outShape[outShape.length - 1] === (4 + numClasses);
+  const at = (row, i) => transposed ? data[i * (4 + numClasses) + row] : data[row * numBoxes + i];
 
   for (let i = 0; i < numBoxes; i++) {
     let bestScore = 0, bestClass = 0;
     for (let c = 0; c < numClasses; c++) {
-      const score = data[(4 + c) * numBoxes + i];
+      const score = at(4 + c, i);
       if (score > bestScore) { bestScore = score; bestClass = c; }
     }
     if (bestScore < CONF_THRESHOLD) continue;
 
     // YOLOv8 outputs cx,cy,w,h normalized to input size (640)
-    // Return as fractions (0-1) so caller can scale to any canvas size
-    const cx = data[0 * numBoxes + i] / 640;
-    const cy = data[1 * numBoxes + i] / 640;
-    const bw = data[2 * numBoxes + i] / 640;
-    const bh = data[3 * numBoxes + i] / 640;
+    const cx = at(0, i) / 640;
+    const cy = at(1, i) / 640;
+    const bw = at(2, i) / 640;
+    const bh = at(3, i) / 640;
 
     detections.push({
       class: bestClass,
       score: bestScore,
-      // bbox as fractions — caller multiplies by actual W/H
       bboxFrac: [cx - bw/2, cy - bh/2, bw, bh]
     });
   }
 
   return applyNMS(detections);
+}
+
 }
 
 function applyNMS(dets) {
