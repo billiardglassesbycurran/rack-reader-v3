@@ -1660,9 +1660,6 @@ async function runYOLOInference(canvasEl) {
 
   return applyNMS(detections);
 }
-
-}
-
 function applyNMS(dets) {
   dets.sort((a,b) => b.score - a.score);
   const kept = [];
