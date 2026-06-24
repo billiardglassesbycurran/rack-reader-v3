@@ -1223,15 +1223,6 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
     </div>
 
-    <!-- SHOT HISTORY -->
-    <div class="card" id="history-panel" style="display:none">
-      <div class="card-label" style="display:flex;align-items:center;justify-content:space-between">
-        <span>&#128248; Shot History</span>
-        <button onclick="clearHistory()" style="background:none;border:none;color:var(--text-muted);font-size:10px;font-family:'Barlow Condensed',sans-serif;cursor:pointer;letter-spacing:.5px">CLEAR</button>
-      </div>
-      <div id="history-list" style="display:flex;flex-direction:column;gap:6px"></div>
-    </div>
-
     <!-- VIEW MODE -->
     <div class="card" id="view-mode-card">
       <div class="card-label">📐 Perspective Mode</div>
@@ -2705,8 +2696,6 @@ function suggestShot() {
   if (sourceImg) renderCanvas();
   setStatus('Difficulty ' + difficulty + '/10 · ' + diffLabel, 'gold');
 
-  // Save to shot history
-  saveToHistory(title, difficulty, cutAngle, gameMode);
   saveSettings();
 }
 
@@ -3401,25 +3390,12 @@ try {
   loadModel();
   console.log('DEBUG: loadModel called');
   drawEnglishSVG(currentEnglish);
-  renderHistory();
+  
 } catch(e) {
   console.error('DEBUG: Init crashed:', e.message, e.stack);
   document.getElementById('model-msg').textContent = 'Init error: ' + e.message;
 }
 </script>
-<!-- HISTORY RESTORE POPUP -->
-<div class="history-restore-overlay" id="history-restore-overlay" onclick="closeHistoryRestoreOnOverlay(event)">
-  <div class="history-restore-popup">
-    <img class="history-restore-thumb" id="history-restore-thumb" src="" alt="shot"/>
-    <div class="history-restore-title" id="history-restore-title"></div>
-    <div class="history-restore-meta" id="history-restore-meta"></div>
-    <div class="history-restore-question">Load this shot's image back onto the canvas?</div>
-    <div class="history-restore-btns">
-      <button class="history-restore-yes" onclick="confirmHistoryRestore()">&#10003; Yes, Load It</button>
-      <button class="history-restore-no" onclick="closeHistoryRestore()">Cancel</button>
-    </div>
-  </div>
-</div>
 
 <!-- SPIN POPUP -->
 <div class="spin-popup-overlay" id="spin-popup-overlay" onclick="closeSpinPopupOnOverlay(event)">
