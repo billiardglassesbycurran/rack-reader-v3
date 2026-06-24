@@ -2590,6 +2590,48 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
 }
 
 /* ═══════════════════════════════════════════
+   BEST SHOT ENGINE
+═══════════════════════════════════════════ */
+const STANDARD_POCKETS = [
+  {fx:0.04, fy:0.04}, {fx:0.50, fy:0.03}, {fx:0.96, fy:0.04},
+  {fx:0.04, fy:0.96}, {fx:0.50, fy:0.97}, {fx:0.96, fy:0.96}
+];
+
+function scoreShot(cue, ball, pocket) {
+  const cut = computeCutAngle(cue, ball, pocket);
+  if (cut === null) return null;
+  const cueDist = dist(cue, ball);
+  const ballToPkt = dist(ball, pocket);
+  let d = 1 + (cut/90)*6;
+  if (cueDist > 0.6) d += 2; else if (cueDist < 0.2) d -= 1;
+  if (ballToPkt > 0.5) d += 1;
+  d = Math.max(1, Math.min(10, Math.round(d)));
+  return { cut, cueDist, ballToPkt, difficulty: d, pocket };
+}
+
+function bestPocketForBall(cue, ball, pockets) {
+  let best = null;
+  for (const p of pockets) {
+    const s = scoreShot(cue, ball, p);
+    if (!s) continue;
+    if (!best || s.difficulty < best.difficulty ||
+       (s.difficulty === best.difficulty && s.cut < best.cut)) best = s;
+  }
+  return best;
+}
+
+function findBestShot(cue, targets, userPockets) {
+  const pockets = (userPockets && userPockets.length > 0) ? userPockets : STANDARD_POCKETS;
+  const usingAssumed = !(userPockets && userPockets.length > 0);
+  const ranked = targets.map(ball => {
+    const b = bestPocketForBall(cue, ball, pockets);
+    return b ? { ball, cut: b.cut, cueDist: b.cueDist, ballToPkt: b.ballToPkt, difficulty: b.difficulty, pocket: b.pocket } : null;
+  }).filter(Boolean);
+  ranked.sort((a,b) => a.difficulty - b.difficulty || a.cut - b.cut);
+  return { ranked, usingAssumed };
+}
+
+/* ═══════════════════════════════════════════
    SHOT SUGGESTION
 ═══════════════════════════════════════════ */
 function suggestShot() {
