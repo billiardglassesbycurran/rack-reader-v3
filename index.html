@@ -2108,9 +2108,16 @@ function renderCanvas() {
   const card = document.getElementById('canvas-card');
   const maxW = card.clientWidth || 560;
   const ratio = sourceImg.naturalWidth / sourceImg.naturalHeight;
-  canvas.width  = maxW;
-  canvas.height = Math.round(maxW / ratio);
-  const W = canvas.width, H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = maxW;
+  const cssH = Math.round(maxW / ratio);
+  // Render at full device resolution for sharp text/lines
+  canvas.width  = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cssW, H = cssH;
 
   ctx.clearRect(0, 0, W, H);
   ctx.drawImage(sourceImg, 0, 0, W, H);
