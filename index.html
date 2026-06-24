@@ -2652,13 +2652,31 @@ function suggestShot() {
     sug.classList.add('show'); return;
   }
 
-  const allTargets=[...objs,...(eight?[eight]:[])];
+const allTargets=[...objs,...(eight?[eight]:[])];
   let targetBall=null,cutAngle=null,pocketInfo=null,cueToTarget=null;
 
-  if (allTargets.length>0) {
+  // ── BEST SHOT AUTO-EVALUATE ──
+  const bestShotOn = document.getElementById('bestshot-toggle') && document.getElementById('bestshot-toggle').checked;
+  const userPockets = marks.filter(m=>m.type==='pocket');
+  window._bestShotResult = null;
+  if (bestShotOn && allTargets.length>0) {
+    const result = findBestShot(cue, allTargets, userPockets);
+    window._bestShotResult = result;
+    if (result.ranked.length>0) {
+      const top = result.ranked[0];
+      targetBall = top.ball;
+      cueToTarget = dist(cue, targetBall);
+      cutAngle = top.cut;
+      pocketInfo = getPocketType(top.pocket);
+      // tag balls with their rank for canvas crown
+      marks.forEach(m=>{ delete m._rank; });
+      result.ranked.forEach((r,i)=>{ r.ball._rank = i; });
+    }
+  } else if (allTargets.length>0) {
     targetBall=closestTo(cue,allTargets);
     cueToTarget=dist(cue,targetBall);
     if (pkt) { cutAngle=computeCutAngle(cue,targetBall,pkt); pocketInfo=getPocketType(pkt); }
+    marks.forEach(m=>{ delete m._rank; });
   }
 
   if (pocketInfo) addBadge(geo,pocketInfo.label,'pocket-type');
