@@ -1028,7 +1028,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div class="hdr-inner" style="border-top:1px solid rgba(200,151,46,.2);padding-top:9px">
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
-        <div class="hdr-name"><span>Curran's AI Detector</span></div>
+        <div class="hdr-name"><span>Curran's Shot Reader</span></div>
         <div class="hdr-sub">Custom AI · Live Shot Intelligence <span style="color:var(--gold-dim);opacity:.7">· v3.6.2326</span></div>
       </div>
       <button class="help-btn" onclick="toggleHelp()" title="Help">?</button>
@@ -1351,6 +1351,19 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       </div>
     </div>
 
+    <!-- FOOTER -->
+    <div style="text-align:center;padding:18px 14px 8px;border-top:1px solid var(--border);margin-top:8px">
+      <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.3px">Curran's Shot Reader</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.7">
+        Built by <strong style="color:var(--cream)">Adam &amp; Bill Curran</strong><br>
+        William J. Curran &amp; Son Opticians &middot; Est. 1952<br>
+        Crafting custom billiard glasses for over 70 years<br>
+        <a href="https://www.billiardglasses.com" target="_blank" style="color:var(--gold);text-decoration:none">www.billiardglasses.com</a>
+      </div>
+      <div style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:.5px">
+        &copy; 2026 Curran Opticians &middot; All rights reserved
+      </div>
+    </div>
 
 
 
@@ -3529,21 +3542,48 @@ try {
       </div>
 
       <div class="help-section">
-        <div class="help-section-title">📷 Camera & Scanning</div>
+        <div class="help-section-title">🚀 Quick Start</div>
+        <div class="help-item">
+          <div class="help-icon">1️⃣</div>
+          <div><div class="help-item-title">Get a picture of the table</div><div class="help-item-desc">Tap <strong>Start Camera</strong> and point at the table, or tap the <strong>📁 folder</strong> button to upload a photo from your phone.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">2️⃣</div>
+          <div><div class="help-item-title">Tap AI Detect</div><div class="help-item-desc">The AI finds the balls and marks them for you. You can fix any it gets wrong (see Marking Balls below).</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">3️⃣</div>
+          <div><div class="help-item-title">Mark your pocket</div><div class="help-item-desc">Tap <strong>Target Pocket</strong>, then tap where you want the ball to go.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">4️⃣</div>
+          <div><div class="help-item-title">Tap Suggest Best Shot</div><div class="help-item-desc">The app reads the shot, rates how hard it is, and coaches you through it.</div></div>
+        </div>
+      </div>
+      <div class="help-tip">💡 <strong>That's it!</strong> Everything below explains each feature in more detail.</div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">📷 Getting a Picture</div>
         <div class="help-item">
           <div class="help-icon">📷</div>
-          <div><div class="help-item-title">Start Camera</div><div class="help-item-desc">Activates your camera. Point at the pool table from above or at a playing angle.</div></div>
+          <div><div class="help-item-title">Start Camera</div><div class="help-item-desc">Turns on your camera. Point at the pool table from above (best) or from your playing angle.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📁</div>
+          <div><div class="help-item-title">Upload a Photo (folder button)</div><div class="help-item-desc">Tap the yellow folder to pick a photo already on your phone — handy for reviewing a shot later or if the lighting is better in a saved picture.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">⚡</div>
-          <div><div class="help-item-title">Auto-Scan</div><div class="help-item-desc">When enabled, captures automatically when balls stop moving. Perfect for tripod use.</div></div>
+          <div><div class="help-item-title">Auto-Scan</div><div class="help-item-desc">When on, the app snaps a picture by itself whenever the balls stop moving. Great if your phone is on a stand or tripod.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎯</div>
-          <div><div class="help-item-title">Scan Now</div><div class="help-item-desc">Manually captures the current camera frame instantly.</div></div>
+          <div><div class="help-item-title">Scan Now</div><div class="help-item-desc">Grabs the current camera picture right away, without waiting.</div></div>
         </div>
       </div>
-      <div class="help-tip">💡 <strong>Tripod tip:</strong> Mount phone overhead, set sensitivity to 5, still delay to 1.2s. App scans automatically every time balls stop.</div>
+      <div class="help-tip">💡 <strong>Tripod tip:</strong> Mount the phone overhead, turn on Auto-Scan, and the app reads the table every time the balls stop.</div>
 
       <div class="help-divider"></div>
 
@@ -3551,37 +3591,85 @@ try {
         <div class="help-section-title">🤖 AI Detection</div>
         <div class="help-item">
           <div class="help-icon">🤖</div>
-          <div><div class="help-item-title">AI Detect Button</div><div class="help-item-desc">After capturing a frame, tap to automatically find and mark balls. AI markers show a purple "AI" label.</div></div>
+          <div><div class="help-item-title">AI Detect Button</div><div class="help-item-desc">After you have a picture, tap this to automatically find and mark the balls. AI-placed markers show a small purple "AI" tag.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔄</div>
+          <div><div class="help-item-title">Re-detect</div><div class="help-item-desc">Not happy with the result? Tap Re-detect to clear the AI markers and try again.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">📊</div>
-          <div><div class="help-item-title">AI Confidence Slider</div><div class="help-item-desc">Low (10-30%) detects more balls. High (60%+) only places very confident markers.</div></div>
+          <div><div class="help-item-title">AI Confidence Slider</div><div class="help-item-desc">Low (10–30%) finds more balls but may guess. High (60%+) only marks balls it's very sure about.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">✋</div>
+          <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — especially at an angle or in tricky lighting. No problem: just tap the correct type (Solid or Stripe) and tap that ball to fix it. This improves over time as the model is trained on more photos.</div></div>
         </div>
       </div>
-      <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good lighting. If AI misses balls, lower the confidence slider or mark manually.</div>
+      <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good light. If the AI misses balls, lower the confidence slider or mark them by hand.</div>
 
       <div class="help-divider"></div>
 
       <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">🎱 Marking Balls</div>
+        <div class="help-section-title">🎱 Marking Balls by Hand</div>
         <div class="help-item">
           <div class="help-icon">⚪</div>
-          <div><div class="help-item-title">Cue Ball</div><div class="help-item-desc">Mark the white ball first. The app draws aim lines FROM the cue ball to your target.</div></div>
+          <div><div class="help-item-title">Cue Ball</div><div class="help-item-desc">Mark the white ball. The app draws its aim lines starting FROM the cue ball.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🔴</div>
-          <div><div class="help-item-title">Solid & Stripe</div><div class="help-item-desc">Mark your object balls. The app picks the closest one to the cue ball as primary target.</div></div>
+          <div><div class="help-item-title">Solid &amp; Stripe</div><div class="help-item-desc">Pick the type, then tap the ball. Tap an existing ball with a new type selected to correct it.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎱</div>
+          <div><div class="help-item-title">8-Ball</div><div class="help-item-desc">Mark the black 8-ball separately so the app knows it's special.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🕳️</div>
-          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc">Mark where you want to pocket the ball. Unlocks cut angle, aim lines and ghost ball.</div></div>
+          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc">Mark where you want to sink the ball. This unlocks the cut angle, aim lines, and ghost ball.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🕳️🕳️</div>
+          <div><div class="help-item-title">Mark Several Pockets</div><div class="help-item-desc">You can place up to 6 pockets. With Auto-Evaluate on, the app checks every pocket and picks the best one for each ball.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">↩</div>
-          <div><div class="help-item-title">Undo & Clear</div><div class="help-item-desc">Undo removes last marker. Clear removes all markers. X discards the frame entirely.</div></div>
+          <div><div class="help-item-title">Undo, Clear &amp; Discard</div><div class="help-item-desc">Undo removes the last marker. ⊘ Clear removes all markers. ✕ throws away the picture so you can start over.</div></div>
         </div>
       </div>
-      <div class="help-tip">💡 <strong>Workflow:</strong> Mark Cue Ball → Target Ball → Target Pocket → Suggest Best Shot.</div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">⭐ Best Shot Finder</div>
+        <div class="help-item">
+          <div class="help-icon">⭐</div>
+          <div><div class="help-item-title">Auto-Evaluate Best Shot</div><div class="help-item-desc">Turn this on (in Auto-Scan Settings) and the app scores every ball on the table, then crowns your easiest shot.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🟢</div>
+          <div><div class="help-item-title">The Green Crown</div><div class="help-item-desc">A glowing green ring labeled <strong>★ BEST</strong> appears on the easiest ball right on the table picture, so you can see your best option at a glance.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎯</div>
+          <div><div class="help-item-title">Sharper with pockets</div><div class="help-item-desc">If you haven't marked pockets, the app assumes standard table pockets. Mark your own pockets for more accurate picks.</div></div>
+        </div>
+      </div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">📐 Player vs Overhead View</div>
+        <div class="help-item">
+          <div class="help-icon">🧍</div>
+          <div><div class="help-item-title">Player View</div><div class="help-item-desc">For pictures taken from where you stand. Angles are approximate — the camera angle bends the geometry — so advice is a helpful guide, not exact.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🚁</div>
+          <div><div class="help-item-title">Overhead View</div><div class="help-item-desc">For pictures taken straight down over the table (phone on a stand above it). This gives precise cut angles and the most accurate geometry.</div></div>
+        </div>
+      </div>
+      <div class="help-tip">💡 <strong>Want exact angles?</strong> Hold the phone above the table and switch to Overhead View.</div>
 
       <div class="help-divider"></div>
 
@@ -3589,21 +3677,40 @@ try {
         <div class="help-section-title">🎱 English / Spin Control</div>
         <div class="help-item">
           <div class="help-icon">🔛</div>
-          <div><div class="help-item-title">Enable in Settings</div><div class="help-item-desc">Toggle on English/Spin Control — the popup opens immediately so you can set your contact point right away.</div></div>
+          <div><div class="help-item-title">Turn it on</div><div class="help-item-desc">Toggle English/Spin Control in settings. A cue ball diagram pops up so you can choose where you'll strike the ball.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎱</div>
-          <div><div class="help-item-title">Tap the Cue Ball Diagram</div><div class="help-item-desc">A cue ball diagram pops up with 6 zones: Follow (top), Draw (bottom), Stun (just below center), Left English, Right English, and Center Ball. Tap any zone to select it.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">⚪</div>
-          <div><div class="help-item-title">Tap On Canvas Too</div><div class="help-item-desc">Once you've placed the cue ball marker on the canvas, tap it (while in any mode other than Cue) to reopen the spin popup anytime.</div></div>
+          <div><div class="help-item-title">Pick your contact point</div><div class="help-item-desc">Tap a zone: Follow (top), Draw (bottom), Stun (just below center), Left, Right, or Center. Each changes how the cue ball behaves after contact.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">➡️</div>
-          <div><div class="help-item-title">Path Line on Canvas</div><div class="help-item-desc">After marking cue ball and target, a colored path line shows where the cue ball will travel after contact based on your spin selection.</div></div>
+          <div><div class="help-item-title">See the path</div><div class="help-item-desc">A colored line on the picture shows where the cue ball travels after it hits, based on your spin choice (shown in Overhead View).</div></div>
         </div>
       </div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">🎯 Aiming Aids</div>
+        <div class="help-item">
+          <div class="help-icon">🟡</div>
+          <div><div class="help-item-title">Target Line</div><div class="help-item-desc">Draws the aim line from your cue, through the contact point, to the pocket.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎯</div>
+          <div><div class="help-item-title">Contact Point</div><div class="help-item-desc">Puts a crosshair on the exact spot where the cue ball should strike the object ball.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔵</div>
+          <div><div class="help-item-title">Shaft Edge Guide</div><div class="help-item-desc">Shows which edge of your cue shaft to line up for the cut — a real aiming system used by serious players.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📐</div>
+          <div><div class="help-item-title">Double-the-Distance</div><div class="help-item-desc">Marks a precise aim point using the double-the-distance method for tricky cut angles.</div></div>
+        </div>
+      </div>
+      <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they're the easiest to read.</div>
 
       <div class="help-divider"></div>
 
@@ -3611,22 +3718,25 @@ try {
         <div class="help-section-title">🔍 Shot Suggestions</div>
         <div class="help-item">
           <div class="help-icon">📐</div>
-          <div><div class="help-item-title">Cut Angle</div><div class="help-item-desc">0° = straight in (easiest). 90° = maximum cut (hardest). Color coded green/amber/red.</div></div>
+          <div><div class="help-item-title">Cut Angle</div><div class="help-item-desc">0° = straight in (easiest). 90° = maximum cut (hardest). Color coded green / amber / red.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎯</div>
-          <div><div class="help-item-title">Difficulty Rating</div><div class="help-item-desc">1-10 score combining cut angle, distance and spin. 1-3 Easy · 4-6 Moderate · 7-10 Difficult.</div></div>
+          <div><div class="help-item-title">Difficulty Rating</div><div class="help-item-desc">A 1–10 score from cut angle, distance, and spin. 1–3 Easy · 4–6 Moderate · 7–10 Difficult.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🛡️</div>
-          <div><div class="help-item-title">Safety Suggestion</div><div class="help-item-desc">When difficulty hits 7+, the app automatically suggests a defensive safety play.</div></div>
+          <div><div class="help-item-title">Safety Suggestion</div><div class="help-item-desc">On really hard shots (7+), the app suggests playing a safety instead — a smart defensive move.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎮</div>
-          <div><div class="help-item-title">Game Modes</div><div class="help-item-desc">8-Ball targets your group. 9-Ball always hits lowest ball first. Straight Pool focuses on cluster control.</div></div>
+          <div><div class="help-item-title">Game Modes</div><div class="help-item-desc">8-Ball, 9-Ball (always hit the lowest ball first), and Straight Pool each change the advice.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🏫</div>
+          <div><div class="help-item-title">Coaching Mode</div><div class="help-item-desc">Turn on to get a plain-English explanation of WHY a shot has its difficulty rating.</div></div>
         </div>
       </div>
-      <div class="help-tip">💡 <strong>Pro tip:</strong> Always mark the Target Pocket for the most accurate advice.</div>
 
       <div class="help-divider"></div>
 
@@ -3634,9 +3744,28 @@ try {
         <div class="help-section-title">🔔 Sound Chimes</div>
         <div class="help-item">
           <div class="help-icon">🔔</div>
-          <div><div class="help-item-title">Two-Chime System</div><div class="help-item-desc">Soft click = table scanned. Louder two-tone = suggestion ready. Designed for tripod use so you hear when to look up.</div></div>
+          <div><div class="help-item-title">Two-Chime System</div><div class="help-item-desc">A soft click means the table was scanned. A louder two-tone means your suggestion is ready — so you know when to look up.</div></div>
         </div>
       </div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">👓 About Curran's Shot Reader</div>
+        <div class="help-item">
+          <div class="help-icon">👨‍👦</div>
+          <div><div class="help-item-title">Built by Adam &amp; Bill Curran</div><div class="help-item-desc">A father-and-son project from the family behind William J. Curran &amp; Son Opticians — serving since 1952.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">👓</div>
+          <div><div class="help-item-title">Custom Billiard Glasses</div><div class="help-item-desc">Curran Opticians crafts custom prescription billiard glasses designed for players. Over 70 years of opticianry, now with a little AI on the side.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🌐</div>
+          <div><div class="help-item-title">Learn More</div><div class="help-item-desc">Visit <strong>www.billiardglasses.com</strong> to see our custom billiard eyewear.</div></div>
+        </div>
+      </div>
+
       <div style="height:20px"></div>
     </div>
   </div>
