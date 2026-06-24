@@ -2327,10 +2327,28 @@ function renderCanvas() {
     const lbl = {cue:'C',obj:'S',eight:'8',stripe:'T',pocket:'P'}[m.type];
     const lc  = {cue:'#1a1508',obj:'#fff',eight:'#fff',stripe:'#1a0808',pocket:'#c8972e'}[m.type];
     ctx.fillStyle=lc; ctx.fillText(lbl, x, y+.5);
-    if (m.aiDetected) {
+   if (m.aiDetected) {
       ctx.font=`bold 8px Barlow Condensed,sans-serif`;
       ctx.fillStyle='rgba(168,85,247,0.9)';
       ctx.fillText('AI', x, y + R + 7);
+    }
+    // BEST SHOT crown — green glowing ring + label on the #1 ranked ball
+    if (m._rank === 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, R * 1.9, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(45,255,138,0.95)';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = 'rgba(45,255,138,0.7)';
+      ctx.shadowBlur = 14;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.font = `bold ${Math.round(R*0.62)}px Barlow Condensed,sans-serif`;
+      ctx.fillStyle = 'rgba(45,255,138,0.95)';
+      ctx.textAlign = 'center';
+      ctx.shadowBlur = 6;
+      ctx.fillText('★ BEST', x, y - R - 6);
+      ctx.restore();
     }
     ctx.restore();
   });
