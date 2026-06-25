@@ -1,4 +1,15 @@
 <!DOCTYPE html>
+<!--
+═══════════════════════════════════════════════════════════════
+  CURRAN'S SHOT READER
+  AI-powered billiards shot analysis
+  © 2026 Adam Curran & Bill Curran — Curran Opticians
+  William J. Curran & Son Opticians, Est. 1952
+  www.billiardglasses.com
+  All rights reserved. Unauthorized copying, redistribution, or
+  rebranding of this application or its code is prohibited.
+═══════════════════════════════════════════════════════════════
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1230,6 +1241,20 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="capture-flash" id="capture-flash"></div>
     </div>
 
+    <!-- COLOR LEGEND -->
+    <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
+      </div>
+    </div>
+
     <!-- AI DETECTIONS -->
     <div class="detections-box" id="detections-box">
       <div class="det-title">🤖 AI Detected</div>
@@ -1429,8 +1454,8 @@ const motionCtx = motionCvs.getContext('2d', { willReadFrequently: true });
    LOAD CUSTOM MODEL
 ═══════════════════════════════════════════ */
 async function loadModel() {
-  setModelStatus('Loading your custom trained model...', 'loading');
-  setStatus('Loading AI model...', '');
+  setModelStatus('🎱 Warming up Curran\'s AI…', 'loading');
+  setStatus('Getting the table ready…', '');
 
   try {
     // Load TF.js first
@@ -2137,6 +2162,8 @@ function renderCanvas() {
 
   ctx.clearRect(0, 0, W, H);
   ctx.drawImage(sourceImg, 0, 0, W, H);
+  var legend = document.getElementById('color-legend');
+  if (legend) legend.style.display = marks.length ? 'block' : 'none';
   if (!marks.length) return;
 
   const R    = Math.max(9, Math.min(W,H) * 0.027);
@@ -2788,9 +2815,14 @@ const allTargets=[...objs,...(eight?[eight]:[])];
   badge.textContent = 'DIFFICULTY ' + difficulty + '/10 · ' + diffLabel;
   document.getElementById('sug-title').after(badge);
 
-  titl.textContent = title;
+ titl.textContent = title;
   var englishAdvice = getEnglishAdvice(cutAngle);
-  body.textContent = advice + englishAdvice + safetyNote;
+  var plainHeadline = '';
+  if (difficulty <= 3)      plainHeadline = '✅ This is a makeable shot — step in with confidence.\n\n';
+  else if (difficulty <= 6) plainHeadline = '⚖️ This is a moderate shot — focus and commit.\n\n';
+  else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
+  else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
+  body.textContent = plainHeadline + advice + englishAdvice + safetyNote;
   sug.classList.add('show');
 
   // Coaching mode
@@ -3465,35 +3497,85 @@ function buildCoachingText(cutAngle, difficulty, cueToTarget, spin) {
 
   // Player view disclaimer
   if (viewMode === 'player') {
-    lines.push('<strong>Player View mode:</strong> Angles shown are approximate — perspective distortion affects accuracy. Switch to Overhead View with phone held above the table for precise geometry.');
+    lines.push('<strong>Player View mode:</strong> Angles here are approximate — your camera angle bends the geometry. Use this as a read on the shot, not exact degrees. For precise angles, hold the phone above the table and switch to Overhead View.');
   }
 
+  // ── WHY this difficulty? (combines the factors instead of repeating each) ──
   if (cutAngle !== null) {
-    if (cutAngle < 10) lines.push('<strong>Straight shot:</strong> Aim directly at the center of the object ball. The cue ball will follow through along the shot line.');
-    else if (cutAngle < 30) lines.push('<strong>Thin cut (' + cutAngle + '°):</strong> Use the ghost-ball method — imagine a ghost ball touching the object ball on the line to the pocket, aim the cue ball at that ghost ball\'s center.');
-    else if (cutAngle < 55) lines.push('<strong>Moderate cut (' + cutAngle + '°):</strong> The object ball travels roughly perpendicular to your cue stick angle. Visualize where the contact point is on the object ball, not the pocket itself.');
-    else lines.push('<strong>Hard cut (' + cutAngle + '°):</strong> You\'re hitting near the edge of the object ball. Very thin contact — your cue tip barely grazes it. Any miscue or unintended spin will throw the ball offline.');
+    var factors = [];
+    if (cutAngle < 10) factors.push('the shot is nearly straight');
+    else if (cutAngle < 30) factors.push('the ' + cutAngle + '° cut is gentle');
+    else if (cutAngle < 55) factors.push('the ' + cutAngle + '° cut is significant');
+    else factors.push('the ' + cutAngle + '° cut is severe');
+    if (cueToTarget !== null) {
+      if (cueToTarget > 0.55) factors.push('the cue ball is far from the object ball, which magnifies any aiming error');
+      else if (cueToTarget < 0.2) factors.push('the balls are close together, which keeps errors small');
+      else factors.push('the distance is moderate');
+    }
+    if (spin && spin !== 'c') factors.push('you\'ve added spin, which raises the skill needed');
+    lines.push('<strong>Why ' + difficulty + '/10:</strong> ' + capitalize(factors.join(', ')) + '. The rating blends all of these — angle matters most, but distance multiplies it.');
   }
 
+  // ── HOW TO AIM (technique, not just the angle number) ──
+  if (cutAngle !== null) {
+    if (cutAngle < 10) {
+      lines.push('<strong>Aiming:</strong> Aim cue-ball center straight through the object-ball center to the pocket. The trap on "easy" straight shots is steering — keep your bridge still and let the cue swing like a pendulum.');
+    } else if (cutAngle < 30) {
+      lines.push('<strong>Aiming — ghost ball:</strong> Picture a phantom cue ball frozen against the object ball, exactly on the line to the pocket. Aim your real cue ball\'s center at that phantom\'s center. Your tip is NOT aimed at the pocket — it\'s aimed at that ghost spot.');
+    } else if (cutAngle < 55) {
+      lines.push('<strong>Aiming — contact point:</strong> Find the spot on the object ball that points directly away from the pocket — that\'s your contact point. Send the edge of the cue ball to kiss exactly that spot. Trust the thinner hit; beginners almost always hit these too full.');
+    } else {
+      lines.push('<strong>Aiming — feathered cut:</strong> You\'re grazing the very edge of the object ball. Pick the outermost sliver that still drives it toward the pocket. Commit fully — flinching or decelerating into a thin cut is what sends it wide.');
+    }
+  }
+
+  // ── STROKE & SPEED (distance-specific mechanics) ──
   if (cueToTarget !== null) {
-    if (cueToTarget > 0.55) lines.push('<strong>Long distance:</strong> Speed control is critical. Use a slow, smooth backswing — rushing long shots is the #1 cause of misses.');
-    else if (cueToTarget < 0.2) lines.push('<strong>Short distance:</strong> Don\'t rush — short shots are often missed due to overconfidence. Slow down, stay down on the shot.');
+    if (cueToTarget > 0.55) {
+      lines.push('<strong>Stroke:</strong> Long shot — speed control is everything. Slow your backswing right down, pause briefly at the back, then accelerate smoothly through the ball. Don\'t add power; add follow-through. Keep your head dead still until the cue ball reaches the object ball.');
+    } else if (cueToTarget < 0.2) {
+      lines.push('<strong>Stroke:</strong> Close shot — the danger is overconfidence and a jabby, rushed stroke. Use a short, slow, smooth swing. Stay down through contact and watch the contact point, not the pocket.');
+    } else {
+      lines.push('<strong>Stroke:</strong> One smooth, even backswing and a relaxed follow-through. Let the cue do the work — gripping tight or punching the ball adds unwanted spin and throws the line.');
+    }
   }
 
+  // ── SPIN INTERACTION (how the chosen spin behaves at THIS cut) ──
   if (spin && spin !== 'c') {
-    var spinTips = {
-      't': '<strong>Follow (top spin):</strong> Strike above center. The cue ball will roll forward after contact — useful for chasing position up the table.',
-      'b': '<strong>Draw (back spin):</strong> Strike below center with a firm stroke. The cue ball reverses direction after contact — great for avoiding scratches.',
-      'stun': '<strong>Stun shot:</strong> Strike just below center on a firm stroke. The cue ball stops dead or near-dead — gives you the most control over cue ball position.',
-      'l': '<strong>Left english:</strong> Causes throw — the object ball deflects slightly right. Aim a little left to compensate.',
-      'r': '<strong>Right english:</strong> Causes throw — the object ball deflects slightly left. Aim a little right to compensate.'
-    };
-    if (spinTips[spin]) lines.push(spinTips[spin]);
+    var s = '';
+    if (spin === 't') {
+      s = '<strong>Follow at this angle:</strong> Strike about a tip above center. The cue ball holds its line into the object ball, then rolls forward after contact';
+      s += (cutAngle !== null && cutAngle > 45) ? ' — but on a thin cut it won\'t travel as far forward as you\'d expect, so plan position conservatively.' : ', carrying up-table for your next shot.';
+    } else if (spin === 'b') {
+      s = '<strong>Draw at this angle:</strong> Strike a tip or more below center with a level cue and firm, smooth stroke. The cue ball pulls back after contact';
+      s += (cutAngle !== null && cutAngle > 45) ? ' — on a steep cut, draw kicks the cue ball back and sideways sharply, so give yourself margin.' : ', perfect for avoiding a scratch and pulling shape back down-table.';
+    } else if (spin === 'stun') {
+      s = '<strong>Stun at this angle:</strong> Hit just below center, firm. The cue ball stops dead on a straight shot';
+      s += (cutAngle !== null && cutAngle > 15) ? ' or slides off at about 90° to the cut on an angled shot — the single most useful tool for precise position.' : ' — zero forward roll, maximum control.';
+    } else if (spin === 'l' || spin === 'r') {
+      var side = spin === 'l' ? 'left' : 'right';
+      var throwDir = spin === 'l' ? 'right' : 'left';
+      var aimDir = spin === 'l' ? 'left' : 'right';
+      s = '<strong>' + capitalize(side) + ' english:</strong> Side spin "throws" the object ball slightly ' + throwDir + ', so aim a touch ' + aimDir + ' to compensate. It also widens your rebound off the ' + side + ' rail. Use it for position, not for potting — it makes aiming harder, so skip it unless you need the shape.';
+    }
+    if (s) lines.push(s);
+  } else if (spin === 'c' && cutAngle !== null) {
+    lines.push('<strong>Center ball:</strong> No spin is the most reliable, most repeatable hit. On this shot it\'s the percentage play — only reach for spin when you specifically need to move the cue ball somewhere center won\'t take it.');
   }
 
-  if (difficulty >= 7) lines.push('<strong>Safety option:</strong> At difficulty ' + difficulty + '/10, consider whether a safety play leaves your opponent in a worse position than a low-percentage shot attempt.');
+  // ── SAFETY (deeper reasoning on hard shots) ──
+  if (difficulty >= 7) {
+    lines.push('<strong>Consider a safety:</strong> At ' + difficulty + '/10 the make-percentage is low. A strong safety — tucking the cue ball behind a blocker or freezing it to a rail — can win you the game more reliably than a hero shot. Ask: if I miss, do I hand my opponent an easy run? If yes, defense is the stronger play.');
+  } else if (difficulty <= 3) {
+    lines.push('<strong>Don\'t waste it:</strong> This is a high-percentage shot — the mistake here is getting careless and forgetting position. Decide where you want the cue ball to finish for your NEXT shot before you pull the trigger.');
+  }
 
   return lines.join('<br><br>');
+}
+
+function capitalize(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+}
 }
 
 /* ═══════════════════════════════════════════
@@ -3537,7 +3619,7 @@ try {
     <div class="help-modal" id="help-modal">
       <div class="help-handle"></div>
       <div class="help-header">
-        <div class="help-title">How to Use <span>Rack Reader</span></div>
+        <title>Curran/'s Billiard Table Ball Detector</title>
         <button class="help-close" onclick="toggleHelp()">✕</button>
       </div>
 
