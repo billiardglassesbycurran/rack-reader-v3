@@ -1394,6 +1394,20 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         <div class="pill"        onclick="setGame('9ball',this)">9-Ball</div>
         <div class="pill"        onclick="setGame('straight',this)">Straight</div>
       </div>
+
+      <!-- GROUP FILTER (8-Ball only) -->
+      <div id="group-filter-wrap" style="margin-top:10px">
+        <div class="card-label" style="margin-bottom:7px">Which balls? · 8-Ball rules</div>
+        <div class="pills">
+          <div class="pill active" id="grp-all"     onclick="setGroupFilter('all',this)">All Balls</div>
+          <div class="pill"        id="grp-solids"  onclick="setGroupFilter('solids',this)">Solids</div>
+          <div class="pill"        id="grp-stripes" onclick="setGroupFilter('stripes',this)">Stripes</div>
+        </div>
+        <div id="group-filter-desc" style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:7px">
+          Crowning the easiest shot from any ball on the table.
+        </div>
+      </div>
+
       <div class="div"></div>
       <button class="btn btn-gold" onclick="suggestShot()" style="width:100%;font-size:14px;padding:11px">
         🔍 Suggest Best Shot
