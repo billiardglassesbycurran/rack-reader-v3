@@ -3062,9 +3062,51 @@ function setMode(mode) {
 
 function setGame(mode,el) {
   gameMode=mode;
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  // Only clear the game-mode pills, not the group-filter pills
+  document.querySelectorAll('.pills .pill').forEach(p=>{
+    if (p.id==='grp-all'||p.id==='grp-solids'||p.id==='grp-stripes') return;
+    p.classList.remove('active');
+  });
   el.classList.add('active'); hideSuggestion();
+  updateGroupFilterVisibility();
   saveSettings();
+}
+
+var groupFilter = 'all'; // 'all' | 'solids' | 'stripes'
+
+function setGroupFilter(val, el) {
+  groupFilter = val;
+  ['grp-all','grp-solids','grp-stripes'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) b.classList.remove('active');
+  });
+  if (el) el.classList.add('active');
+  updateGroupFilterDesc();
+  hideSuggestion();
+  saveSettings();
+}
+
+function updateGroupFilterDesc() {
+  var desc = document.getElementById('group-filter-desc');
+  if (!desc) return;
+  var autoEval = document.getElementById('bestshot-toggle');
+  if (autoEval && !autoEval.checked) {
+    desc.textContent = 'Turn on Auto-Evaluate Best Shot (in Auto-Scan Settings) to see the crown.';
+    return;
+  }
+  if (groupFilter === 'solids') {
+    desc.textContent = 'Crowning only solids. The 8-ball unlocks once your solids are gone.';
+  } else if (groupFilter === 'stripes') {
+    desc.textContent = 'Crowning only stripes. The 8-ball unlocks once your stripes are gone.';
+  } else {
+    desc.textContent = 'Crowning the easiest shot from any ball on the table.';
+  }
+}
+
+function updateGroupFilterVisibility() {
+  var wrap = document.getElementById('group-filter-wrap');
+  if (!wrap) return;
+  wrap.style.display = (gameMode === '8ball') ? '' : 'none';
 }
 
 function setViewMode(mode) {
@@ -3666,6 +3708,8 @@ try {
   loadModel();
   console.log('DEBUG: loadModel called');
   drawEnglishSVG(currentEnglish);
+  updateGroupFilterVisibility();
+  updateGroupFilterDesc();
   
 } catch(e) {
   console.error('DEBUG: Init crashed:', e.message, e.stack);
