@@ -2667,7 +2667,32 @@ const STANDARD_POCKETS = [
   {fx:0.04, fy:0.96}, {fx:0.50, fy:0.97}, {fx:0.96, fy:0.96}
 ];
 
-function scoreShot(cue, ball, pocket) {
+// ── Geometry: distance from a ball to the target→pocket line ──
+function pointToSegmentDist(p, a, b) {
+  const vx=b.fx-a.fx, vy=b.fy-a.fy, wx=p.fx-a.fx, wy=p.fy-a.fy;
+  const segLen2 = vx*vx+vy*vy;
+  let t = segLen2>0 ? (wx*vx+wy*vy)/segLen2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.fx-(a.fx+t*vx), p.fy-(a.fy+t*vy));
+}
+// ── Is the object→pocket path blocked by another ball? ──
+const BALL_RADIUS = 0.024;
+const BLOCK_THRESHOLD = BALL_RADIUS*2;
+function pathBlocked(ball, pocket, allBalls) {
+  if (!allBalls) return false;
+  for (const other of allBalls) {
+    if (other === ball) continue;
+    if (dist(other, ball) < BALL_RADIUS*0.5) continue;
+    if (pointToSegmentDist(other, ball, pocket) < BLOCK_THRESHOLD) {
+      const along = (other.fx-ball.fx)*(pocket.fx-ball.fx) + (other.fy-ball.fy)*(pocket.fy-ball.fy);
+      const segLen2 = (pocket.fx-ball.fx)**2 + (pocket.fy-ball.fy)**2;
+      const t = segLen2>0 ? along/segLen2 : -1;
+      if (t>0.02 && t<0.98) return true;
+    }
+  }
+  return false;
+}
+function scoreShot(cue, ball, pocket, allBalls) {
   const cut = computeCutAngle(cue, ball, pocket);
   if (cut === null) return null;
   const cueDist = dist(cue, ball);
@@ -2675,14 +2700,16 @@ function scoreShot(cue, ball, pocket) {
   let d = 1 + (cut/90)*6;
   if (cueDist > 0.6) d += 2; else if (cueDist < 0.2) d -= 1;
   if (ballToPkt > 0.5) d += 1;
+  let blocked = false;
+  if (pathBlocked(ball, pocket, allBalls)) { d += 10; blocked = true; }
   d = Math.max(1, Math.min(10, Math.round(d)));
-  return { cut, cueDist, ballToPkt, difficulty: d, pocket };
+  return { cut, cueDist, ballToPkt, difficulty: d, pocket, blocked };
 }
 
-function bestPocketForBall(cue, ball, pockets) {
+function bestPocketForBall(cue, ball, pockets, allBalls) {
   let best = null;
   for (const p of pockets) {
-    const s = scoreShot(cue, ball, p);
+    const s = scoreShot(cue, ball, p, allBalls);
     if (!s) continue;
     if (!best || s.difficulty < best.difficulty ||
        (s.difficulty === best.difficulty && s.cut < best.cut)) best = s;
@@ -2693,9 +2720,8 @@ function bestPocketForBall(cue, ball, pockets) {
 function findBestShot(cue, targets, userPockets) {
   const pockets = (userPockets && userPockets.length > 0) ? userPockets : STANDARD_POCKETS;
   const usingAssumed = !(userPockets && userPockets.length > 0);
-  const ranked = targets.map(ball => {
-    const b = bestPocketForBall(cue, ball, pockets);
-    return b ? { ball, cut: b.cut, cueDist: b.cueDist, ballToPkt: b.ballToPkt, difficulty: b.difficulty, pocket: b.pocket } : null;
+  const ranked = targets.map(ball => {const b = bestPocketForBall(cue, ball, pockets, targets);
+      return b ? { ball, cut: b.cut, cueDist: b.cueDist, ballToPkt: b.ballToPkt, difficulty: b.difficulty, pocket: b.pocket, blocked: b.blocked } : null;
   }).filter(Boolean);
   ranked.sort((a,b) => a.difficulty - b.difficulty || a.cut - b.cut);
   return { ranked, usingAssumed };
