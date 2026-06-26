@@ -2796,7 +2796,18 @@ function suggestShot() {
     sug.classList.add('show'); return;
   }
 
-const allTargets=[...objs,...(eight?[eight]:[])];
+// Build the crown's candidate pool, applying 8-Ball group filter.
+  // Note: 'objs' contains BOTH solids (type 'obj') and stripes (type 'stripe').
+  const solidsOnly  = objs.filter(m => m.type === 'obj');
+  const stripesOnly = objs.filter(m => m.type === 'stripe');
+  let allTargets;
+  if (gameMode === '8ball' && groupFilter === 'solids') {
+    allTargets = solidsOnly.length > 0 ? solidsOnly : (eight ? [eight] : []);
+  } else if (gameMode === '8ball' && groupFilter === 'stripes') {
+    allTargets = stripesOnly.length > 0 ? stripesOnly : (eight ? [eight] : []);
+  } else {
+    allTargets = [...objs, ...(eight ? [eight] : [])];
+  }
   let targetBall=null,cutAngle=null,pocketInfo=null,cueToTarget=null;
 
   // ── BEST SHOT AUTO-EVALUATE ──
