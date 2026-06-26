@@ -468,6 +468,33 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 
 .div { height:1px; background:var(--border); margin:8px 0; }
 
+/* ── STICKY ACTION BAR ── */
+.sticky-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: var(--rail);
+  border-top: 2px solid var(--gold-dim);
+  box-shadow: 0 -4px 20px rgba(0,0,0,.6);
+  z-index: 50;
+}
+.sticky-action-bar::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.sticky-action-bar .btn {
+  flex: 1;
+  font-size: 14px;
+  padding: 12px 10px;
+}
 
 /* ── LANDSCAPE MODE ── */
 @media screen and (orientation: landscape) {
