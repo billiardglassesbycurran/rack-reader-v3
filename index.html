@@ -2747,9 +2747,12 @@ function scoreShot(cue, ball, pocket, allBalls) {
   const ballToPkt = dist(ball, pocket);
   let d = 1 + (cut/90)*6;
   if (cueDist > 0.6) d += 2; else if (cueDist < 0.2) d -= 1;
-  if (ballToPkt > 0.5) d += 1;
+if (ballToPkt > 0.5) d += 1;
   let blocked = false;
   if (pathBlocked(ball, pocket, allBalls)) { d += 10; blocked = true; }
+  // Also check the CUE -> object-ball path (a ball parked in the cue's lane
+  // makes the shot a combo/carom, not a clean direct — bury it like a block).
+  if (cue && pathBlocked(cue, ball, allBalls)) { d += 10; blocked = true; }
   d = Math.max(1, Math.min(10, Math.round(d)));
   return { cut, cueDist, ballToPkt, difficulty: d, pocket, blocked };
 }
