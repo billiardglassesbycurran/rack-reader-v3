@@ -2490,7 +2490,10 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
   if (!cue || objs.length === 0) return;
 
   const cx = cue.fx * W, cy = cue.fy * H;
-  const obj = objs[0];
+  // Aim aids should describe the CROWNED (best) ball, not just the first-marked one.
+  // The crown tags its ball with _rank === 0; fall back to objs[0] if no crown.
+  const crowned = objs.find(o => o._rank === 0);
+  const obj = crowned || objs[0];
   const ox = obj.fx * W, oy = obj.fy * H;
   const px = pkt ? pkt.fx * W : null;
   const py = pkt ? pkt.fy * H : null;
