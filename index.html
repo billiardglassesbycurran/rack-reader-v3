@@ -2251,16 +2251,6 @@ function renderCanvas() {
           ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke(); ctx.restore();
         }
       }
-      // Ghost ball — overhead only (perspective distorts its position)
-      if (viewMode === 'overhead') {
-        const ang = Math.atan2(cy-oy, cx-ox);
-        const gx  = ox + Math.cos(ang) * R*2.3;
-        const gy  = oy + Math.sin(ang) * R*2.3;
-        ctx.save();
-        ctx.beginPath(); ctx.arc(gx, gy, R, 0, Math.PI*2);
-        ctx.strokeStyle='rgba(240,232,213,0.5)'; ctx.lineWidth=1.5;
-        ctx.setLineDash([3,3]); ctx.stroke(); ctx.restore();
-      }
     });
   }
 
