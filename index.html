@@ -3194,6 +3194,13 @@ function setViewMode(mode) {
   saveSettings();
 }
 
+function toggleSimpleMode() {
+  var t = document.getElementById('simplemode-toggle');
+  simpleMode = t ? t.checked : true;
+  if (sourceImg) renderCanvas();
+  saveSettings();
+}
+
 function undoMark() {
   if (!marks.length) return;
   marks.pop(); if (sourceImg) renderCanvas(); hideSuggestion();
