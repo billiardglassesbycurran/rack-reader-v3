@@ -2572,10 +2572,48 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
     ctx.lineTo(contactX + arm, contactY);
     ctx.moveTo(contactX, contactY - arm);
     ctx.lineTo(contactX, contactY + arm);
-    ctx.strokeStyle = 'rgba(255, 80, 80, 0.75)';
+   ctx.strokeStyle = 'rgba(255, 80, 80, 0.75)';
     ctx.lineWidth = 1.2;
     ctx.stroke();
     ctx.restore();
+  }
+
+  // ── GHOST BALL AIM (needs a pocket to know the aim line) ──
+  // Temporary gate: always draws while testing. Next edit swaps `true`
+  // for aimToggle('aim-ghostball').
+  if (true && px !== null) {
+    const opx = px - ox, opy = py - oy;
+    const opd = Math.hypot(opx, opy);
+    if (opd > 0.0001) {
+      const onx = opx / opd, ony = opy / opd;
+      const ghx = ox - onx * R * 2;
+      const ghy = oy - ony * R * 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ghx, ghy, R, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.16)';
+      ctx.fill();
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.shadowColor = 'rgba(255,255,255,0.4)';
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(ghx, ghy, R * 0.16, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(45,255,138,0.95)';
+      ctx.shadowColor = 'rgba(45,255,138,0.7)';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.font = `bold ${Math.round(R * 0.55)}px Barlow Condensed, sans-serif`;
+      ctx.fillStyle = 'rgba(45,255,138,0.95)';
+      ctx.textAlign = 'center';
+      ctx.shadowBlur = 0;
+      ctx.fillText('AIM HERE', ghx, ghy - R - 6);
+      ctx.restore();
+    }
   }
 
   // ── 3. SHAFT EDGE GUIDE ──
