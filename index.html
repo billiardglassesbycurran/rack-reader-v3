@@ -2236,6 +2236,13 @@ function renderCanvas() {
 
   if (cue) {
     objs.forEach(ob => {
+      // SIMPLE MODE: in simple view, only draw these per-ball lines for the
+      // crowned (best) ball. If no crown exists yet, fall back to drawing none
+      // of them is too aggressive — so only skip when a crown actually exists.
+      if (simpleMode) {
+        const hasCrown = objs.some(o => o._rank === 0);
+        if (hasCrown && ob._rank !== 0) return;
+      }
       const cx = cue.fx*W, cy = cue.fy*H;
       const ox = ob.fx*W,  oy = ob.fy*H;
       // Aim line: cue → object ball (always shown)
