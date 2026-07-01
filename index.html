@@ -2492,6 +2492,11 @@ function rangeWord(d) { return d<.22?'close-range':d<.5?'mid-range':'long-range'
    AIMING AIDS
 ═══════════════════════════════════════════ */
 function aimToggle(id) {
+  // In Simple mode, the three advanced aids never draw — even if their
+  // toggle is saved on. Target Line stays visible in Simple mode.
+  if (simpleMode && (id === 'aim-contactpoint' || id === 'aim-shaftedge' || id === 'aim-dtd')) {
+    return false;
+  }
   var el = document.getElementById(id);
   return el && el.checked;
 }
