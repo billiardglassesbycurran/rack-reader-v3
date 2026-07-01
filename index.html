@@ -3204,8 +3204,43 @@ function setViewMode(mode) {
 function toggleSimpleMode() {
   var t = document.getElementById('simplemode-toggle');
   simpleMode = t ? t.checked : true;
+  applyAdvancedVisibility();
   if (sourceImg) renderCanvas();
   saveSettings();
+}
+
+// Show/hide the advanced-only rows, and when hiding them in Simple mode,
+// force their aids OFF so Simple view is guaranteed clean regardless of
+// what was saved. Advanced mode restores them from saved settings.
+function applyAdvancedVisibility() {
+  document.querySelectorAll('.adv-only').forEach(function(el){
+    el.style.display = simpleMode ? 'none' : '';
+  });
+  if (simpleMode) {
+    // Suppress the five advanced aids on the canvas while in Simple mode.
+    ['aim-contactpoint','aim-shaftedge','aim-dtd'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.checked = false;
+    });
+    var eng = document.getElementById('english-toggle');
+    if (eng && eng.checked) { eng.checked = false; toggleEnglish(false); }
+    var coach = document.getElementById('coaching-toggle');
+    if (coach) coach.checked = false;
+  } else {
+    // Advanced: restore the aids to whatever was saved.
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('rr_settings') || 'null'); } catch(e) {}
+    if (s) {
+      if (s.aimContact !== undefined) document.getElementById('aim-contactpoint').checked = s.aimContact;
+      if (s.aimShaft   !== undefined) document.getElementById('aim-shaftedge').checked    = s.aimShaft;
+      if (s.aimDtd     !== undefined) document.getElementById('aim-dtd').checked          = s.aimDtd;
+      if (s.coaching   !== undefined) document.getElementById('coaching-toggle').checked  = s.coaching;
+      if (s.english    !== undefined) {
+        document.getElementById('english-toggle').checked = s.english;
+        if (s.english) toggleEnglish(false);
+      }
+    }
+  }
 }
 
 function undoMark() {
