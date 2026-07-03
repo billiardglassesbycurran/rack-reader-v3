@@ -256,9 +256,11 @@ body::before {
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  isolation: isolate;
+  contain: layout paint;
 }
 .icon-btn {
-  height:32px; min-width:32px; background:rgba(0,0,0,.75);
+  height:32px; min-width:32px; background:rgb(18,18,18);
   border:1px solid rgba(255,255,255,.2); border-radius:7px;
   color:#fff; font-size:13px; padding: 0 8px;
   display:flex; align-items:center; justify-content:center; gap:4px;
@@ -267,8 +269,8 @@ body::before {
 }
 .icon-btn:hover { background:rgba(45,255,138,.3); }
 .undo-btn {
-  background: rgba(200,151,46,0.25);
-  border-color: rgba(200,151,46,0.5);
+  background: rgb(58,44,18);
+  border-color: rgba(200,151,46,0.6);
   color: #f0b840;
   font-size: 12px;
   padding: 0 10px;
@@ -2642,25 +2644,44 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
       // ring, or the ghost ball regardless of shot direction.
       var halfW = aimW / 2 + aimPadX;
       var halfH = aimFS / 2 + aimPadY;
-      // Perpendicular to the aim direction (onx,ony)
+      // How far the label center must sit from the ball center so the whole pill
+      // clears the ball + green crown ring (~R*1.5) even at its nearest corner.
+      var pillReach = Math.hypot(halfW, halfH);
+      var clearR = R * 1.6 + pillReach + 8;
+      // Try 8 directions around the ball; pick the first that keeps the whole pill
+      // on-canvas. Prefer perpendicular-to-aim, then straight up/down, then the rest.
       var perpX = -ony, perpY = onx;
-      // Distance out from ball center: clear the ball AND the green crown ring
-      // (~R*1.5 radius) plus enough of the pill that even its near corner sits in
-      // open felt. Use the larger of half-width/half-height so diagonal offsets clear too.
-      var pillReach = Math.max(halfW, halfH);
-      var sideDist = R * 2.4 + pillReach + 8;
-      // Try both perpendicular sides; pick the one that keeps the pill on-screen
-      // with more breathing room from the top/bottom edges.
-      var upX = ox + perpX * sideDist, upY = oy + perpY * sideDist;
-      var dnX = ox - perpX * sideDist, dnY = oy - perpY * sideDist;
-      // Score each side by how far its center sits from the nearest vertical edge
-      var upRoom = Math.min(upY, H - upY);
-      var dnRoom = Math.min(dnY, H - dnY);
-      var lx, ly;
-      if (upRoom >= dnRoom) { lx = upX; ly = upY; } else { lx = dnX; ly = dnY; }
-      // Final clamp so the whole pill always stays fully on the canvas
-      lx = Math.max(halfW + 2, Math.min(W - halfW - 2, lx));
-      ly = Math.max(halfH + 2, Math.min(H - halfH - 2, ly));
+      var dirs = [
+        [perpX, perpY], [-perpX, -perpY],      // perpendicular to aim (both sides)
+        [0, -1], [0, 1],                        // straight up / down
+        [1, 0], [-1, 0],                        // right / left
+        [0.707, -0.707], [0.707, 0.707],        // right diagonals (toward open field)
+        [-0.707, -0.707], [-0.707, 0.707]       // left diagonals
+      ];
+      var lx = null, ly = null;
+      for (var di = 0; di < dirs.length; di++) {
+        var cxo = ox + dirs[di][0] * clearR;
+        var cyo = oy + dirs[di][1] * clearR;
+        // Does the whole pill fit on-canvas at this candidate center?
+        if (cxo - halfW >= 2 && cxo + halfW <= W - 2 &&
+            cyo - halfH >= 2 && cyo + halfH <= H - 2) {
+          lx = cxo; ly = cyo; break;
+        }
+      }
+      // Fallback: ball is jammed in a corner/against a rail and no direction fits
+      // cleanly. Aim the label toward whichever quadrant has the most open room,
+      // then clamp. This keeps the text off the rail instead of clipping.
+      if (lx === null) {
+        var roomRight = W - ox, roomLeft = ox;
+        var roomDown = H - oy, roomUp = oy;
+        var dx = roomRight >= roomLeft ? 1 : -1;
+        var dy = roomDown  >= roomUp   ? 1 : -1;
+        // Push mostly horizontally (labels are wide), with a slight vertical bias.
+        lx = ox + dx * clearR;
+        ly = oy + dy * (R * 1.2 + halfH);
+        lx = Math.max(halfW + 2, Math.min(W - halfW - 2, lx));
+        ly = Math.max(halfH + 2, Math.min(H - halfH - 2, ly));
+      }
       ctx.fillStyle = 'rgba(6,20,12,0.82)';
       var pillX = lx - aimW / 2 - aimPadX;
       var pillY = ly - aimFS / 2 - aimPadY;
