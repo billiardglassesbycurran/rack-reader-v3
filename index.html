@@ -1080,7 +1080,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">Custom AI · Live Shot Intelligence <span style="color:var(--gold-dim);opacity:.7">· V7.2.1132</span></div>
+        <div class="hdr-sub">Custom AI · Live Shot Intelligence <span style="color:var(--gold-dim);opacity:.7">· V7.3.1152</span></div>
       </div>
       <button class="help-btn" onclick="toggleHelp()" title="Help">?</button>
     </div>
@@ -1281,6 +1281,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <!-- CANVAS -->
     <div class="canvas-card" id="canvas-card">
       <canvas id="main-canvas" style="display:none"></canvas>
+      <canvas id="minimap" width="260" height="260" style="position:fixed;width:132px;height:132px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.7);display:none;z-index:60;pointer-events:none;background:#06100a"></canvas>
       <div class="canvas-placeholder" id="canvas-placeholder">
         <div class="big">🎯</div>
         <div>Captured frame appears here</div>
@@ -1297,13 +1298,14 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
-        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
-        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
-        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
-        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
-        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
+        <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
+        <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
+        <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
+        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
+        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
+        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
+        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
+        <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
       </div>
     </div>
 
@@ -1452,7 +1454,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         <a href="https://www.billiardglasses.com" target="_blank" style="color:var(--gold);text-decoration:none">www.billiardglasses.com</a>
       </div>
       <div style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:.5px">
-        &copy; 2026 Curran Opticians &middot; All rights reserved
+        &copy; 2026 Curran Opticians &middot; All Rights Reserved
       </div>
     </div>
 
@@ -1501,6 +1503,7 @@ let cameraOn      = false;
 let sourceImg     = null;
 let marks         = [];
 let markMode      = 'cue';
+let dragCtx       = null;
 let gameMode      = '8ball';
 let viewMode      = 'player'; // 'player' | 'overhead'
 let simpleMode    = true; // Simple view: show only the crowned ball's lines
@@ -1689,7 +1692,7 @@ async function runDetection() {
     document.getElementById('detections-box').classList.toggle('show', added > 0);
     if (added > 0) document.getElementById('redetect-btn').style.display = 'block';
     renderCanvas();
-    setStatus(`🤖 AI placed ${added} marker(s) — review and tap Suggest Best Shot`, 'live');
+    setStatus(`🤖 AI placed ${added} marker(s) — tap any ball to fix its type, then Suggest Best Shot`, 'live');
 
     // Auto-suggest if we have enough info
     const hasCue = marks.some(m => m.type === 'cue');
@@ -2414,7 +2417,9 @@ function renderCanvas() {
   // ── COMBO PATH (Advanced only) ──
   // Draws cue → ball A → ball B → pocket in a distinct cyan so it reads as the
   // recommended escape. Only present when suggestShot set window._comboShot.
-  if (!simpleMode && window._comboShot && cue) {
+  if (!simpleMode && window._comboShot && cue
+      && marks.indexOf(window._comboShot.ballA) !== -1
+      && marks.indexOf(window._comboShot.ballB) !== -1) {
     const cb = window._comboShot;
     const cx = cue.fx*W,        cy = cue.fy*H;
     const ax = cb.ballA.fx*W,   ay = cb.ballA.fy*H;
@@ -2431,18 +2436,62 @@ function renderCanvas() {
     ctx.moveTo(cx,cy); ctx.lineTo(ax,ay); ctx.lineTo(bx,by); ctx.lineTo(px,py);
     ctx.stroke();
     ctx.restore();
-    // COMBO label near ball A (the ball you strike first)
+    // "COMBO SHOT" header near ball A, clamped to stay on-canvas
     ctx.save();
     ctx.setLineDash([]);
     ctx.font = `bold ${Math.round(R*0.6)}px Barlow Condensed,sans-serif`;
     ctx.fillStyle = 'rgba(64,206,255,0.98)';
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.textBaseline = 'alphabetic';
+    ctx.shadowColor = 'rgba(0,0,0,0.75)';
     ctx.shadowBlur = 4;
-    const lblY = ay - R - 5 > 12 ? ay - R - 5 : ay + R + 14;
-    ctx.fillText('COMBO', ax, lblY);
+    const hdr = 'COMBO SHOT';
+    const halfW = ctx.measureText(hdr).width / 2;
+    let lblX = ax;
+    if (lblX - halfW < 4) lblX = halfW + 4;
+    if (lblX + halfW > W - 4) lblX = W - 4 - halfW;
+    const lblY = ay - R - 6 > 12 ? ay - R - 6 : ay + R + 15;
+    ctx.fillText(hdr, lblX, lblY);
     ctx.restore();
+    // Sequence badges: ① on the ball you strike, ② on the ball that's pocketed.
+    // Placed upper-right of each ball so they clear the centered S/8/T label.
+    const drawSeqBadge = (bx0, by0, txt) => {
+      const rB = R * 0.5;
+      const cxB = bx0 + R * 0.9, cyB = by0 - R * 0.9;
+      ctx.save();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(cxB, cyB, rB, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(64,206,255,0.98)';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 3;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#062430';
+      ctx.font = `bold ${Math.round(R*0.6)}px Barlow Condensed,sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(txt, cxB, cyB + 0.5);
+      ctx.restore();
+    };
+    drawSeqBadge(ax, ay, '1');
+    drawSeqBadge(bx, by, '2');
   }
+
+  // ── Dynamic legend: each key appears only when its line is actually on screen ──
+  (function(){
+    var adv = !simpleMode;
+    var isOn = function(id){ var e=document.getElementById(id); return !!(e && e.checked); };
+    var vis  = function(id, show){ var e=document.getElementById(id); if(e) e.style.display = show ? 'flex' : 'none'; };
+    var hasObj = objs.length > 0, hasCue = !!cue, hasPkt = !!pkt;
+    vis('lg-aim',     hasCue && hasObj);                     // orange cue → ball (always drawn)
+    vis('lg-best',    isOn('bestshot-toggle') && hasObj);    // green crown ring
+    var comboLive = !!window._comboShot && marks.indexOf(window._comboShot.ballA) !== -1 && marks.indexOf(window._comboShot.ballB) !== -1;
+    vis('lg-combo',   adv && comboLive);                     // cyan combo path
+    vis('lg-target',  adv && isOn('aim-targetline') && hasPkt);
+    vis('lg-contact', adv && isOn('aim-contactpoint') && hasObj);
+    // Angle colours belong to the ball → pocket line, which only draws when a pocket is placed
+    vis('lg-easy',    adv && hasPkt);
+    vis('lg-med',     adv && hasPkt);
+    vis('lg-hard',    adv && hasPkt);
+  })();
 
   marks.forEach(m => {
     const x = m.fx*W, y = m.fy*H;
@@ -3318,57 +3367,141 @@ function buildStraightAdvice(cue,target,pkt,cutAngle,pocketInfo,d,allTargets) {
 /* ═══════════════════════════════════════════
    INTERACTIONS
 ═══════════════════════════════════════════ */
-canvas.addEventListener('pointerdown', function(e) {
-  if (!sourceImg) return;
-  e.preventDefault();
-  const rect=canvas.getBoundingClientRect();
-  const fx=((e.clientX-rect.left)*(canvas.width/rect.width))/canvas.width;
-  const fy=((e.clientY-rect.top)*(canvas.height/rect.height))/canvas.height;
+function clamp01(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
 
-  // Check if tapping an existing cue ball marker → open spin popup
-  // Only intercept if NOT in cue-placement mode (so you can still re-place the cue)
-  const cueMark = marks.find(m => m.type === 'cue');
-  if (cueMark && markMode !== 'cue') {
-    const R = Math.max(9, Math.min(canvas.width, canvas.height) * 0.027);
-    const tapX = fx * canvas.width;
-    const tapY = fy * canvas.height;
-    const markX = cueMark.fx * canvas.width;
-    const markY = cueMark.fy * canvas.height;
-    if (Math.hypot(tapX - markX, tapY - markY) < R * 2.2) {
-      openSpinPopup();
-      return;
-    }
+// Shared placement — used by both quick-tap and drag-to-place.
+function placeMarkAt(mode, fx, fy) {
+  if (mode==='cue')    marks = marks.filter(m=>m.type!=='cue');
+  if (mode==='eight')  marks = marks.filter(m=>m.type!=='eight');
+  if (mode==='pocket') {
+    const pc = marks.filter(m=>m.type==='pocket').length;
+    if (pc >= 6) { const fi = marks.findIndex(m=>m.type==='pocket'); if (fi!==-1) marks.splice(fi,1); }
   }
-
-  if (markMode==='cue')    marks=marks.filter(m=>m.type!=='cue');
-  if (markMode==='eight')  marks=marks.filter(m=>m.type!=='eight');
-  if (markMode==='pocket') {
-    const pocketCount = marks.filter(m=>m.type==='pocket').length;
-    if (pocketCount >= 6) {
-      // already at 6 — replace the oldest pocket instead of adding a 7th
-      const firstPocketIdx = marks.findIndex(m=>m.type==='pocket');
-      if (firstPocketIdx !== -1) marks.splice(firstPocketIdx, 1);
-    }
+  if (mode !== 'pocket') {
+    const RR = 0.035;
+    for (let i=marks.length-1;i>=0;i--){ const m=marks[i]; if(m.type==='pocket')continue; if(Math.hypot(m.fx-fx,m.fy-fy)<RR) marks.splice(i,1); }
   }
-  // Tap-to-correct: if placing a BALL marker on top of an existing ball
-  // marker (any type), replace it instead of stacking. Pockets are exempt.
-  if (markMode !== 'pocket') {
-    const REPLACE_RADIUS = 0.035; // ~1.5 ball radii in fractional coords
-    for (let i = marks.length - 1; i >= 0; i--) {
-      const m = marks[i];
-      if (m.type === 'pocket') continue;
-      if (Math.hypot(m.fx - fx, m.fy - fy) < REPLACE_RADIUS) {
-        marks.splice(i, 1);
-      }
-    }
-  }
-  marks.push({type:markMode,fx,fy});
+  const nm = { type: mode, fx, fy };
+  marks.push(nm);
   renderCanvas(); hideSuggestion();
   const names={cue:'Cue ball',obj:'Solid ball',eight:'8-ball',stripe:'Stripe ball',pocket:'Target pocket'};
   const pktCount = marks.filter(m=>m.type==='pocket').length;
-  const pktMsg = pktCount > 0 ? ' · ' + pktCount + ' pocket(s) marked' : '';
-  setStatus(names[markMode]+' placed — '+marks.length+' mark(s)'+pktMsg+(markMode==='cue'?' · tap ⚪ to set spin':''),'gold');
+  const pktMsg = pktCount>0 ? ' · '+pktCount+' pocket(s) marked' : '';
+  setStatus(names[mode]+' placed — '+marks.length+' mark(s)'+pktMsg+(mode==='cue'?' · tap ⚪ to set spin':''),'gold');
+  return nm;
+}
+
+// A quick tap (no drag): cue→spin, object ball→cycle type, empty felt→place.
+function handleTap(fx, fy) {
+  const R = Math.max(9, Math.min(canvas.width, canvas.height) * 0.027);
+  const tapX = fx*canvas.width, tapY = fy*canvas.height;
+  const cueMark = marks.find(m => m.type === 'cue');
+  if (cueMark && markMode !== 'cue') {
+    if (Math.hypot(tapX - cueMark.fx*canvas.width, tapY - cueMark.fy*canvas.height) < R*2.2) { openSpinPopup(); return; }
+  }
+  for (let i = marks.length-1; i>=0; i--) {
+    const m = marks[i];
+    if (m.type !== 'obj' && m.type !== 'stripe' && m.type !== 'eight') continue;
+    if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < R*1.6) {
+      const nextType = { obj:'stripe', stripe:'eight', eight:'obj' };
+      m.type = nextType[m.type]; delete m._rank;
+      renderCanvas(); hideSuggestion();
+      const nm = { obj:'Solid', stripe:'Stripe', eight:'8-ball' };
+      setStatus('Changed to '+nm[m.type]+' — tap again to cycle (Solid → Stripe → 8)','gold');
+      return;
+    }
+  }
+  placeMarkAt(markMode, fx, fy);
+}
+
+// Mini-map: zoomed crop centred on the dragged point, parked in the corner
+// farthest from the finger so a large hand never covers it.
+function showMiniMap(cx, cy, clientX, clientY) {
+  const mm = document.getElementById('minimap');
+  if (!mm) return;
+  const mctx = mm.getContext('2d');
+  const iw = mm.width, ih = mm.height;
+  const crop = Math.min(canvas.width, canvas.height) * 0.22;
+  let sx = cx - crop/2, sy = cy - crop/2;
+  sx = Math.max(0, Math.min(canvas.width - crop, sx));
+  sy = Math.max(0, Math.min(canvas.height - crop, sy));
+  mctx.clearRect(0,0,iw,ih);
+  mctx.imageSmoothingEnabled = true;
+  try { mctx.drawImage(canvas, sx, sy, crop, crop, 0, 0, iw, ih); } catch(_) {}
+  const chX = (cx - sx)/crop * iw, chY = (cy - sy)/crop * ih;
+  mctx.strokeStyle = 'rgba(64,206,255,0.95)'; mctx.lineWidth = 2.5;
+  mctx.beginPath();
+  mctx.moveTo(chX-16, chY); mctx.lineTo(chX+16, chY);
+  mctx.moveTo(chX, chY-16); mctx.lineTo(chX, chY+16); mctx.stroke();
+  mctx.beginPath(); mctx.arc(chX, chY, 11, 0, Math.PI*2); mctx.stroke();
+  const rect = canvas.getBoundingClientRect();
+  const margin = 10, mmW = 132, mmH = 132;
+  const fingerRight  = clientX > rect.left + rect.width/2;
+  const fingerBottom = clientY > rect.top + rect.height/2;
+  const left = fingerRight ? rect.left + margin : rect.right - margin - mmW;
+  const top  = fingerBottom ? rect.top + margin : rect.bottom - margin - mmH;
+  mm.style.left = Math.max(4, left) + 'px';
+  mm.style.top  = Math.max(4, top) + 'px';
+  mm.style.display = 'block';
+}
+function hideMiniMap(){ const mm=document.getElementById('minimap'); if(mm) mm.style.display='none'; }
+
+canvas.addEventListener('pointerdown', function(e) {
+  if (!sourceImg) return;
+  if (e.button && e.button !== 0) return;   // ignore right/middle mouse buttons (laptop)
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const fx = ((e.clientX-rect.left)*(canvas.width/rect.width))/canvas.width;
+  const fy = ((e.clientY-rect.top)*(canvas.height/rect.height))/canvas.height;
+  const R = Math.max(9, Math.min(canvas.width, canvas.height) * 0.027);
+  // Topmost existing mark under the finger → candidate to drag-move.
+  let hit = null;
+  for (let i = marks.length - 1; i >= 0; i--) {
+    const m = marks[i];
+    const hitR = (m.type === 'cue') ? R*2.2 : (m.type === 'pocket') ? R*2 : R*1.6;
+    if (Math.hypot(fx*canvas.width - m.fx*canvas.width, fy*canvas.height - m.fy*canvas.height) < hitR) { hit = m; break; }
+  }
+  dragCtx = { startFx: fx, startFy: fy, startPx: e.clientX, startPy: e.clientY,
+              mark: hit, isNew: !hit, moved: false, pointerId: e.pointerId };
+  try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
 });
+
+canvas.addEventListener('pointermove', function(e) {
+  if (!dragCtx || e.pointerId !== dragCtx.pointerId) return;
+  const rect = canvas.getBoundingClientRect();
+  const fx = clamp01(((e.clientX-rect.left)*(canvas.width/rect.width))/canvas.width);
+  const fy = clamp01(((e.clientY-rect.top)*(canvas.height/rect.height))/canvas.height);
+  if (!dragCtx.moved) {
+    if (Math.hypot(e.clientX - dragCtx.startPx, e.clientY - dragCtx.startPy) < 10) return; // still a tap
+    dragCtx.moved = true;
+    hideSuggestion();
+    // Clear the previous suggestion's visuals so the drag view is clean.
+    marks.forEach(m => { delete m._rank; });
+    window._comboShot = null; window._bestShotResult = null;
+    if (dragCtx.isNew) dragCtx.mark = placeMarkAt(markMode, dragCtx.startFx, dragCtx.startFy);
+  }
+  if (dragCtx.mark) {
+    dragCtx.mark.fx = fx; dragCtx.mark.fy = fy; delete dragCtx.mark._rank;
+    renderCanvas();
+    showMiniMap(fx*canvas.width, fy*canvas.height, e.clientX, e.clientY);
+  }
+});
+
+function endDrag(e) {
+  if (!dragCtx || (e && e.pointerId !== dragCtx.pointerId)) return;
+  const d = dragCtx; dragCtx = null;
+  try { canvas.releasePointerCapture(d.pointerId); } catch(_) {}
+  hideMiniMap();
+  if (d.moved) {
+    renderCanvas(); hideSuggestion();
+    const names={cue:'Cue ball',obj:'Solid ball',eight:'8-ball',stripe:'Stripe ball',pocket:'Pocket'};
+    if (d.mark) setStatus((names[d.mark.type]||'Ball')+' moved — '+marks.length+' mark(s)','gold');
+  } else if (e && e.type === 'pointerup') {
+    handleTap(d.startFx, d.startFy);
+  }
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
 
 function setMode(mode) {
   markMode=mode;
@@ -3989,6 +4122,24 @@ try {
       <div class="help-divider"></div>
 
       <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">✨ Simple vs Advanced</div>
+        <div class="help-item">
+          <div class="help-icon">🏊</div>
+          <div><div class="help-item-title">Start in the shallow end</div><div class="help-item-desc">The app opens in <strong>Simple View</strong> every time. It shows only what a beginner needs: your best ball (the green crown), where to aim (the dotted ring), and the line from your cue. Nothing else to distract you.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🤿</div>
+          <div><div class="help-item-title">Graduate to the deep end</div><div class="help-item-desc">Turn <strong>Simple View</strong> off (in Auto-Scan Settings) to unlock Advanced: every ball's lines, cut-angle colors, spin control, coaching, combo shots, and all the aiming aids. Turn it back on any time to de-clutter.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔄</div>
+          <div><div class="help-item-title">It resets each visit</div><div class="help-item-desc">Simple View comes back on every time you open the app, so beginners are never dropped into a wall of lines. Advanced is a choice you make each session.</div></div>
+        </div>
+      </div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
         <div class="help-section-title">📷 Getting a Picture</div>
         <div class="help-item">
           <div class="help-icon">📷</div>
@@ -4027,7 +4178,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">✋</div>
-          <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — especially at an angle or in tricky lighting. No problem: just tap the correct type (Solid or Stripe) and tap that ball to fix it. This improves over time as the model is trained on more photos.</div></div>
+          <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — especially at an angle or in tricky lighting. No problem: just <strong>tap the ball</strong> and it cycles through Solid → Stripe → 8-ball → Solid until it's right. No re-scan needed.</div></div>
         </div>
       </div>
       <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good light. If the AI misses balls, lower the confidence slider or mark them by hand.</div>
@@ -4042,7 +4193,11 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🔴</div>
-          <div><div class="help-item-title">Solid &amp; Stripe</div><div class="help-item-desc">Pick the type, then tap the ball. Tap an existing ball with a new type selected to correct it.</div></div>
+          <div><div class="help-item-title">Solid &amp; Stripe</div><div class="help-item-desc">Pick the type, then tap the felt to place a ball. Already placed one that's the wrong type? Just <strong>tap it</strong> to cycle Solid → Stripe → 8-ball.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔍</div>
+          <div><div class="help-item-title">Precise placement (big fingers welcome)</div><div class="help-item-desc"><strong>Press and drag</strong> a ball to move it exactly where you want. A zoomed mini-map pops into the corner with a crosshair so your finger never hides the spot — it even jumps to the corner away from your hand. Drag on empty felt to place a new ball the same way.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎱</div>
@@ -4153,6 +4308,10 @@ try {
           <div><div class="help-item-title">Safety Suggestion</div><div class="help-item-desc">On really hard shots (7+), the app suggests playing a safety instead — a smart defensive move.</div></div>
         </div>
         <div class="help-item">
+          <div class="help-icon">🎯</div>
+          <div><div class="help-item-title">Combo Shots</div><div class="help-item-desc">When there's no clear direct shot (blocked, or an extreme cut), Advanced mode looks for a 2-ball combo — hit ball ① into ball ② to send it to the pocket. It's drawn as a cyan line and only appears as an escape, never over a makeable direct shot.</div></div>
+        </div>
+        <div class="help-item">
           <div class="help-icon">🎮</div>
           <div><div class="help-item-title">Game Modes</div><div class="help-item-desc">8-Ball, 9-Ball (always hit the lowest ball first), and Straight Pool each change the advice.</div></div>
         </div>
@@ -4178,11 +4337,19 @@ try {
         <div class="help-section-title">👓 About Curran's Shot Reader</div>
         <div class="help-item">
           <div class="help-icon">👨‍👦</div>
-          <div><div class="help-item-title">Built by Adam &amp; Bill Curran</div><div class="help-item-desc">A father-and-son project from the family behind William J. Curran &amp; Son Opticians — serving since 1952.</div></div>
+          <div><div class="help-item-title">A father-and-son project</div><div class="help-item-desc">Built by Adam &amp; Bill Curran, third generation of William J. Curran &amp; Son Opticians in Drexel Hill, PA — serving since 1952.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">👓</div>
-          <div><div class="help-item-title">Custom Billiard Glasses</div><div class="help-item-desc">Curran Opticians crafts custom prescription billiard glasses designed for players. Over 70 years of opticianry, now with a little AI on the side.</div></div>
+          <div class="help-icon">🎱</div>
+          <div><div class="help-item-title">Why an optical shop built this</div><div class="help-item-desc">We make custom prescription <strong>billiard glasses</strong> for players who look up at a table all night. Helping you see the table clearly and read your next shot is the same mission — just taken one step further.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔒</div>
+          <div><div class="help-item-title">Private and free</div><div class="help-item-desc">Everything runs right on your phone — your photos are never uploaded to a server. No account, no sign-up, and it's free to use.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🛠️</div>
+          <div><div class="help-item-title">A work in progress</div><div class="help-item-desc">This is a passion project we keep improving. It won't be perfect on every table or angle yet — overhead photos in good light work best. Your feedback makes it better.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🌐</div>
