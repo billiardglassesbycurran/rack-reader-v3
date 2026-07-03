@@ -2635,10 +2635,20 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
       ctx.textAlign = 'center';
       ctx.shadowBlur = 0;
       ctx.textBaseline = 'middle';
-      var aimTxt = 'AIM AT CIRCLE';
+      var aimTxt = 'AIM AT DOTTED RING';
       var aimFS = Math.round(R * 0.55);
+      ctx.font = `bold ${aimFS}px Barlow Condensed, sans-serif`;
       var aimPadX = aimFS * 0.5, aimPadY = aimFS * 0.35;
       var aimW = ctx.measureText(aimTxt).width;
+      // If the label would be too wide for the canvas (long text on a narrow phone
+      // screen), shrink the font so the whole pill can still fit beside the ball.
+      var maxPillW = W * 0.42;
+      if (aimW + aimPadX * 2 > maxPillW) {
+        aimFS = Math.max(9, Math.floor(aimFS * maxPillW / (aimW + aimPadX * 2)));
+        ctx.font = `bold ${aimFS}px Barlow Condensed, sans-serif`;
+        aimPadX = aimFS * 0.5; aimPadY = aimFS * 0.35;
+        aimW = ctx.measureText(aimTxt).width;
+      }
       // Place the label PERPENDICULAR to the aim line, out to the side of the
       // crowned ball, into open felt — so it never overlaps the ball, the crown
       // ring, or the ghost ball regardless of shot direction.
