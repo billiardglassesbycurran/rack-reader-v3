@@ -2628,7 +2628,34 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
       ctx.fillStyle = 'rgba(45,255,138,0.95)';
       ctx.textAlign = 'center';
       ctx.shadowBlur = 0;
-      ctx.fillText('AIM HERE', ghx, ghy - R - 6);
+      ctx.textBaseline = 'middle';
+      var aimTxt = 'AIM HERE';
+      var aimFS = Math.round(R * 0.55);
+      var aimPadX = aimFS * 0.5, aimPadY = aimFS * 0.35;
+      var aimW = ctx.measureText(aimTxt).width;
+      var lx = ghx;
+      var ly = ghy - R - 6 - aimFS * 0.5;
+      if (ly - aimFS < 4) ly = ghy + R + 6 + aimFS * 0.5;
+      var halfW = aimW / 2 + aimPadX;
+      lx = Math.max(halfW + 2, Math.min(W - halfW - 2, lx));
+      ly = Math.max(aimFS + 4, Math.min(H - aimFS - 4, ly));
+      ctx.fillStyle = 'rgba(6,20,12,0.82)';
+      var pillX = lx - aimW / 2 - aimPadX;
+      var pillY = ly - aimFS / 2 - aimPadY;
+      var pillW = aimW + aimPadX * 2;
+      var pillH = aimFS + aimPadY * 2;
+      var pr = pillH / 2;
+      ctx.beginPath();
+      ctx.moveTo(pillX + pr, pillY);
+      ctx.arcTo(pillX + pillW, pillY, pillX + pillW, pillY + pillH, pr);
+      ctx.arcTo(pillX + pillW, pillY + pillH, pillX, pillY + pillH, pr);
+      ctx.arcTo(pillX, pillY + pillH, pillX, pillY, pr);
+      ctx.arcTo(pillX, pillY, pillX + pillW, pillY, pr);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(45,255,138,0.98)';
+      ctx.fillText(aimTxt, lx, ly);
+      ctx.textBaseline = 'alphabetic';
       ctx.restore();
     }
   }
