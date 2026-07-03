@@ -2277,7 +2277,7 @@ function renderCanvas() {
   // ── AIMING AIDS ──
   drawAimingAids(ctx, cue, objs, pkt, R, W, H);
 
-  // ── CUE BALL PATH AFTER CONTACT (Spin Physics) ──
+// ── CUE BALL PATH AFTER CONTACT (Spin Physics) ──
   // Only shown in Overhead View — perspective distortion makes it wrong in Player View
   // Hidden in Simple mode to keep the beginner view clean.
   if (!simpleMode && cue && objs.length > 0 && viewMode === 'overhead') {
