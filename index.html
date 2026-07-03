@@ -2971,9 +2971,9 @@ function suggestShot() {
   body.textContent = plainHeadline + advice + englishAdvice + safetyNote;
   sug.classList.add('show');
 
-  // Coaching mode
+  // Coaching mode — suppressed in Simple mode even if the toggle was saved on
   var coachBox = document.getElementById('coaching-box');
-  var coachOn = document.getElementById('coaching-toggle').checked;
+  var coachOn = !simpleMode && document.getElementById('coaching-toggle').checked;
   if (coachOn && coachBox) {
     var spinState = document.getElementById('english-toggle').checked ? currentEnglish : 'c';
     coachBox.innerHTML = buildCoachingText(cutAngle, difficulty, cueToTarget, spinState);
