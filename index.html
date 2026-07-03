@@ -252,6 +252,10 @@ body::before {
 .canvas-top-btns {
   position:absolute; top:8px; right:8px;
   display:flex; gap:5px; z-index:5;
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 .icon-btn {
   height:32px; min-width:32px; background:rgba(0,0,0,.75);
@@ -2633,12 +2637,18 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
       var aimFS = Math.round(R * 0.55);
       var aimPadX = aimFS * 0.5, aimPadY = aimFS * 0.35;
       var aimW = ctx.measureText(aimTxt).width;
-      var lx = ghx;
-      var ly = ghy - R - 6 - aimFS * 0.5;
-      if (ly - aimFS < 4) ly = ghy + R + 6 + aimFS * 0.5;
+      // Push the label away from the object ball, along the aim line, past the
+      // ghost ball — so it never sits on top of the crowned ball or the ghost.
+      // (onx,ony) points from object ball toward the ghost/cue side.
+      var awayX = -onx, awayY = -ony; // direction from object ball outward through ghost
+      var lblDist = R * 2.2 + aimFS * 0.6 + aimPadY; // clear of the ghost ball
+      var lx = ghx + awayX * lblDist;
+      var ly = ghy + awayY * lblDist;
+      // Clamp so the whole pill stays on the canvas
       var halfW = aimW / 2 + aimPadX;
+      var halfH = aimFS / 2 + aimPadY;
       lx = Math.max(halfW + 2, Math.min(W - halfW - 2, lx));
-      ly = Math.max(aimFS + 4, Math.min(H - aimFS - 4, ly));
+      ly = Math.max(halfH + 2, Math.min(H - halfH - 2, ly));
       ctx.fillStyle = 'rgba(6,20,12,0.82)';
       var pillX = lx - aimW / 2 - aimPadX;
       var pillY = ly - aimFS / 2 - aimPadY;
@@ -3607,7 +3617,7 @@ function loadSettings() {
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
     if (s.gameMode) {
       gameMode = s.gameMode;
-      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.textContent.toLowerCase().replace('-','').includes(s.gameMode.replace('ball',''))));
+      document.querySelectorAll('.pill[onclick*="setGame"]').forEach(p => p.classList.toggle('active', p.textContent.toLowerCase().replace('-','').includes(s.gameMode.replace('ball',''))));
     }
     if (s.viewMode) { viewMode = s.viewMode; setViewMode(s.viewMode); }
     if (s.spin) { currentEnglish = s.spin; }
