@@ -3060,16 +3060,18 @@ function suggestShot() {
   }
 
   // ── COMBO SHOTS (Advanced only) ──
-  // Surfaced ONLY when the best direct shot is blocked (no clear lane exists).
+  // Surfaced ONLY when there's no real direct shot: the best direct is either
+  // blocked (no clear lane) OR an extreme cut (>=72deg is effectively unmakeable).
   // A combo is an escape hatch, never shown alongside a makeable direct shot.
+  // Combos scan all 6 standard pockets (an escape may use a pocket the direct
+  // shot can't), even when the user has marked a specific pocket for direct aim.
   window._comboShot = null;
   var comboNote = '';
-  if (!simpleMode && bestShotOn && window._bestShotResult
-      && window._bestShotResult.ranked.length > 0
-      && window._bestShotResult.ranked[0].blocked
-      && allTargets.length >= 2) {
-    var comboPockets = (userPockets && userPockets.length > 0) ? userPockets : STANDARD_POCKETS;
-    var combo = findComboShot(cue, allTargets, comboPockets);
+  var _bd = window._bestShotResult && window._bestShotResult.ranked.length > 0
+            ? window._bestShotResult.ranked[0] : null;
+  var _noDirect = _bd && (_bd.blocked || _bd.cut >= 72);
+  if (!simpleMode && bestShotOn && _noDirect && allTargets.length >= 2) {
+    var combo = findComboShot(cue, allTargets, STANDARD_POCKETS);
     if (combo && combo.difficulty <= 8) {
       window._comboShot = combo;
       var pkT = getPocketType(combo.pocket);
