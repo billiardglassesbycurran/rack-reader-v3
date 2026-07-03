@@ -3085,6 +3085,15 @@ function suggestShot() {
     }
   }
 
+  // TEMP DEBUG — remove after diagnosis. Runs the combo engine independently of the
+  // gate so we can see whether the ENGINE finds a combo vs whether the GATE blocked it.
+  var _dbgRaw = (cue && allTargets.length >= 2) ? findComboShot(cue, allTargets, STANDARD_POCKETS) : null;
+  var _dbg = '\n\n[DBG simple=' + simpleMode + ' best=' + bestShotOn
+    + ' cut=' + (_bd ? _bd.cut : 'NA') + ' blocked=' + (_bd ? _bd.blocked : 'NA')
+    + ' noDirect=' + _noDirect + ' tgts=' + allTargets.length
+    + ' rawCombo=' + (_dbgRaw ? _dbgRaw.difficulty + '/10' : 'NULL')
+    + ' gateCombo=' + (window._comboShot ? window._comboShot.difficulty + '/10' : 'NULL') + ']';
+
   if (pocketInfo) addBadge(geo,pocketInfo.label,'pocket-type');
   if (cutAngle!==null) {
     if (viewMode === 'overhead') {
@@ -3160,7 +3169,7 @@ function suggestShot() {
   else if (difficulty <= 6) plainHeadline = '⚖️ This is a moderate shot — focus and commit.\n\n';
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
-  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote;
+  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote + _dbg;
   sug.classList.add('show');
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
