@@ -2644,8 +2644,11 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
       var halfH = aimFS / 2 + aimPadY;
       // Perpendicular to the aim direction (onx,ony)
       var perpX = -ony, perpY = onx;
-      // Distance out: clear the ball + green crown ring + the pill's own height
-      var sideDist = R * 1.9 + halfH + 6;
+      // Distance out from ball center: clear the ball AND the green crown ring
+      // (~R*1.5 radius) plus enough of the pill that even its near corner sits in
+      // open felt. Use the larger of half-width/half-height so diagonal offsets clear too.
+      var pillReach = Math.max(halfW, halfH);
+      var sideDist = R * 2.4 + pillReach + 8;
       // Try both perpendicular sides; pick the one that keeps the pill on-screen
       // with more breathing room from the top/bottom edges.
       var upX = ox + perpX * sideDist, upY = oy + perpY * sideDist;
