@@ -2637,16 +2637,25 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
       var aimFS = Math.round(R * 0.55);
       var aimPadX = aimFS * 0.5, aimPadY = aimFS * 0.35;
       var aimW = ctx.measureText(aimTxt).width;
-      // Push the label away from the object ball, along the aim line, past the
-      // ghost ball — so it never sits on top of the crowned ball or the ghost.
-      // (onx,ony) points from object ball toward the ghost/cue side.
-      var awayX = -onx, awayY = -ony; // direction from object ball outward through ghost
-      var lblDist = R * 2.2 + aimFS * 0.6 + aimPadY; // clear of the ghost ball
-      var lx = ghx + awayX * lblDist;
-      var ly = ghy + awayY * lblDist;
-      // Clamp so the whole pill stays on the canvas
+      // Place the label PERPENDICULAR to the aim line, out to the side of the
+      // crowned ball, into open felt — so it never overlaps the ball, the crown
+      // ring, or the ghost ball regardless of shot direction.
       var halfW = aimW / 2 + aimPadX;
       var halfH = aimFS / 2 + aimPadY;
+      // Perpendicular to the aim direction (onx,ony)
+      var perpX = -ony, perpY = onx;
+      // Distance out: clear the ball + green crown ring + the pill's own height
+      var sideDist = R * 1.9 + halfH + 6;
+      // Try both perpendicular sides; pick the one that keeps the pill on-screen
+      // with more breathing room from the top/bottom edges.
+      var upX = ox + perpX * sideDist, upY = oy + perpY * sideDist;
+      var dnX = ox - perpX * sideDist, dnY = oy - perpY * sideDist;
+      // Score each side by how far its center sits from the nearest vertical edge
+      var upRoom = Math.min(upY, H - upY);
+      var dnRoom = Math.min(dnY, H - dnY);
+      var lx, ly;
+      if (upRoom >= dnRoom) { lx = upX; ly = upY; } else { lx = dnX; ly = dnY; }
+      // Final clamp so the whole pill always stays fully on the canvas
       lx = Math.max(halfW + 2, Math.min(W - halfW - 2, lx));
       ly = Math.max(halfH + 2, Math.min(H - halfH - 2, ly));
       ctx.fillStyle = 'rgba(6,20,12,0.82)';
