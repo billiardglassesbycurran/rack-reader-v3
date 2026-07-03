@@ -2253,26 +2253,34 @@ function renderCanvas() {
         const hasCrown = objs.some(o => o._rank === 0);
         if (hasCrown && ob._rank !== 0) return;
       }
+      // When a combo is the recommended play, fade THIS crowned ball's dead
+      // direct lines (the impossible best-direct) so the combo path drawn later
+      // reads as dominant. Other balls' lines are untouched.
+      const dimDirect = !simpleMode && window._comboShot && ob._rank === 0;
+      const aOrange = dimDirect ? 0.15 : 0.8;
+      const aOShadow = dimDirect ? 0.1 : 0.5;
       const cx = cue.fx*W, cy = cue.fy*H;
       const ox = ob.fx*W,  oy = ob.fy*H;
       // Aim line: cue → object ball (always shown)
       ctx.save();
-      ctx.setLineDash([8,5]); ctx.strokeStyle='rgba(200,151,46,0.8)';
-      ctx.lineWidth=2.2; ctx.shadowColor='rgba(200,151,46,0.5)'; ctx.shadowBlur=8;
+      ctx.setLineDash([8,5]); ctx.strokeStyle='rgba(200,151,46,'+aOrange+')';
+      ctx.lineWidth=2.2; ctx.shadowColor='rgba(200,151,46,'+aOShadow+')'; ctx.shadowBlur=8;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ox,oy); ctx.stroke();
       ctx.restore();
       if (pkt) {
         const px = pkt.fx*W, py = pkt.fy*H;
         const cutAngle = computeCutAngle(cue, ob, pkt);
+        const baseCol = cutAngle < 30 ? '52,201,106' : cutAngle < 55 ? '224,136,32' : '204,34,34';
+        const aPocket = dimDirect ? 0.15 : 0.7;
         // Object ball → pocket line (always shown)
         ctx.save();
         ctx.setLineDash([5,7]);
-        ctx.strokeStyle = cutAngle < 30 ? 'rgba(52,201,106,0.7)' : cutAngle < 55 ? 'rgba(224,136,32,0.7)' : 'rgba(204,34,34,0.7)';
-        ctx.lineWidth=1.8; ctx.shadowColor='rgba(45,255,138,0.4)'; ctx.shadowBlur=6;
+        ctx.strokeStyle = 'rgba('+baseCol+','+aPocket+')';
+        ctx.lineWidth=1.8; ctx.shadowColor='rgba(45,255,138,'+(dimDirect?0.1:0.4)+')'; ctx.shadowBlur=6;
         ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(px,py); ctx.stroke();
         ctx.restore();
-        // Cut angle arc — overhead only (meaningless at playing angle)
-        if (cutAngle !== null && viewMode === 'overhead') {
+        // Cut angle arc — overhead only; skip when this ball's lines are dimmed
+        if (cutAngle !== null && viewMode === 'overhead' && !dimDirect) {
           const inAngle  = Math.atan2(cy-oy, cx-ox);
           const outAngle = Math.atan2(py-oy, px-ox);
           ctx.save();
@@ -2400,6 +2408,39 @@ function renderCanvas() {
     ctx.arc(endX, endY, R * 1.1, 0, Math.PI * 2);
     ctx.stroke();
 
+    ctx.restore();
+  }
+
+  // ── COMBO PATH (Advanced only) ──
+  // Draws cue → ball A → ball B → pocket in a distinct cyan so it reads as the
+  // recommended escape. Only present when suggestShot set window._comboShot.
+  if (!simpleMode && window._comboShot && cue) {
+    const cb = window._comboShot;
+    const cx = cue.fx*W,        cy = cue.fy*H;
+    const ax = cb.ballA.fx*W,   ay = cb.ballA.fy*H;
+    const bx = cb.ballB.fx*W,   by = cb.ballB.fy*H;
+    const px = cb.pocket.fx*W,  py = cb.pocket.fy*H;
+    ctx.save();
+    ctx.setLineDash([10,6]);
+    ctx.strokeStyle = 'rgba(64,206,255,0.95)';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(64,206,255,0.6)';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy); ctx.lineTo(ax,ay); ctx.lineTo(bx,by); ctx.lineTo(px,py);
+    ctx.stroke();
+    ctx.restore();
+    // COMBO label near ball A (the ball you strike first)
+    ctx.save();
+    ctx.setLineDash([]);
+    ctx.font = `bold ${Math.round(R*0.6)}px Barlow Condensed,sans-serif`;
+    ctx.fillStyle = 'rgba(64,206,255,0.98)';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 4;
+    const lblY = ay - R - 5 > 12 ? ay - R - 5 : ay + R + 14;
+    ctx.fillText('COMBO', ax, lblY);
     ctx.restore();
   }
 
@@ -3085,15 +3126,6 @@ function suggestShot() {
     }
   }
 
-  // TEMP DEBUG — remove after diagnosis. Runs the combo engine independently of the
-  // gate so we can see whether the ENGINE finds a combo vs whether the GATE blocked it.
-  var _dbgRaw = (cue && allTargets.length >= 2) ? findComboShot(cue, allTargets, STANDARD_POCKETS) : null;
-  var _dbg = '\n\n[DBG simple=' + simpleMode + ' best=' + bestShotOn
-    + ' cut=' + (_bd ? _bd.cut : 'NA') + ' blocked=' + (_bd ? _bd.blocked : 'NA')
-    + ' noDirect=' + _noDirect + ' tgts=' + allTargets.length
-    + ' rawCombo=' + (_dbgRaw ? _dbgRaw.difficulty + '/10' : 'NULL')
-    + ' gateCombo=' + (window._comboShot ? window._comboShot.difficulty + '/10' : 'NULL') + ']';
-
   if (pocketInfo) addBadge(geo,pocketInfo.label,'pocket-type');
   if (cutAngle!==null) {
     if (viewMode === 'overhead') {
@@ -3169,7 +3201,7 @@ function suggestShot() {
   else if (difficulty <= 6) plainHeadline = '⚖️ This is a moderate shot — focus and commit.\n\n';
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
-  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote + _dbg;
+  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote;
   sug.classList.add('show');
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
