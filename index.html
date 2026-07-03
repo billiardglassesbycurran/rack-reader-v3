@@ -2285,8 +2285,9 @@ function renderCanvas() {
     const spinOn = englishToggle && englishToggle.checked;
     const spin = spinOn ? (currentEnglish === 'stun' ? 'c' : currentEnglish) : 'c';
 
+    const spinBall = objs.find(o => o._rank === 0) || objs[0];
     const cx = cue.fx*W, cy = cue.fy*H;
-    const ox = objs[0].fx*W, oy = objs[0].fy*H;
+    const ox = spinBall.fx*W, oy = spinBall.fy*H;
     // If no pocket, use a perpendicular default for stun/center
     const px = pkt ? pkt.fx*W : ox + (oy - cy); // fallback: perpendicular to shot
     const py = pkt ? pkt.fy*H : oy - (ox - cx);
