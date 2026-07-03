@@ -19,6 +19,10 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500&display=swap');
 
+/* Hides advanced-only elements in Simple mode without disturbing their normal
+   display type (block rows, flex legend chips, etc.) when shown again. */
+.adv-hidden { display: none !important; }
+
 :root {
   --felt:        #0e2118;
   --felt-mid:    #122a1e;
@@ -1294,12 +1298,12 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
         <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
+        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
+        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
+        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
+        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
+        <span class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
       </div>
     </div>
 
@@ -2917,6 +2921,86 @@ function findBestShot(cue, targets, userPockets) {
 }
 
 /* ═══════════════════════════════════════════
+   COMBO SHOTS (Advanced only)
+   2-ball combo: cue strikes ball A, A drives ball B into a pocket.
+   Only surfaced when NO clear direct shot exists (best direct is blocked).
+   A combo is a fallback/escape, never a competitor to a direct shot.
+═══════════════════════════════════════════ */
+function comboLaneClear(ax, ay, bx, by, balls, ignore) {
+  // True if no ball (other than those in `ignore`) sits between (ax,ay) and (bx,by).
+  for (const o of balls) {
+    if (ignore.indexOf(o) !== -1) continue;
+    const d = pointToSegmentDist({fx:o.fx, fy:o.fy}, {fx:ax, fy:ay}, {fx:bx, fy:by});
+    if (d < BLOCK_THRESHOLD) {
+      const along = (o.fx-ax)*(bx-ax) + (o.fy-ay)*(by-ay);
+      const segLen2 = (bx-ax)**2 + (by-ay)**2;
+      const t = segLen2 > 0 ? along/segLen2 : -1;
+      if (t > 0.05 && t < 0.95) return false;
+    }
+  }
+  return true;
+}
+function angleBetweenVec(x1, y1, x2, y2) {
+  const l1 = Math.hypot(x1, y1), l2 = Math.hypot(x2, y2);
+  if (!l1 || !l2) return null;
+  const dot = (x1*x2 + y1*y2) / (l1*l2);
+  return Math.acos(Math.max(-1, Math.min(1, dot))) * 180 / Math.PI;
+}
+function comboBallDesc(m) {
+  if (m.type === 'eight') return 'the 8-ball';
+  if (m.type === 'stripe') return 'a stripe';
+  return 'a solid';
+}
+function comboPosHint(m) {
+  const h = m.fy < 0.4 ? 'top' : m.fy > 0.6 ? 'bottom' : 'middle';
+  const v = m.fx < 0.4 ? 'left' : m.fx > 0.6 ? 'right' : 'center';
+  return h + '-' + v;
+}
+// Returns the best 2-ball combo {ballA, ballB, pocket, ghostA, cutAB, cutCueA, difficulty} or null.
+function findComboShot(cue, targets, pockets) {
+  if (!cue || !targets || targets.length < 2) return null;
+  let best = null;
+  const twoR = BALL_RADIUS * 2;
+  for (const B of targets) {                 // ball we want to pocket
+    for (const P of pockets) {
+      const bpx = P.fx - B.fx, bpy = P.fy - B.fy;
+      const bpLen = Math.hypot(bpx, bpy);
+      if (bpLen < 0.02) continue;            // B already basically in the pocket
+      const dBPx = bpx/bpLen, dBPy = bpy/bpLen;
+      // B -> P lane must be clear (cue counts as a blocker; ignore B itself)
+      if (!comboLaneClear(B.fx, B.fy, P.fx, P.fy, targets.concat([cue]), [B])) continue;
+      // ghost point A must reach to drive B toward P
+      const gAx = B.fx - dBPx*twoR, gAy = B.fy - dBPy*twoR;
+      for (const A of targets) {             // ball the cue strikes first
+        if (A === B) continue;
+        const aInx = gAx - A.fx, aIny = gAy - A.fy;   // direction A must travel
+        if (Math.hypot(aInx, aIny) < 0.001) continue;
+        // cut angle at the A->B collision (A approach vs B departure)
+        const cutAB = angleBetweenVec(aInx, aIny, dBPx, dBPy);
+        if (cutAB === null || cutAB > 55) continue;   // too thin to reliably drive B
+        // A -> B lane clear (ignore A and B)
+        if (!comboLaneClear(A.fx, A.fy, B.fx, B.fy, targets.concat([cue]), [A, B])) continue;
+        // cue must send A toward the ghost point -> cut angle at A
+        const cueInx = A.fx - cue.fx, cueIny = A.fy - cue.fy;
+        const cutCueA = angleBetweenVec(cueInx, cueIny, aInx, aIny);
+        if (cutCueA === null || cutCueA > 65) continue;
+        // cue -> A lane clear (ignore A; B blocking this path kills the combo)
+        if (!comboLaneClear(cue.fx, cue.fy, A.fx, A.fy, targets, [A])) continue;
+        const dCueA = Math.hypot(cueInx, cueIny), dAB = dist(A, B), dBP = bpLen;
+        // Combos are inherently tough: two collisions compound aiming error.
+        let diff = 4 + cutAB/25 + cutCueA/45 + (dCueA + dAB + dBP)*1.4;
+        diff = Math.max(1, Math.min(10, Math.round(diff)));
+        const cand = { ballA:A, ballB:B, pocket:P, ghostA:{fx:gAx, fy:gAy},
+                       cutAB:Math.round(cutAB), cutCueA:Math.round(cutCueA), difficulty:diff };
+        if (!best || cand.difficulty < best.difficulty ||
+           (cand.difficulty === best.difficulty && cand.cutAB < best.cutAB)) best = cand;
+      }
+    }
+  }
+  return best;
+}
+
+/* ═══════════════════════════════════════════
    SHOT SUGGESTION
 ═══════════════════════════════════════════ */
 function suggestShot() {
@@ -2973,6 +3057,30 @@ function suggestShot() {
     cueToTarget=dist(cue,targetBall);
     if (pkt) { cutAngle=computeCutAngle(cue,targetBall,pkt); pocketInfo=getPocketType(pkt); }
     marks.forEach(m=>{ delete m._rank; });
+  }
+
+  // ── COMBO SHOTS (Advanced only) ──
+  // Surfaced ONLY when the best direct shot is blocked (no clear lane exists).
+  // A combo is an escape hatch, never shown alongside a makeable direct shot.
+  window._comboShot = null;
+  var comboNote = '';
+  if (!simpleMode && bestShotOn && window._bestShotResult
+      && window._bestShotResult.ranked.length > 0
+      && window._bestShotResult.ranked[0].blocked
+      && allTargets.length >= 2) {
+    var comboPockets = (userPockets && userPockets.length > 0) ? userPockets : STANDARD_POCKETS;
+    var combo = findComboShot(cue, allTargets, comboPockets);
+    if (combo && combo.difficulty <= 8) {
+      window._comboShot = combo;
+      var pkT = getPocketType(combo.pocket);
+      var pkLbl = (pkT ? pkT.label : 'pocket').toLowerCase();
+      comboNote = '\n\n🎯 COMBO OPTION (no clear direct shot): strike '
+        + comboBallDesc(combo.ballA) + ' (' + comboPosHint(combo.ballA) + ' area) so it drives '
+        + comboBallDesc(combo.ballB) + ' (' + comboPosHint(combo.ballB) + ' area) into the ' + pkLbl
+        + '. This is a fallback, not a high-percentage play \u2014 a combo compounds aiming error across two collisions ('
+        + combo.difficulty + '/10). Confirm hitting ' + comboBallDesc(combo.ballA)
+        + ' first is legal for your game before you commit.';
+    }
   }
 
   if (pocketInfo) addBadge(geo,pocketInfo.label,'pocket-type');
@@ -3050,7 +3158,7 @@ function suggestShot() {
   else if (difficulty <= 6) plainHeadline = '⚖️ This is a moderate shot — focus and commit.\n\n';
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
-  body.textContent = plainHeadline + advice + englishAdvice + safetyNote;
+  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote;
   sug.classList.add('show');
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
@@ -3302,7 +3410,7 @@ function toggleSimpleMode() {
 // and switching back to Advanced restores everything automatically.
 function applyAdvancedVisibility() {
   document.querySelectorAll('.adv-only').forEach(function(el){
-    el.style.display = simpleMode ? 'none' : '';
+    el.classList.toggle('adv-hidden', simpleMode);
   });
 }
 
