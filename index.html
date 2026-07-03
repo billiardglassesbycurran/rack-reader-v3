@@ -1228,8 +1228,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       </div>
       <div class="div"></div>
       <!-- AIMING AIDS -->
-      <div class="card-label" style="margin-top:4px">🎯 Aiming Aids</div>
-      <div class="autoscan-row">
+      <div class="card-label adv-only" style="margin-top:4px">🎯 Aiming Aids</div>
+      <div class="autoscan-row adv-only">
         <div>
           <div class="autoscan-label">🟡 Target Line</div>
           <div class="autoscan-desc">Aim line from cue tip through contact point to pocket</div>
@@ -2500,9 +2500,9 @@ function rangeWord(d) { return d<.22?'close-range':d<.5?'mid-range':'long-range'
    AIMING AIDS
 ═══════════════════════════════════════════ */
 function aimToggle(id) {
-  // In Simple mode, the three advanced aids never draw — even if their
-  // toggle is saved on. Target Line stays visible in Simple mode.
-  if (simpleMode && (id === 'aim-contactpoint' || id === 'aim-shaftedge' || id === 'aim-dtd')) {
+  // In Simple mode, the advanced aids never draw — even if their toggle is saved
+  // on. This keeps Simple view minimal: crown + ghost ball + cue→ball line only.
+  if (simpleMode && (id === 'aim-targetline' || id === 'aim-contactpoint' || id === 'aim-shaftedge' || id === 'aim-dtd')) {
     return false;
   }
   var el = document.getElementById(id);
