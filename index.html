@@ -2279,7 +2279,8 @@ function renderCanvas() {
 
   // ── CUE BALL PATH AFTER CONTACT (Spin Physics) ──
   // Only shown in Overhead View — perspective distortion makes it wrong in Player View
-  if (cue && objs.length > 0 && viewMode === 'overhead') {
+  // Hidden in Simple mode to keep the beginner view clean.
+  if (!simpleMode && cue && objs.length > 0 && viewMode === 'overhead') {
     const englishToggle = document.getElementById('english-toggle');
     const spinOn = englishToggle && englishToggle.checked;
     const spin = spinOn ? (currentEnglish === 'stun' ? 'c' : currentEnglish) : 'c';
