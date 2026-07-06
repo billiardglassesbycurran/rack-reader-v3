@@ -647,18 +647,20 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 
 /* ── HELP MODAL ── */
 .help-btn {
-  width: 32px; height: 32px;
-  border-radius: 50%;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 16px;
   background: rgba(200,151,46,.15);
   border: 1.5px solid var(--gold-dim);
   color: var(--gold);
   font-family: 'Playfair Display', serif;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
   transition: all .2s;
   flex-shrink: 0;
+  white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
 }
 .help-btn:hover { background: rgba(200,151,46,.3); border-color: var(--gold); }
@@ -1080,9 +1082,9 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">Custom AI · Live Shot Intelligence <span style="color:var(--gold-dim);opacity:.7">· V7.3.1152</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.6.1211</span></div>
       </div>
-      <button class="help-btn" onclick="toggleHelp()" title="Help">?</button>
+      <button class="help-btn" onclick="toggleHelp()" title="Help"><span style="font-size:15px">?</span> Help</button>
     </div>
   </header>
 
@@ -1114,15 +1116,77 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div class="still-badge" id="still-badge">STILL</div>
   </div>
 
+  <!-- STEP 1 HEADER -->
+  <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:4px 2px 8px;display:flex;align-items:center;gap:8px">
+    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">1</span> Take a picture of your table
+  </div>
+
   <!-- CAMERA CONTROLS -->
   <div class="cam-controls">
     <button class="btn btn-green" id="cam-btn" onclick="toggleCamera()" style="flex:1.1">📷 Start Camera</button>
     <button class="btn btn-scan"  id="scan-btn" onclick="triggerManualScan()" disabled style="flex:1.3">⚡ SCAN NOW</button>
     <button class="btn btn-ai"    id="ai-btn"   onclick="runDetection()" disabled style="flex:1.3">🤖 AI Detect</button>
-    <button class="btn btn-ghost" onclick="triggerUpload()" style="flex:.7">📁</button>
   </div>
+  <div style="display:flex;align-items:center;gap:10px;margin:9px 2px;color:var(--text-muted);font-size:12px;letter-spacing:2px">
+    <span style="flex:1;height:1px;background:var(--border)"></span>OR<span style="flex:1;height:1px;background:var(--border)"></span>
+  </div>
+  <button class="btn" onclick="triggerUpload()" style="width:100%;background:#13233a;color:#bcd4ff;border:1px solid #33507e">📁 Upload Photo</button>
   <input type="file" id="file-input" accept="image/*" style="display:none">
   <div id="upload-zone" style="display:none"></div>
+
+  <!-- VIEW: Simple / Advanced -->
+  <div style="display:flex;background:#0b1811;border:1px solid #40ceff;border-radius:22px;padding:3px;margin:12px 0 2px">
+    <div id="viewpill-simple" onclick="setSimpleView(true)"  style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;background:#40ceff;color:#06171f">✨ Simple</div>
+    <div id="viewpill-adv"    onclick="setSimpleView(false)" style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;color:#9fe4ff">Advanced</div>
+  </div>
+  <div style="text-align:center;font-size:11px;color:var(--text-muted);margin:5px 2px 2px;line-height:1.4">Switch to <span style="color:#9fe4ff;font-weight:600">Advanced</span> to unlock extra features &amp; settings below</div>
+
+  <!-- STEP 2: ALIGN TABLE -->
+  <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:14px 2px 8px;display:flex;align-items:center;gap:8px">
+    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">2</span> Line up the table
+  </div>
+  <button class="btn" onclick="startAlign()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff"><span style="font-size:16px">📐</span> Align Table <span style="opacity:.65;font-weight:400">— auto-place 6 pockets</span></button>
+
+    <!-- VIEW MODE -->
+    <div class="card adv-only" id="view-mode-card">
+      <div class="card-label">📐 Perspective Mode</div>
+      <div class="view-mode-bar">
+        <div class="view-mode-pill active" id="vmp-player" onclick="setViewMode('player')">
+          <span class="vmp-icon">
+            <!-- Cue stick at playing angle -->
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="2" y1="20" x2="18" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="19" cy="3" r="2" fill="currentColor" opacity=".6"/>
+              <circle cx="7" cy="16" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <circle cx="7" cy="16" r="1" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="vmp-label">Player View</span>
+        </div>
+        <div class="view-mode-pill" id="vmp-overhead" onclick="setViewMode('overhead')">
+          <span class="vmp-icon">
+            <!-- Pool table from above -->
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <rect x="4" y="6" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1" fill="none" opacity=".5"/>
+              <!-- Corner pockets -->
+              <circle cx="4" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="18" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="4" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="18" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
+              <!-- Side pockets -->
+              <circle cx="11" cy="4" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="11" cy="18" r="1.2" fill="currentColor" opacity=".8"/>
+              <!-- Ball -->
+              <circle cx="11" cy="11" r="2" fill="currentColor" opacity=".6"/>
+            </svg>
+          </span>
+          <span class="vmp-label">Overhead View</span>
+        </div>
+      </div>
+      <div class="view-mode-hint" id="view-mode-hint">Natural playing angle · geometry is advisory</div>
+    </div>
+
 
   <!-- STATUS -->
   <div class="status-strip">
@@ -1133,21 +1197,165 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   <!-- BODY -->
   <div class="body">
 
+    <!-- CANVAS -->
+    <div class="canvas-card" id="canvas-card">
+      <canvas id="main-canvas" style="display:none"></canvas>
+      <canvas id="minimap" width="260" height="260" style="position:fixed;width:132px;height:132px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.7);display:none;z-index:60;pointer-events:none;background:#06100a"></canvas>
+      <div class="canvas-placeholder" id="canvas-placeholder">
+        <div class="big">🎯</div>
+        <div>Captured frame appears here</div>
+      </div>
+      <div class="canvas-top-btns">
+        <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
+        <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
+        <div class="icon-btn" title="Discard frame" onclick="discardFrame()">✕</div>
+      </div>
+      <div class="capture-flash" id="capture-flash"></div>
+    </div>
+
+    <!-- COLOR LEGEND -->
+    <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
+        <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
+        <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
+        <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
+        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
+        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
+        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
+        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
+        <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
+      </div>
+    </div>
+
+    <!-- AI DETECTIONS -->
+    <div class="detections-box" id="detections-box">
+      <div class="det-title">🤖 AI Detected</div>
+      <div class="det-list" id="det-list"></div>
+      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
+    </div>
+
+    <!-- STEP 3: MARK / FIX BALLS — manual chips collapsed by default -->
+    <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:6px 2px 8px;display:flex;align-items:center;gap:8px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">3</span> Check the balls
+    </div>
+    <div class="card">
+      <div onclick="toggleManualMark()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+        <div class="card-label" style="margin:0"><span id="manual-mark-caret">▸</span> Mark / add balls manually</div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">optional</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin:5px 0 0;line-height:1.4">AI Detect places the balls for you — just <strong style="color:var(--cream)">tap any wrong one</strong> to fix it (Solid → Stripe → 8 → Cue). Open this only to add or place a ball by hand.</div>
+      <div id="manual-mark-body" style="display:none;margin-top:10px">
+      <div class="mark-row">
+        <div class="mark-chip active" data-mode="cue" onclick="setMode('cue')">
+          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#ffffff,#e8e0cc 50%,#c8b890);border:2px solid rgba(200,190,160,.5)"></div>Cue
+        </div>
+        <div class="mark-chip" data-mode="obj" onclick="setMode('obj')">
+          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#f07070,#cc1111 55%,#880000);border:2px solid #aa0000"></div>Solid
+        </div>
+        <div class="mark-chip" data-mode="stripe" onclick="setMode('stripe')">
+          <!-- Stripe ball: white with colored stripe through middle -->
+          <div class="chip-ball" style="
+            background: linear-gradient(
+              to bottom,
+              #f0e8d8 0%, #f0e8d8 30%,
+              #e07020 30%, #e07020 70%,
+              #f0e8d8 70%, #f0e8d8 100%
+            );
+            border:2px solid #c06010;
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.4), inset -2px -2px 4px rgba(0,0,0,0.3);
+          "></div>Stripe
+        </div>
+        <div class="mark-chip" data-mode="eight" onclick="setMode('eight')">
+          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#444,#111 55%,#000);border:2px solid #444;position:relative">
+            <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#fff;line-height:1">8</span>
+          </div>8-Ball
+        </div>
+        <div class="mark-chip" data-mode="pocket" onclick="setMode('pocket')" style="grid-column:span 4">
+          <!-- Pocket icon - dark circle like a table pocket -->
+          <div style="
+            width:22px;height:22px;border-radius:50%;
+            background:radial-gradient(circle at 40% 35%, #1a1a1a, #000000);
+            border:2px solid #4a3a20;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.9), 0 0 8px rgba(200,151,46,0.3);
+            flex-shrink:0;
+          "></div>Target Pocket
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- ENGLISH PANEL -->
+    <div class="english-panel card" id="english-panel" style="display:none">
+      <div class="card-label">&#127506; Cue Ball Contact Point</div>
+      <div class="english-wrap">
+        <div id="english-svg-wrap" onclick="openSpinPopup()" style="width:88px;height:88px;flex-shrink:0;cursor:pointer;border-radius:50%;transition:box-shadow .2s;box-shadow:0 0 0 2px rgba(200,151,46,0.3);" title="Tap to set spin"></div>
+        <div class="english-info">
+          <div class="english-name" id="english-name">Center Ball</div>
+          <div class="english-desc" id="english-desc">No spin — most accurate. Best for long shots and thin cuts.</div>
+          <button class="english-reset" onclick="openSpinPopup()">Tap to change spin &#8250;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME MODE + SUGGEST -->
+    <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:6px 2px 8px;display:flex;align-items:center;gap:8px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">4</span> Game &amp; shot
+    </div>
+    <div class="card">
+      <div class="card-label">Game Mode</div>
+      <div class="pills">
+        <div class="pill active" onclick="setGame('8ball',this)">8-Ball</div>
+        <div class="pill"        onclick="setGame('9ball',this)">9-Ball</div>
+        <div class="pill"        onclick="setGame('straight',this)">Straight</div>
+      </div>
+
+      <!-- GROUP FILTER (8-Ball only) -->
+      <div id="group-filter-wrap" style="margin-top:10px">
+        <div class="card-label" style="margin-bottom:7px">Which balls? · 8-Ball rules</div>
+        <div class="pills">
+          <div class="pill active" id="grp-all"     onclick="setGroupFilter('all',this)">All Balls</div>
+          <div class="pill"        id="grp-solids"  onclick="setGroupFilter('solids',this)">Solids</div>
+          <div class="pill"        id="grp-stripes" onclick="setGroupFilter('stripes',this)">Stripes</div>
+        </div>
+        <div id="group-filter-desc" style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:7px">
+          Crowning the easiest shot from any ball on the table.
+        </div>
+      </div>
+
+      <div class="div"></div>
+      <button class="btn btn-gold" onclick="suggestShot()" style="width:100%;font-size:14px;padding:11px">
+        🔍 Suggest Best Shot
+      </button>
+      <div class="suggestion" id="suggestion">
+        <div class="geo-badges" id="geo-badges"></div>
+        <div class="sug-title"  id="sug-title"></div>
+        <div class="sug-body"   id="sug-body"></div>
+        <div class="coaching-box" id="coaching-box"></div>
+      </div>
+    </div>
+
+
+    <!-- SETTINGS (moved below the workflow) -->
    <!-- AUTO-SCAN SETTINGS -->
     <div class="card">
-      <div class="card-label">Auto-Scan Settings</div>
-      <!-- SIMPLE MODE TOGGLE -->
+      <div class="card-label">Settings</div>
+      <!-- Simple/Advanced lives in the top pill now; keep the hidden state holder -->
+      <input type="checkbox" id="simplemode-toggle" checked style="display:none">
+      <!-- Best Shot — core setting, always visible, first -->
       <div class="autoscan-row">
         <div>
-          <div class="autoscan-label">✨ Simple View</div>
-          <div class="autoscan-desc">Shows only your best shot's lines — less clutter. Turn off for full detail on every ball.</div>
+          <div class="autoscan-label">&#11088; Auto-Evaluate Best Shot</div>
+          <div class="autoscan-desc">Scores every ball and crowns your easiest shot. Place pockets for sharper results.</div>
         </div>
         <label class="toggle">
-          <input type="checkbox" id="simplemode-toggle" checked onchange="toggleSimpleMode()">
+          <input type="checkbox" id="bestshot-toggle" checked>
           <div class="toggle-track"></div>
         </label>
       </div>
       <div class="div"></div>
+      <!-- Auto-scan only applies to the live camera — hidden for uploaded photos -->
+      <div id="autoscan-block" style="display:none">
       <div class="autoscan-row">
         <div>
           <div class="autoscan-label">Auto-scan when table goes still</div>
@@ -1181,18 +1389,19 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
           <div class="toggle-track"></div>
         </label>
       </div>
+      </div>
 
-      <div class="div"></div>
-      <div class="sens-row">
+      <div class="div adv-only"></div>
+      <div class="sens-row adv-only">
         <div class="sens-label">AI Confidence</div>
         <input type="range" id="conf-slider" min="10" max="80" value="35"
           oninput="document.getElementById('conf-val').textContent=this.value+'%';CONF_THRESHOLD=parseInt(this.value)/100">
         <div class="sens-val" id="conf-val">35%</div>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:3px;padding-left:80px">
+      <div class="adv-only" style="font-size:10px;color:var(--text-muted);margin-top:3px;padding-left:80px">
         Low = more detections · High = precise only
       </div>
-      <div class="div"></div>
+      <div class="div adv-only"></div>
      <div class="autoscan-row adv-only">
         <div>
           <div class="autoscan-label">&#127979; Coaching Mode</div>
@@ -1200,17 +1409,6 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         </div>
         <label class="toggle">
           <input type="checkbox" id="coaching-toggle">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="div"></div>
-      <div class="autoscan-row">
-        <div>
-          <div class="autoscan-label">&#11088; Auto-Evaluate Best Shot</div>
-          <div class="autoscan-desc">Scores every ball and crowns your easiest shot. Place pockets for sharper results.</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="bestshot-toggle" checked>
           <div class="toggle-track"></div>
         </label>
       </div>
@@ -1254,194 +1452,6 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
           <div class="toggle-track"></div>
         </label>
       </div>
-      <div class="div adv-only"></div>
-      <div class="autoscan-row adv-only">
-        <div>
-          <div class="autoscan-label">🔵 Shaft Edge Guide</div>
-          <div class="autoscan-desc">Shows which cue shaft edge to align for the cut angle</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="aim-shaftedge" onchange="renderCanvas()">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="div adv-only"></div>
-      <div class="autoscan-row adv-only">
-        <div>
-          <div class="autoscan-label">📐 Double-the-Distance</div>
-          <div class="autoscan-desc">DTD aim point marker for precise cut angle targeting</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="aim-dtd" onchange="renderCanvas()">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-    </div>
-
-    <!-- CANVAS -->
-    <div class="canvas-card" id="canvas-card">
-      <canvas id="main-canvas" style="display:none"></canvas>
-      <canvas id="minimap" width="260" height="260" style="position:fixed;width:132px;height:132px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.7);display:none;z-index:60;pointer-events:none;background:#06100a"></canvas>
-      <div class="canvas-placeholder" id="canvas-placeholder">
-        <div class="big">🎯</div>
-        <div>Captured frame appears here</div>
-      </div>
-      <div class="canvas-top-btns">
-        <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
-        <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
-        <div class="icon-btn" title="Discard frame" onclick="discardFrame()">✕</div>
-      </div>
-      <div class="capture-flash" id="capture-flash"></div>
-    </div>
-
-    <!-- COLOR LEGEND -->
-    <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
-        <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
-        <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
-        <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
-        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
-        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
-        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
-        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
-        <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
-      </div>
-    </div>
-
-    <!-- AI DETECTIONS -->
-    <div class="detections-box" id="detections-box">
-      <div class="det-title">🤖 AI Detected</div>
-      <div class="det-list" id="det-list"></div>
-      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
-    </div>
-
-    <!-- VIEW MODE -->
-    <div class="card" id="view-mode-card">
-      <div class="card-label">📐 Perspective Mode</div>
-      <div class="view-mode-bar">
-        <div class="view-mode-pill active" id="vmp-player" onclick="setViewMode('player')">
-          <span class="vmp-icon">
-            <!-- Cue stick at playing angle -->
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="2" y1="20" x2="18" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="19" cy="3" r="2" fill="currentColor" opacity=".6"/>
-              <circle cx="7" cy="16" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <circle cx="7" cy="16" r="1" fill="currentColor"/>
-            </svg>
-          </span>
-          <span class="vmp-label">Player View</span>
-        </div>
-        <div class="view-mode-pill" id="vmp-overhead" onclick="setViewMode('overhead')">
-          <span class="vmp-icon">
-            <!-- Pool table from above -->
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <rect x="4" y="6" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1" fill="none" opacity=".5"/>
-              <!-- Corner pockets -->
-              <circle cx="4" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="18" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="4" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="18" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
-              <!-- Side pockets -->
-              <circle cx="11" cy="4" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="11" cy="18" r="1.2" fill="currentColor" opacity=".8"/>
-              <!-- Ball -->
-              <circle cx="11" cy="11" r="2" fill="currentColor" opacity=".6"/>
-            </svg>
-          </span>
-          <span class="vmp-label">Overhead View</span>
-        </div>
-      </div>
-      <div class="view-mode-hint" id="view-mode-hint">Natural playing angle · geometry is advisory</div>
-    </div>
-
-    <!-- MARK BALLS -->
-    <div class="card">
-      <div class="card-label">Manual Mark — select type, tap canvas</div>
-      <div class="mark-row">
-        <div class="mark-chip active" data-mode="cue" onclick="setMode('cue')">
-          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#ffffff,#e8e0cc 50%,#c8b890);border:2px solid rgba(200,190,160,.5)"></div>Cue
-        </div>
-        <div class="mark-chip" data-mode="obj" onclick="setMode('obj')">
-          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#f07070,#cc1111 55%,#880000);border:2px solid #aa0000"></div>Solid
-        </div>
-        <div class="mark-chip" data-mode="stripe" onclick="setMode('stripe')">
-          <!-- Stripe ball: white with colored stripe through middle -->
-          <div class="chip-ball" style="
-            background: linear-gradient(
-              to bottom,
-              #f0e8d8 0%, #f0e8d8 30%,
-              #e07020 30%, #e07020 70%,
-              #f0e8d8 70%, #f0e8d8 100%
-            );
-            border:2px solid #c06010;
-            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.4), inset -2px -2px 4px rgba(0,0,0,0.3);
-          "></div>Stripe
-        </div>
-        <div class="mark-chip" data-mode="eight" onclick="setMode('eight')">
-          <div class="chip-ball" style="background:radial-gradient(circle at 35% 30%,#444,#111 55%,#000);border:2px solid #444;position:relative">
-            <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#fff;line-height:1">8</span>
-          </div>8-Ball
-        </div>
-        <div class="mark-chip" data-mode="pocket" onclick="setMode('pocket')" style="grid-column:span 4">
-          <!-- Pocket icon - dark circle like a table pocket -->
-          <div style="
-            width:22px;height:22px;border-radius:50%;
-            background:radial-gradient(circle at 40% 35%, #1a1a1a, #000000);
-            border:2px solid #4a3a20;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.9), 0 0 8px rgba(200,151,46,0.3);
-            flex-shrink:0;
-          "></div>Target Pocket
-        </div>
-      </div>
-    </div>
-
-    <!-- ENGLISH PANEL -->
-    <div class="english-panel card" id="english-panel" style="display:none">
-      <div class="card-label">&#127506; Cue Ball Contact Point</div>
-      <div class="english-wrap">
-        <div id="english-svg-wrap" onclick="openSpinPopup()" style="width:88px;height:88px;flex-shrink:0;cursor:pointer;border-radius:50%;transition:box-shadow .2s;box-shadow:0 0 0 2px rgba(200,151,46,0.3);" title="Tap to set spin"></div>
-        <div class="english-info">
-          <div class="english-name" id="english-name">Center Ball</div>
-          <div class="english-desc" id="english-desc">No spin — most accurate. Best for long shots and thin cuts.</div>
-          <button class="english-reset" onclick="openSpinPopup()">Tap to change spin &#8250;</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- GAME MODE + SUGGEST -->
-    <div class="card">
-      <div class="card-label">Game Mode</div>
-      <div class="pills">
-        <div class="pill active" onclick="setGame('8ball',this)">8-Ball</div>
-        <div class="pill"        onclick="setGame('9ball',this)">9-Ball</div>
-        <div class="pill"        onclick="setGame('straight',this)">Straight</div>
-      </div>
-
-      <!-- GROUP FILTER (8-Ball only) -->
-      <div id="group-filter-wrap" style="margin-top:10px">
-        <div class="card-label" style="margin-bottom:7px">Which balls? · 8-Ball rules</div>
-        <div class="pills">
-          <div class="pill active" id="grp-all"     onclick="setGroupFilter('all',this)">All Balls</div>
-          <div class="pill"        id="grp-solids"  onclick="setGroupFilter('solids',this)">Solids</div>
-          <div class="pill"        id="grp-stripes" onclick="setGroupFilter('stripes',this)">Stripes</div>
-        </div>
-        <div id="group-filter-desc" style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:7px">
-          Crowning the easiest shot from any ball on the table.
-        </div>
-      </div>
-
-      <div class="div"></div>
-      <button class="btn btn-gold" onclick="suggestShot()" style="width:100%;font-size:14px;padding:11px">
-        🔍 Suggest Best Shot
-      </button>
-      <div class="suggestion" id="suggestion">
-        <div class="geo-badges" id="geo-badges"></div>
-        <div class="sug-title"  id="sug-title"></div>
-        <div class="sug-body"   id="sug-body"></div>
-        <div class="coaching-box" id="coaching-box"></div>
-      </div>
     </div>
 
     <!-- FOOTER -->
@@ -1450,7 +1460,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div style="font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.7">
         Built by <strong style="color:var(--cream)">Adam &amp; Bill Curran</strong><br>
         William J. Curran &amp; Son Opticians &middot; Est. 1952<br>
-        Crafting custom billiard glasses for over 70 years<br>
+        Crafting Custom Billiard Glasses For Over 70 Years<br>
         <a href="https://www.billiardglasses.com" target="_blank" style="color:var(--gold);text-decoration:none">www.billiardglasses.com</a>
       </div>
       <div style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:.5px">
@@ -1460,8 +1470,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 
     <!-- STICKY ACTION BAR -->
     <div class="sticky-action-bar">
-      <button class="btn btn-ai ready" onclick="runDetection()">🤖 AI Detect</button>
-      <button class="btn btn-gold" onclick="suggestShot()">🔍 Suggest Best Shot</button>
+      <button class="btn btn-gold" onclick="suggestShot()" style="width:100%">🔍 Suggest Best Shot</button>
     </div>
 
 
@@ -1503,6 +1512,7 @@ let cameraOn      = false;
 let sourceImg     = null;
 let marks         = [];
 let markMode      = 'cue';
+let aligning      = false;
 let dragCtx       = null;
 let gameMode      = '8ball';
 let viewMode      = 'player'; // 'player' | 'overhead'
@@ -2053,6 +2063,7 @@ async function startCamera() {
     video.style.display = 'block';
     document.getElementById('cam-off-msg').style.display = 'none';
     document.getElementById('motion-bar-wrap').style.display = 'flex';
+    var asb = document.getElementById('autoscan-block'); if (asb) asb.style.display = 'block';
     cameraOn = true;
     camBtn.textContent = '⏹ Stop'; camBtn.className = 'btn btn-red';
     scanBtn.disabled = false;
@@ -2073,6 +2084,7 @@ function stopCamera() {
   video.style.display = 'none'; video.srcObject = null;
   document.getElementById('cam-off-msg').style.display = '';
   document.getElementById('motion-bar-wrap').style.display = 'none';
+  var asb = document.getElementById('autoscan-block'); if (asb) asb.style.display = 'none';
   document.getElementById('still-badge').classList.remove('show');
   document.getElementById('scan-overlay').classList.remove('active');
   cameraOn = false;
@@ -2155,7 +2167,7 @@ function captureFrame(mode) {
   tmp.getContext('2d').drawImage(video, 0, 0, vw, vh);
   const img = new Image();
   img.onload = () => {
-    sourceImg = img; marks = [];
+    sourceImg = img; marks = []; aligning = false; window._tableH = null;
     renderCanvas();
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
@@ -2200,7 +2212,7 @@ function loadImageFile(file) {
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
-    stopCamera(); sourceImg = img; marks = [];
+    stopCamera(); sourceImg = img; marks = []; aligning = false; window._tableH = null;
     renderCanvas();
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
@@ -2246,6 +2258,14 @@ function renderCanvas() {
   const cue  = marks.find(m => m.type === 'cue');
   const objs = marks.filter(m => m.type === 'obj' || m.type === 'eight' || m.type === 'stripe');
   const pkt  = marks.find(m => m.type === 'pocket');
+  // Map each ball to the pocket the engine actually chose for it. With several
+  // pockets marked (e.g. all 6 from Align Table), the aim/ghost/line must point
+  // at the RIGHT pocket, not just the first one in the list. Falls back to pkt.
+  const bestPktMap = new Map();
+  if (window._bestShotResult && window._bestShotResult.ranked) {
+    window._bestShotResult.ranked.forEach(r => { if (r && r.ball && r.pocket) bestPktMap.set(r.ball, r.pocket); });
+  }
+  const pocketFor = (ob) => bestPktMap.get(ob) || pkt;
 
   if (cue) {
     objs.forEach(ob => {
@@ -2256,6 +2276,7 @@ function renderCanvas() {
         const hasCrown = objs.some(o => o._rank === 0);
         if (hasCrown && ob._rank !== 0) return;
       }
+      const obPkt = pocketFor(ob);
       // When a combo is the recommended play, fade THIS crowned ball's dead
       // direct lines (the impossible best-direct) so the combo path drawn later
       // reads as dominant. Other balls' lines are untouched.
@@ -2268,11 +2289,21 @@ function renderCanvas() {
       ctx.save();
       ctx.setLineDash([8,5]); ctx.strokeStyle='rgba(200,151,46,'+aOrange+')';
       ctx.lineWidth=2.2; ctx.shadowColor='rgba(200,151,46,'+aOShadow+')'; ctx.shadowBlur=8;
-      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ox,oy); ctx.stroke();
+      // For the crowned ball (which shows a ghost ring), run the aim line to the
+      // GHOST-BALL CENTER — the dot inside the dotted ring — so the line lines up
+      // with exactly where you aim, not the object ball's center. Other balls keep
+      // pointing at their center.
+      let aimX = ox, aimY = oy;
+      if (obPkt && ob._rank === 0) {
+        const gpx = obPkt.fx*W - ox, gpy = obPkt.fy*H - oy;
+        const gpd = Math.hypot(gpx, gpy);
+        if (gpd > 0.0001) { aimX = ox - (gpx/gpd)*R*2; aimY = oy - (gpy/gpd)*R*2; }
+      }
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(aimX,aimY); ctx.stroke();
       ctx.restore();
-      if (pkt) {
-        const px = pkt.fx*W, py = pkt.fy*H;
-        const cutAngle = computeCutAngle(cue, ob, pkt);
+      if (obPkt) {
+        const px = obPkt.fx*W, py = obPkt.fy*H;
+        const cutAngle = computeCutAngle(cue, ob, obPkt);
         const baseCol = cutAngle < 30 ? '52,201,106' : cutAngle < 55 ? '224,136,32' : '204,34,34';
         const aPocket = dimDirect ? 0.15 : 0.7;
         // Object ball → pocket line (always shown)
@@ -2295,8 +2326,10 @@ function renderCanvas() {
     });
   }
 
-  // ── AIMING AIDS ──
-  drawAimingAids(ctx, cue, objs, pkt, R, W, H);
+  // ── AIMING AIDS ── (use the crowned ball's chosen pocket, not just the first)
+  const _crown = objs.find(o => o._rank === 0);
+  const _aimPkt = _crown ? pocketFor(_crown) : pkt;
+  drawAimingAids(ctx, cue, objs, _aimPkt, R, W, H);
 
 // ── CUE BALL PATH AFTER CONTACT (Spin Physics) ──
   // Only shown in Overhead View — perspective distortion makes it wrong in Player View
@@ -2493,7 +2526,46 @@ function renderCanvas() {
     vis('lg-hard',    adv && hasPkt);
   })();
 
+  // ── TABLE ALIGNMENT BOX ──
+  // Amber + dashed while you're still placing corners; solid green once all 4
+  // are down. Draws the quad outline, check-scanner L-brackets, and drag handles.
+  const _corners = marks.filter(m => m.type === 'corner').sort((a,b)=>a.idx-b.idx);
+  if (_corners.length > 0) {
+    const done = _corners.length >= 4;
+    const col = done ? '45,255,138' : '255,176,32';
+    const pts = _corners.map(c => ({ x:c.fx*W, y:c.fy*H }));
+    ctx.save();
+    // outline
+    ctx.strokeStyle = 'rgba('+col+',0.95)'; ctx.lineWidth = 2.5;
+    ctx.setLineDash(done ? [] : [8,5]);
+    ctx.beginPath();
+    pts.forEach((p,i)=> i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y));
+    if (done) ctx.closePath();
+    ctx.stroke();
+    // L-brackets at each corner (only meaningful once closed)
+    if (done) {
+      ctx.setLineDash([]); ctx.lineWidth = 4; ctx.lineCap = 'round';
+      const bl = Math.max(16, R*1.2);
+      pts.forEach((p,i)=>{
+        const nx = pts[(i+1)%4], pv = pts[(i+3)%4];
+        [nx, pv].forEach(t=>{
+          const dx=t.x-p.x, dy=t.y-p.y, d=Math.hypot(dx,dy)||1, L=Math.min(bl, d*0.3);
+          ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+dx/d*L, p.y+dy/d*L); ctx.stroke();
+        });
+      });
+    }
+    // drag handles
+    ctx.setLineDash([]); ctx.lineWidth = 1.5;
+    pts.forEach(p=>{
+      ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2);
+      ctx.fillStyle='rgba('+col+',1)'; ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.stroke();
+    });
+    ctx.restore();
+  }
+
   marks.forEach(m => {
+    if (m.type === 'corner') return;   // corners drawn by the alignment box above
     const x = m.fx*W, y = m.fy*H;
     ctx.save();
     // Pocket gets a larger tap target in Player View
@@ -2596,7 +2668,7 @@ function rangeWord(d) { return d<.22?'close-range':d<.5?'mid-range':'long-range'
 function aimToggle(id) {
   // In Simple mode, the advanced aids never draw — even if their toggle is saved
   // on. This keeps Simple view minimal: crown + ghost ball + cue→ball line only.
-  if (simpleMode && (id === 'aim-targetline' || id === 'aim-contactpoint' || id === 'aim-shaftedge' || id === 'aim-dtd')) {
+  if (simpleMode && (id === 'aim-targetline' || id === 'aim-contactpoint')) {
     return false;
   }
   var el = document.getElementById(id);
@@ -2624,9 +2696,6 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
   // = center of object ball minus R*2 along shot direction
   const contactX = ox - shotNx * R * 2;
   const contactY = oy - shotNy * R * 2;
-
-  // Cut angle for shaft edge / DTD calculations
-  const cutAngle = (px !== null) ? (computeCutAngle(cue, obj, pkt) || 0) : null;
 
   // ── 1. TARGET LINE ──
   if (aimToggle('aim-targetline') && px !== null) {
@@ -2807,136 +2876,6 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
     }
   }
 
-  // ── 3. SHAFT EDGE GUIDE ──
-  if (aimToggle('aim-shaftedge') && cutAngle !== null) {
-    ctx.save();
-    // Shaft width approximation — about 1.5x ball radius visually
-    const shaftW = R * 0.6;
-    // Perpendicular to shot direction
-    const perpX = -shotNy, perpY = shotNx;
-
-    // For cuts ≤ 13°: edge of shaft points AT contact point
-    // For cuts > 13°: edge points OUTSIDE contact point
-    // For cuts < 13° (very straight): edge points INSIDE
-    let edgeOffset = 0;
-    if (cutAngle <= 13) {
-      edgeOffset = shaftW * 0.5; // edge inside
-    } else {
-      edgeOffset = -shaftW * 0.5; // edge outside
-    }
-
-    // Draw shaft rectangle behind cue ball
-    const shaftLen = shotDist * 0.6;
-    const shaftStartX = cx - shotNx * shaftLen;
-    const shaftStartY = cy - shotNy * shaftLen;
-    const edgeShiftX = perpX * edgeOffset;
-    const edgeShiftY = perpY * edgeOffset;
-
-    // Draw two shaft edge lines
-    const e1x = edgeShiftX + perpX * shaftW / 2;
-    const e1y = edgeShiftY + perpY * shaftW / 2;
-    const e2x = edgeShiftX - perpX * shaftW / 2;
-    const e2y = edgeShiftY - perpY * shaftW / 2;
-
-    // Shaft fill
-    ctx.beginPath();
-    ctx.moveTo(shaftStartX + e1x, shaftStartY + e1y);
-    ctx.lineTo(cx + e1x, cy + e1y);
-    ctx.lineTo(cx + e2x, cy + e2y);
-    ctx.lineTo(shaftStartX + e2x, shaftStartY + e2y);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(205, 160, 80, 0.2)';
-    ctx.strokeStyle = 'rgba(205, 160, 80, 0.7)';
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([]);
-    ctx.fill();
-    ctx.stroke();
-
-    // Highlight the active edge (the one that points at contact)
-    const activeEdgeX = cx + (cutAngle <= 13 ? e1x : e2x);
-    const activeEdgeY = cy + (cutAngle <= 13 ? e1y : e2y);
-    const startEdgeX = shaftStartX + (cutAngle <= 13 ? e1x : e2x);
-    const startEdgeY = shaftStartY + (cutAngle <= 13 ? e1y : e2y);
-    ctx.beginPath();
-    ctx.moveTo(startEdgeX, startEdgeY);
-    ctx.lineTo(activeEdgeX, activeEdgeY);
-    ctx.strokeStyle = 'rgba(100, 180, 255, 0.95)';
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = 'rgba(100, 180, 255, 0.6)';
-    ctx.shadowBlur = 8;
-    ctx.stroke();
-
-    // Label
-    const labelText = cutAngle <= 13 ? 'Edge → Contact' : cutAngle > 13 ? 'Edge Outside' : 'Edge Inside';
-    ctx.font = `bold ${Math.round(R * 0.7)}px Barlow Condensed, sans-serif`;
-    ctx.fillStyle = 'rgba(100, 180, 255, 0.9)';
-    ctx.shadowBlur = 0;
-    ctx.textAlign = 'center';
-    ctx.fillText(labelText, (shaftStartX + cx) / 2 + perpX * shaftW * 2, (shaftStartY + cy) / 2 + perpY * shaftW * 2);
-    ctx.restore();
-  }
-
-  // ── 4. DOUBLE-THE-DISTANCE (DTD) ──
-  if (aimToggle('aim-dtd') && cutAngle !== null && px !== null) {
-    ctx.save();
-
-    // Contact point vector from object ball center
-    const cpDx = contactX - ox, cpDy = contactY - oy;
-    const cpDist = Math.hypot(cpDx, cpDy);
-
-    let dtdX, dtdY;
-    if (cutAngle <= 45) {
-      // Up to half ball: DTD from OB CENTER to contact point, doubled
-      dtdX = ox + cpDx * 2;
-      dtdY = oy + cpDy * 2;
-    } else {
-      // Thinner than half ball: DTD from OB EDGE to contact point, doubled
-      const edgeX = ox + (cpDx / cpDist) * R;
-      const edgeY = oy + (cpDy / cpDist) * R;
-      dtdX = edgeX + (contactX - edgeX) * 2;
-      dtdY = edgeY + (contactY - edgeY) * 2;
-    }
-
-    // Draw DTD aim point marker
-    const dtdR = R * 0.7;
-    ctx.beginPath();
-    ctx.arc(dtdX, dtdY, dtdR, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(45, 255, 138, 0.9)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([]);
-    ctx.shadowColor = 'rgba(45, 255, 138, 0.5)';
-    ctx.shadowBlur = 10;
-    ctx.stroke();
-
-    // Inner plus
-    ctx.beginPath();
-    ctx.moveTo(dtdX - dtdR * 0.5, dtdY);
-    ctx.lineTo(dtdX + dtdR * 0.5, dtdY);
-    ctx.moveTo(dtdX, dtdY - dtdR * 0.5);
-    ctx.lineTo(dtdX, dtdY + dtdR * 0.5);
-    ctx.strokeStyle = 'rgba(45, 255, 138, 0.9)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Line from cue ball center to DTD point
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(dtdX, dtdY);
-    ctx.strokeStyle = 'rgba(45, 255, 138, 0.4)';
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([4, 4]);
-    ctx.shadowBlur = 0;
-    ctx.stroke();
-
-    // DTD label
-    const dtdLabel = cutAngle <= 45 ? 'DTD Aim Point' : 'DTD (thin cut)';
-    ctx.font = `bold ${Math.round(R * 0.7)}px Barlow Condensed, sans-serif`;
-    ctx.fillStyle = 'rgba(45, 255, 138, 0.9)';
-    ctx.textAlign = 'center';
-    ctx.setLineDash([]);
-    ctx.fillText(dtdLabel, dtdX, dtdY - dtdR - 4);
-    ctx.restore();
-  }
 }
 
 /* ═══════════════════════════════════════════
@@ -2946,6 +2885,87 @@ const STANDARD_POCKETS = [
   {fx:0.04, fy:0.04}, {fx:0.50, fy:0.03}, {fx:0.96, fy:0.04},
   {fx:0.04, fy:0.96}, {fx:0.50, fy:0.97}, {fx:0.96, fy:0.96}
 ];
+
+/* ═══════════════════════════════════════════
+   TABLE ALIGNMENT — perspective (homography)
+   Maps the canonical unit square (a true top-down table) to the 4 table
+   corners in the photo. Works for any quad: rectangle (overhead) or
+   trapezoid (player angle). Validated against known perspectives.
+═══════════════════════════════════════════ */
+function computeHomography(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const x = src[i].x, y = src[i].y, u = dst[i].x, v = dst[i].y;
+    A.push([x, y, 1, 0, 0, 0, -u*x, -u*y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v*x, -v*y]); b.push(v);
+  }
+  const n = 8;
+  for (let col = 0; col < n; col++) {
+    let piv = col;
+    for (let r = col+1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+    [A[col], A[piv]] = [A[piv], A[col]]; [b[col], b[piv]] = [b[piv], b[col]];
+    const d = A[col][col];
+    if (Math.abs(d) < 1e-12) return null;
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const f = A[r][col] / d;
+      for (let c = col; c < n; c++) A[r][c] -= f * A[col][c];
+      b[r] -= f * b[col];
+    }
+  }
+  const h = [];
+  for (let i = 0; i < n; i++) h.push(b[i] / A[i][i]);
+  h.push(1);
+  return h;
+}
+function applyHomography(h, x, y) {
+  const w = h[6]*x + h[7]*y + h[8];
+  return { x: (h[0]*x + h[1]*y + h[2]) / w, y: (h[3]*x + h[4]*y + h[5]) / w };
+}
+// Recompute the homography from the 4 placed corners and (Option A) replace
+// all pockets with a fresh, correct 6 — the 4 corners plus 2 perspective-
+// correct side pockets on whichever pair of rails is longer.
+function rebuildFromCorners() {
+  const corners = marks.filter(m => m.type === 'corner').sort((a,b)=>a.idx-b.idx);
+  if (corners.length < 4 || !canvas.width) return;
+  const W = canvas.width, H = canvas.height;
+  const dst = corners.map(c => ({ x: c.fx*W, y: c.fy*H }));
+  const canon = [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
+  const Hm = computeHomography(canon, dst);
+  window._tableH = Hm;
+  if (!Hm) { setStatus('Corners are too skewed to align — spread them out','warn'); return; }
+  // Replace the box's own pockets (a corner moved → rebuild them). Pockets the
+  // user hand-placed AFTER aligning are kept — Option A's full clean slate
+  // happens once, at startAlign time.
+  marks = marks.filter(m => !(m.type === 'pocket' && m.fromBox));
+  const add = (x,y) => marks.push({ type:'pocket', fx:x/W, fy:y/H, fromBox:true });
+  dst.forEach(p => add(p.x, p.y));                        // 4 corner pockets
+  // side pockets on the LONGER pair of rails (orientation-aware)
+  const topLen  = Math.hypot(dst[1].x-dst[0].x, dst[1].y-dst[0].y);
+  const leftLen = Math.hypot(dst[3].x-dst[0].x, dst[3].y-dst[0].y);
+  const s = (topLen >= leftLen)
+    ? [applyHomography(Hm,0.5,0), applyHomography(Hm,0.5,1)]
+    : [applyHomography(Hm,0,0.5), applyHomography(Hm,1,0.5)];
+  s.forEach(p => add(p.x, p.y));
+  renderCanvas();
+}
+function startAlign() {
+  if (!sourceImg) { setStatus('Load or capture a photo first','warn'); return; }
+  // Option A: aligning starts a clean slate — old pockets and any old box go.
+  marks = marks.filter(m => m.type !== 'corner' && m.type !== 'pocket');
+  window._tableH = null;
+  aligning = true;
+  renderCanvas(); hideSuggestion();
+  setStatus('Align: tap the TOP-LEFT corner of the table (1 of 4)','gold');
+}
+function clearAlign() {
+  marks = marks.filter(m => m.type !== 'corner');
+  aligning = false;
+  window._tableH = null;
+  renderCanvas();
+  setStatus('Alignment cleared','gold');
+}
+
 
 // ── Geometry: distance from a ball to the target→pocket line ──
 function pointToSegmentDist(p, a, b) {
@@ -3105,6 +3125,12 @@ function suggestShot() {
   const geo=document.getElementById('geo-badges');
   geo.innerHTML=''; hideSuggestion();
 
+  if (!sourceImg) {
+    titl.textContent = 'Take a Picture First';
+    body.textContent = 'Start the camera or tap 📁 Upload Photo to load your table — then Suggest Best Shot can read the shot.';
+    sug.classList.add('show'); return;
+  }
+
   if (!cue) {
     titl.textContent='Mark the Cue Ball First';
     body.textContent='Tap the canvas to place the cue ball marker (C) — the app needs to know where you\'re shooting from before it can read the shot.';
@@ -3122,6 +3148,12 @@ function suggestShot() {
     allTargets = stripesOnly.length > 0 ? stripesOnly : (eight ? [eight] : []);
   } else {
     allTargets = [...objs, ...(eight ? [eight] : [])];
+  }
+
+  if (!allTargets || allTargets.length === 0) {
+    titl.textContent = 'No Balls to Aim At';
+    body.textContent = 'Mark at least one object ball — or tap 🤖 AI Detect to find them automatically — so the app has a target to read.';
+    sug.classList.add('show'); return;
   }
   let targetBall=null,cutAngle=null,pocketInfo=null,cueToTarget=null;
 
@@ -3379,7 +3411,7 @@ function placeMarkAt(mode, fx, fy) {
   }
   if (mode !== 'pocket') {
     const RR = 0.035;
-    for (let i=marks.length-1;i>=0;i--){ const m=marks[i]; if(m.type==='pocket')continue; if(Math.hypot(m.fx-fx,m.fy-fy)<RR) marks.splice(i,1); }
+    for (let i=marks.length-1;i>=0;i--){ const m=marks[i]; if(m.type==='pocket'||m.type==='corner')continue; if(Math.hypot(m.fx-fx,m.fy-fy)<RR) marks.splice(i,1); }
   }
   const nm = { type: mode, fx, fy };
   marks.push(nm);
@@ -3391,23 +3423,33 @@ function placeMarkAt(mode, fx, fy) {
   return nm;
 }
 
-// A quick tap (no drag): cue→spin, object ball→cycle type, empty felt→place.
+// A quick tap (no drag): cue→spin (when spin is on), otherwise cycle the ball's type.
+// Cycle: Solid → Stripe → 8 → Cue → Solid. Cue is only entered when no other cue
+// exists, so you can never create two cue balls. Empty felt → place a new mark.
+function nextBallType(m) {
+  if (m.type === 'obj')    return 'stripe';
+  if (m.type === 'stripe') return 'eight';
+  if (m.type === 'eight')  return marks.some(o => o !== m && o.type === 'cue') ? 'obj' : 'cue';
+  if (m.type === 'cue')    return 'obj';
+  return 'obj';
+}
 function handleTap(fx, fy) {
   const R = Math.max(9, Math.min(canvas.width, canvas.height) * 0.027);
   const tapX = fx*canvas.width, tapY = fy*canvas.height;
-  const cueMark = marks.find(m => m.type === 'cue');
-  if (cueMark && markMode !== 'cue') {
-    if (Math.hypot(tapX - cueMark.fx*canvas.width, tapY - cueMark.fy*canvas.height) < R*2.2) { openSpinPopup(); return; }
-  }
+  const englishEl = document.getElementById('english-toggle');
+  const englishOn = !!(englishEl && englishEl.checked);
   for (let i = marks.length-1; i>=0; i--) {
     const m = marks[i];
-    if (m.type !== 'obj' && m.type !== 'stripe' && m.type !== 'eight') continue;
-    if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < R*1.6) {
-      const nextType = { obj:'stripe', stripe:'eight', eight:'obj' };
-      m.type = nextType[m.type]; delete m._rank;
+    if (m.type === 'pocket' || m.type === 'corner') continue;
+    const hitR = (m.type === 'cue') ? R*2.2 : R*1.6;
+    if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < hitR) {
+      // Tapping the cue opens spin ONLY when English/Spin is on; otherwise it cycles.
+      if (m.type === 'cue' && englishOn) { openSpinPopup(); return; }
+      const newType = nextBallType(m);
+      m.type = newType; delete m._rank;
       renderCanvas(); hideSuggestion();
-      const nm = { obj:'Solid', stripe:'Stripe', eight:'8-ball' };
-      setStatus('Changed to '+nm[m.type]+' — tap again to cycle (Solid → Stripe → 8)','gold');
+      const nm = { obj:'Solid', stripe:'Stripe', eight:'8-ball', cue:'Cue ball' };
+      setStatus('Changed to ' + nm[newType] + ' — tap again to cycle (Solid → Stripe → 8 → Cue)', 'gold');
       return;
     }
   }
@@ -3453,13 +3495,38 @@ canvas.addEventListener('pointerdown', function(e) {
   const rect = canvas.getBoundingClientRect();
   const fx = ((e.clientX-rect.left)*(canvas.width/rect.width))/canvas.width;
   const fy = ((e.clientY-rect.top)*(canvas.height/rect.height))/canvas.height;
+
+  // ALIGN MODE: taps drop the 4 table corners in order (TL, TR, BR, BL).
+  if (aligning) {
+    const idx = marks.filter(m => m.type === 'corner').length;
+    marks.push({ type:'corner', idx, fx, fy });
+    if (idx + 1 >= 4) {
+      aligning = false;
+      rebuildFromCorners();
+      setStatus('✓ Table aligned — 6 pockets placed. Drag any corner to fine-tune.','live');
+    } else {
+      const names = ['TOP-LEFT','TOP-RIGHT','BOTTOM-RIGHT','BOTTOM-LEFT'];
+      renderCanvas();
+      setStatus('Align: tap the '+names[idx+1]+' corner ('+(idx+2)+' of 4)','gold');
+    }
+    return;
+  }
+
   const R = Math.max(9, Math.min(canvas.width, canvas.height) * 0.027);
   // Topmost existing mark under the finger → candidate to drag-move.
+  // Corners get priority: a corner pocket sits on top of its corner, so without
+  // this you could never grab the corner to re-align.
   let hit = null;
-  for (let i = marks.length - 1; i >= 0; i--) {
-    const m = marks[i];
-    const hitR = (m.type === 'cue') ? R*2.2 : (m.type === 'pocket') ? R*2 : R*1.6;
-    if (Math.hypot(fx*canvas.width - m.fx*canvas.width, fy*canvas.height - m.fy*canvas.height) < hitR) { hit = m; break; }
+  for (const m of marks) {
+    if (m.type !== 'corner') continue;
+    if (Math.hypot(fx*canvas.width - m.fx*canvas.width, fy*canvas.height - m.fy*canvas.height) < R*2) hit = m;
+  }
+  if (!hit) {
+    for (let i = marks.length - 1; i >= 0; i--) {
+      const m = marks[i];
+      const hitR = (m.type === 'cue') ? R*2.2 : (m.type === 'pocket') ? R*2 : R*1.6;
+      if (Math.hypot(fx*canvas.width - m.fx*canvas.width, fy*canvas.height - m.fy*canvas.height) < hitR) { hit = m; break; }
+    }
   }
   dragCtx = { startFx: fx, startFy: fy, startPx: e.clientX, startPy: e.clientY,
               mark: hit, isNew: !hit, moved: false, pointerId: e.pointerId };
@@ -3493,9 +3560,12 @@ function endDrag(e) {
   try { canvas.releasePointerCapture(d.pointerId); } catch(_) {}
   hideMiniMap();
   if (d.moved) {
-    renderCanvas(); hideSuggestion();
-    const names={cue:'Cue ball',obj:'Solid ball',eight:'8-ball',stripe:'Stripe ball',pocket:'Pocket'};
-    if (d.mark) setStatus((names[d.mark.type]||'Ball')+' moved — '+marks.length+' mark(s)','gold');
+    if (d.mark && d.mark.type === 'corner') { rebuildFromCorners(); setStatus('Corner moved — pockets updated','gold'); }
+    else {
+      renderCanvas(); hideSuggestion();
+      const names={cue:'Cue ball',obj:'Solid ball',eight:'8-ball',stripe:'Stripe ball',pocket:'Pocket'};
+      if (d.mark) setStatus((names[d.mark.type]||'Ball')+' moved — '+marks.length+' mark(s)','gold');
+    }
   } else if (e && e.type === 'pointerup') {
     handleTap(d.startFx, d.startFy);
   }
@@ -3539,7 +3609,7 @@ function updateGroupFilterDesc() {
   if (!desc) return;
   var autoEval = document.getElementById('bestshot-toggle');
   if (autoEval && !autoEval.checked) {
-    desc.textContent = 'Turn on Auto-Evaluate Best Shot (in Auto-Scan Settings) to see the crown.';
+    desc.textContent = 'Turn on Auto-Evaluate Best Shot (in Settings) to see the crown.';
     return;
   }
   if (groupFilter === 'solids') {
@@ -3575,9 +3645,35 @@ function setViewMode(mode) {
 function toggleSimpleMode() {
   var t = document.getElementById('simplemode-toggle');
   simpleMode = t ? t.checked : true;
+  syncViewPills();
   applyAdvancedVisibility();
   if (sourceImg) renderCanvas();
   saveSettings();
+}
+function syncViewPills() {
+  var ps = document.getElementById('viewpill-simple'), pa = document.getElementById('viewpill-adv');
+  if (!ps || !pa) return;
+  if (simpleMode) {
+    ps.style.background = '#40ceff'; ps.style.color = '#06171f';
+    pa.style.background = 'transparent'; pa.style.color = '#9fe4ff';
+  } else {
+    pa.style.background = '#40ceff'; pa.style.color = '#06171f';
+    ps.style.background = 'transparent'; ps.style.color = '#9fe4ff';
+  }
+}
+// Top Simple/Advanced pill → drives the same state as the settings toggle.
+function setSimpleView(simple) {
+  var t = document.getElementById('simplemode-toggle');
+  if (t) t.checked = simple;
+  toggleSimpleMode();
+}
+// Collapsible manual-marking chips (collapsed by default — AI + tap-to-fix is the main path).
+function toggleManualMark() {
+  var b = document.getElementById('manual-mark-body'), c = document.getElementById('manual-mark-caret');
+  if (!b) return;
+  var open = b.style.display !== 'none';
+  b.style.display = open ? 'none' : 'block';
+  if (c) c.textContent = open ? '▸' : '▾';
 }
 
 // Show/hide the advanced-only rows. In Simple mode the rows are hidden;
@@ -3591,19 +3687,39 @@ function applyAdvancedVisibility() {
 }
 
 function undoMark() {
+  if (aligning) {
+    // Mid-alignment: undo removes the last placed corner (or exits align mode).
+    const cs = marks.filter(m=>m.type==='corner');
+    if (cs.length) { marks.splice(marks.indexOf(cs[cs.length-1]), 1); }
+    if (!marks.some(m=>m.type==='corner')) { aligning = false; setStatus('Alignment cancelled',''); }
+    else setStatus('Corner removed — '+marks.filter(m=>m.type==='corner').length+' of 4 placed','gold');
+    if (sourceImg) renderCanvas(); hideSuggestion();
+    return;
+  }
   if (!marks.length) return;
-  marks.pop(); if (sourceImg) renderCanvas(); hideSuggestion();
-  setStatus(marks.length?marks.length+' mark(s) remaining':'All marks removed','');
+  const last = marks[marks.length-1];
+  if (last.type === 'corner' || last.fromBox) {
+    // Undoing the alignment: remove the whole box + its auto-pockets as one unit,
+    // so we never leave a half-broken 3-corner box or 5 auto-pockets behind.
+    marks = marks.filter(m => m.type !== 'corner' && !m.fromBox);
+    window._tableH = null;
+    setStatus('Table alignment removed','gold');
+  } else {
+    marks.pop();
+    setStatus(marks.length?marks.length+' mark(s) remaining':'All marks removed','');
+  }
+  if (sourceImg) renderCanvas(); hideSuggestion();
 }
 
 function clearMarks() {
-  marks=[]; if (sourceImg) renderCanvas(); hideSuggestion();
+  marks=[]; aligning=false; window._tableH=null;
+  if (sourceImg) renderCanvas(); hideSuggestion();
   document.getElementById('detections-box').classList.remove('show');
   setStatus('Marks cleared','');
 }
 
 function discardFrame() {
-  marks=[]; sourceImg=null;
+  marks=[]; sourceImg=null; aligning=false; window._tableH=null;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   canvas.style.display='none'; placeholder.style.display='';
   document.getElementById('detections-box').classList.remove('show');
@@ -3918,9 +4034,7 @@ function saveSettings() {
       viewMode:  viewMode,
       spin:      currentEnglish,
       aimTarget: document.getElementById('aim-targetline').checked,
-      aimContact:document.getElementById('aim-contactpoint').checked,
-      aimShaft:  document.getElementById('aim-shaftedge').checked,
-      aimDtd:    document.getElementById('aim-dtd').checked
+      aimContact:document.getElementById('aim-contactpoint').checked
     }));
   } catch(e) {}
 }
@@ -3950,8 +4064,6 @@ function loadSettings() {
     if (s.spin) { currentEnglish = s.spin; }
     if (s.aimTarget  !== undefined) document.getElementById('aim-targetline').checked   = s.aimTarget;
     if (s.aimContact !== undefined) document.getElementById('aim-contactpoint').checked = s.aimContact;
-    if (s.aimShaft   !== undefined) document.getElementById('aim-shaftedge').checked    = s.aimShaft;
-    if (s.aimDtd     !== undefined) document.getElementById('aim-dtd').checked          = s.aimDtd;
   } catch(e) {}
 }
 
@@ -4067,6 +4179,7 @@ try {
   updateGroupFilterVisibility();
   updateGroupFilterDesc();
   applyAdvancedVisibility();
+  syncViewPills();
   
 } catch(e) {
   console.error('DEBUG: Init crashed:', e.message, e.stack);
@@ -4102,7 +4215,7 @@ try {
         <div class="help-section-title">🚀 Quick Start</div>
         <div class="help-item">
           <div class="help-icon">1️⃣</div>
-          <div><div class="help-item-title">Get a picture of the table</div><div class="help-item-desc">Tap <strong>Start Camera</strong> and point at the table, or tap the <strong>📁 folder</strong> button to upload a photo from your phone.</div></div>
+          <div><div class="help-item-title">Take a picture of your table</div><div class="help-item-desc">Tap <strong>Start Camera</strong> and point at the table, or tap <strong>📁 Upload Photo</strong> to pick one from your phone.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">2️⃣</div>
@@ -4124,16 +4237,16 @@ try {
       <div class="help-section" style="margin-top:16px">
         <div class="help-section-title">✨ Simple vs Advanced</div>
         <div class="help-item">
-          <div class="help-icon">🏊</div>
-          <div><div class="help-item-title">Start in the shallow end</div><div class="help-item-desc">The app opens in <strong>Simple View</strong> every time. It shows only what a beginner needs: your best ball (the green crown), where to aim (the dotted ring), and the line from your cue. Nothing else to distract you.</div></div>
+          <div class="help-icon">🎯</div>
+          <div><div class="help-item-title">Simple View — just the essentials</div><div class="help-item-desc">The app always opens in <strong>Simple View</strong>. It shows only what you need to make the ball: the crowned best shot, the ghost-ball aim ring, and your cue line — a clean read with nothing extra to sort through.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🤿</div>
-          <div><div class="help-item-title">Graduate to the deep end</div><div class="help-item-desc">Turn <strong>Simple View</strong> off (in Auto-Scan Settings) to unlock Advanced: every ball's lines, cut-angle colors, spin control, coaching, combo shots, and all the aiming aids. Turn it back on any time to de-clutter.</div></div>
+          <div class="help-icon">📊</div>
+          <div><div class="help-item-title">Advanced View — the full read</div><div class="help-item-desc">Switch to <strong>Advanced</strong> for the complete picture: every ball's lines, cut-angle color coding, English (spin) control, coaching notes, combo shots, and all aiming aids. Drop back to Simple any time for a clean table.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🔄</div>
-          <div><div class="help-item-title">It resets each visit</div><div class="help-item-desc">Simple View comes back on every time you open the app, so beginners are never dropped into a wall of lines. Advanced is a choice you make each session.</div></div>
+          <div><div class="help-item-title">Resets to Simple each visit</div><div class="help-item-desc">The app returns to Simple View every time you open it, so you always start with a clean, uncluttered read. Advanced is a choice you opt into per session.</div></div>
         </div>
       </div>
 
@@ -4178,7 +4291,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">✋</div>
-          <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — especially at an angle or in tricky lighting. No problem: just <strong>tap the ball</strong> and it cycles through Solid → Stripe → 8-ball → Solid until it's right. No re-scan needed.</div></div>
+          <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — or even the cue ball — especially at an angle or in tricky lighting. No problem: just <strong>tap the ball</strong> and it cycles Solid → Stripe → 8-ball → Cue until it's right. No re-scan needed. (The cue slot is skipped if you already have a cue on the table.)</div></div>
         </div>
       </div>
       <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good light. If the AI misses balls, lower the confidence slider or mark them by hand.</div>
@@ -4193,7 +4306,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🔴</div>
-          <div><div class="help-item-title">Solid &amp; Stripe</div><div class="help-item-desc">Pick the type, then tap the felt to place a ball. Already placed one that's the wrong type? Just <strong>tap it</strong> to cycle Solid → Stripe → 8-ball.</div></div>
+          <div><div class="help-item-title">Solid &amp; Stripe</div><div class="help-item-desc">Pick the type, then tap the felt to place a ball. Already placed one that's the wrong type? Just <strong>tap it</strong> to cycle Solid → Stripe → 8-ball → Cue.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🔍</div>
@@ -4223,7 +4336,7 @@ try {
         <div class="help-section-title">⭐ Best Shot Finder</div>
         <div class="help-item">
           <div class="help-icon">⭐</div>
-          <div><div class="help-item-title">Auto-Evaluate Best Shot</div><div class="help-item-desc">Turn this on (in Auto-Scan Settings) and the app scores every ball on the table, then crowns your easiest shot.</div></div>
+          <div><div class="help-item-title">Auto-Evaluate Best Shot</div><div class="help-item-desc">Turn this on (in Settings) and the app scores every ball on the table, then crowns your easiest shot.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🟢</div>
@@ -4279,14 +4392,6 @@ try {
         <div class="help-item">
           <div class="help-icon">🎯</div>
           <div><div class="help-item-title">Contact Point</div><div class="help-item-desc">Puts a crosshair on the exact spot where the cue ball should strike the object ball.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">🔵</div>
-          <div><div class="help-item-title">Shaft Edge Guide</div><div class="help-item-desc">Shows which edge of your cue shaft to line up for the cut — a real aiming system used by serious players.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">📐</div>
-          <div><div class="help-item-title">Double-the-Distance</div><div class="help-item-desc">Marks a precise aim point using the double-the-distance method for tricky cut angles.</div></div>
         </div>
       </div>
       <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they're the easiest to read.</div>
@@ -4344,6 +4449,10 @@ try {
           <div><div class="help-item-title">Why an optical shop built this</div><div class="help-item-desc">We make custom prescription <strong>billiard glasses</strong> for players who look up at a table all night. Helping you see the table clearly and read your next shot is the same mission — just taken one step further.</div></div>
         </div>
         <div class="help-item">
+          <div class="help-icon">🏆</div>
+          <div><div class="help-item-title">Trusted at every level</div><div class="help-item-desc">From weekend league players to touring professionals like <strong>Karen Corr</strong>, <strong>Robin Dobson</strong>, and <strong>Brian &lsquo;Superman&rsquo; Pauley</strong>, our custom billiard eyewear is worn on tables across the country and around the world.</div></div>
+        </div>
+        <div class="help-item">
           <div class="help-icon">🔒</div>
           <div><div class="help-item-title">Private and free</div><div class="help-item-desc">Everything runs right on your phone — your photos are never uploaded to a server. No account, no sign-up, and it's free to use.</div></div>
         </div>
@@ -4353,7 +4462,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🌐</div>
-          <div><div class="help-item-title">Learn More</div><div class="help-item-desc">Visit <strong>www.billiardglasses.com</strong> to see our custom billiard eyewear.</div></div>
+          <div><div class="help-item-title">Get your own billiard glasses</div><div class="help-item-desc">Custom prescription billiard eyewear, shipped to every U.S. state and just about every country, <strong>FSA/HSA eligible</strong>, and backed by a 2-year protection plan and satisfaction guarantee. See the collection at <strong>www.billiardglasses.com</strong>.</div></div>
         </div>
       </div>
 
