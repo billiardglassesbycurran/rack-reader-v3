@@ -230,8 +230,8 @@ body::before {
 .s-pip.err  { background:var(--red-ball); }
 .s-pip.gold { background:var(--gold); animation:blink 1.4s infinite; }
 .s-text {
-  font-family:'Barlow Condensed',sans-serif; font-size:12px;
-  font-weight:500; letter-spacing:.5px; color:var(--text-dim); flex:1;
+  font-family:'Barlow Condensed',sans-serif; font-size:16px;
+  font-weight:600; letter-spacing:.4px; color:var(--cream); flex:1; line-height:1.3;
 }
 
 /* BODY */
@@ -246,7 +246,7 @@ body::before {
   background:#000; border-radius:var(--r); overflow:hidden;
   position:relative; border:1px solid var(--border-mid);
 }
-#main-canvas { display:block; max-width:100%; touch-action:none; cursor:crosshair; }
+#main-canvas { display:block; max-width:100%; max-height:62vh; width:auto; margin:0 auto; object-fit:contain; touch-action:none; cursor:crosshair; }
 .body { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
 .canvas-placeholder {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -1082,9 +1082,9 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.6.1211</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.7.1131</span></div>
       </div>
-      <button class="help-btn" onclick="toggleHelp()" title="Help"><span style="font-size:15px">?</span> Help</button>
+      <button class="help-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
     </div>
   </header>
 
@@ -1188,63 +1188,21 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     </div>
 
 
-  <!-- STATUS -->
-  <div class="status-strip">
-    <div class="s-pip" id="s-pip"></div>
-    <div class="s-text" id="s-text">Loading AI model...</div>
-  </div>
-
   <!-- BODY -->
   <div class="body">
-
-    <!-- CANVAS -->
-    <div class="canvas-card" id="canvas-card">
-      <canvas id="main-canvas" style="display:none"></canvas>
-      <canvas id="minimap" width="260" height="260" style="position:fixed;width:132px;height:132px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.7);display:none;z-index:60;pointer-events:none;background:#06100a"></canvas>
-      <div class="canvas-placeholder" id="canvas-placeholder">
-        <div class="big">🎯</div>
-        <div>Captured frame appears here</div>
-      </div>
-      <div class="canvas-top-btns">
-        <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
-        <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
-        <div class="icon-btn" title="Discard frame" onclick="discardFrame()">✕</div>
-      </div>
-      <div class="capture-flash" id="capture-flash"></div>
-    </div>
-
-    <!-- COLOR LEGEND -->
-    <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
-        <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
-        <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
-        <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
-        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
-        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
-        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
-        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
-        <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
-      </div>
-    </div>
-
-    <!-- AI DETECTIONS -->
-    <div class="detections-box" id="detections-box">
-      <div class="det-title">🤖 AI Detected</div>
-      <div class="det-list" id="det-list"></div>
-      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
-    </div>
 
     <!-- STEP 3: MARK / FIX BALLS — manual chips collapsed by default -->
     <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:6px 2px 8px;display:flex;align-items:center;gap:8px">
       <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">3</span> Check the balls
     </div>
     <div class="card">
-      <div onclick="toggleManualMark()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
-        <div class="card-label" style="margin:0"><span id="manual-mark-caret">▸</span> Mark / add balls manually</div>
-        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">optional</div>
+      <div style="font-size:11.5px;color:var(--text-muted);line-height:1.45">AI Detect places the balls for you — just <strong style="color:var(--cream)">tap any wrong one</strong> to fix it (Solid → Stripe → 8 → Cue).</div>
+      <div class="adv-only">
+      <div onclick="toggleManualMark()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:10px">
+        <div class="card-label" style="margin:0"><span id="manual-mark-caret">▸</span> Mark balls or pockets manually</div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#9fe4ff">advanced</div>
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin:5px 0 0;line-height:1.4">AI Detect places the balls for you — just <strong style="color:var(--cream)">tap any wrong one</strong> to fix it (Solid → Stripe → 8 → Cue). Open this only to add or place a ball by hand.</div>
+      <div style="font-size:11px;color:var(--text-muted);margin:5px 0 0;line-height:1.4">Place a cue, ball, or <strong style="color:var(--cream)">Target Pocket</strong> by hand — or drag any mark to fine-tune.</div>
       <div id="manual-mark-body" style="display:none;margin-top:10px">
       <div class="mark-row">
         <div class="mark-chip active" data-mode="cue" onclick="setMode('cue')">
@@ -1281,6 +1239,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
             flex-shrink:0;
           "></div>Target Pocket
         </div>
+      </div>
       </div>
       </div>
     </div>
@@ -1327,13 +1286,73 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <button class="btn btn-gold" onclick="suggestShot()" style="width:100%;font-size:14px;padding:11px">
         🔍 Suggest Best Shot
       </button>
+    </div>
+
+
+    <!-- TABLE VIEW (canvas + status, moved after controls) -->
+    <!-- AI Confidence lives right above the table so bad detections can be fixed on the spot -->
+    <div class="card" style="padding:9px 12px">
+      <div class="sens-row" style="margin:0">
+        <div class="sens-label">AI Confidence</div>
+        <input type="range" id="conf-slider" min="10" max="80" value="35"
+          oninput="document.getElementById('conf-val').textContent=this.value+'%';CONF_THRESHOLD=parseInt(this.value)/100">
+        <div class="sens-val" id="conf-val">35%</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;padding-left:80px">
+        Missing balls? Lower it, then re-run 🤖 AI Detect · Too many false balls? Raise it
+      </div>
+    </div>
+  <div class="status-strip">
+    <div class="s-pip" id="s-pip"></div>
+    <div class="s-text" id="s-text">Loading AI model...</div>
+  </div>
+
+    <!-- CANVAS -->
+    <div class="canvas-card" id="canvas-card">
+      <canvas id="main-canvas" style="display:none"></canvas>
+      <canvas id="minimap" width="260" height="260" style="position:fixed;width:132px;height:132px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.7);display:none;z-index:60;pointer-events:none;background:#06100a"></canvas>
+      <div class="canvas-placeholder" id="canvas-placeholder">
+        <div class="big">🎯</div>
+        <div>Captured frame appears here</div>
+      </div>
+      <div class="canvas-top-btns">
+        <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
+        <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
+        <div class="icon-btn" title="Discard frame" onclick="discardFrame()">✕</div>
+      </div>
+      <div class="capture-flash" id="capture-flash"></div>
+    </div>
+
+    <!-- COLOR LEGEND -->
+    <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
+        <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
+        <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
+        <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
+        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
+        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
+        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
+        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
+        <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
+      </div>
+    </div>
+
+    <!-- AI DETECTIONS -->
+    <div class="detections-box" id="detections-box">
+      <div class="det-title">🤖 AI Detected</div>
+      <div class="det-list" id="det-list"></div>
+      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
+    </div>
+
+    <!-- SHOT ADVICE — sits right under the table it describes -->
       <div class="suggestion" id="suggestion">
         <div class="geo-badges" id="geo-badges"></div>
         <div class="sug-title"  id="sug-title"></div>
+        <div class="contact-key" id="contact-key" style="display:none;float:right;margin:0 0 8px 12px;text-align:center"></div>
         <div class="sug-body"   id="sug-body"></div>
         <div class="coaching-box" id="coaching-box"></div>
       </div>
-    </div>
 
 
     <!-- SETTINGS (moved below the workflow) -->
@@ -1391,17 +1410,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       </div>
       </div>
 
-      <div class="div adv-only"></div>
-      <div class="sens-row adv-only">
-        <div class="sens-label">AI Confidence</div>
-        <input type="range" id="conf-slider" min="10" max="80" value="35"
-          oninput="document.getElementById('conf-val').textContent=this.value+'%';CONF_THRESHOLD=parseInt(this.value)/100">
-        <div class="sens-val" id="conf-val">35%</div>
-      </div>
-      <div class="adv-only" style="font-size:10px;color:var(--text-muted);margin-top:3px;padding-left:80px">
-        Low = more detections · High = precise only
-      </div>
-      <div class="div adv-only"></div>
+      <div class="div"></div>
      <div class="autoscan-row adv-only">
         <div>
           <div class="autoscan-label">&#127979; Coaching Mode</div>
@@ -1418,11 +1427,11 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
           <div class="autoscan-label">🎱 English / Spin Control</div>
           <div class="autoscan-desc">Tap cue ball to set contact point — affects shot advice</div>
         </div>
-        <!-- Mini tappable ball — always visible when toggle is on -->
-        <div id="settings-spin-ball" onclick="openSpinPopup()"
-          style="display:none;width:44px;height:44px;flex-shrink:0;cursor:pointer;border-radius:50%;
-                 box-shadow:0 0 0 2px rgba(200,151,46,0.4);transition:box-shadow .2s"
-          title="Tap to change spin"></div>
+        <!-- Mini cue ball — always a real ball (dimmed when spin is off) -->
+        <div id="settings-spin-ball" onclick="spinBallTap()"
+          style="width:44px;height:44px;flex-shrink:0;cursor:pointer;border-radius:50%;opacity:.4;
+                 box-shadow:0 0 0 2px rgba(255,255,255,0.15);transition:opacity .2s, box-shadow .2s"
+          title="Tap to set spin"></div>
         <label class="toggle" style="flex-shrink:0">
           <input type="checkbox" id="english-toggle" onchange="toggleEnglish(true)">
           <div class="toggle-track"></div>
@@ -1883,16 +1892,24 @@ function toggleEnglish(fromUser) {
   var on = document.getElementById('english-toggle').checked;
   var panel = document.getElementById('english-panel');
   var settingsBall = document.getElementById('settings-spin-ball');
+  if (settingsBall) {
+    _drawMiniSpinBall('settings-spin-ball', currentEnglish);   // always a real ball
+    settingsBall.style.opacity = on ? '1' : '.4';
+    settingsBall.style.boxShadow = on ? '0 0 0 2px rgba(200,151,46,0.6)' : '0 0 0 2px rgba(255,255,255,0.15)';
+  }
   if (on) {
     panel.style.display = '';
-    if (settingsBall) settingsBall.style.display = 'block';
     drawEnglishSVG(currentEnglish);
-    // Only open popup on real user tap, not programmatic restore
-    if (fromUser) setTimeout(openSpinPopup, 150);
+    if (fromUser) setTimeout(openSpinPopup, 150);   // only on real user tap
   } else {
     panel.style.display = 'none';
-    if (settingsBall) settingsBall.style.display = 'none';
   }
+}
+// Tapping the settings ball: if spin is off, turn it on; if on, open the picker.
+function spinBallTap() {
+  var t = document.getElementById('english-toggle');
+  if (t && !t.checked) { t.checked = true; toggleEnglish(true); }
+  else openSpinPopup();
 }
 
 function setEnglish(pos) {
@@ -2938,7 +2955,16 @@ function rebuildFromCorners() {
   // user hand-placed AFTER aligning are kept — Option A's full clean slate
   // happens once, at startAlign time.
   marks = marks.filter(m => !(m.type === 'pocket' && m.fromBox));
-  const add = (x,y) => marks.push({ type:'pocket', fx:x/W, fy:y/H, fromBox:true });
+  // Photos often don't show the whole table — only create pockets that are
+  // actually inside the frame (small tolerance for pockets right on the edge).
+  let placed = 0;
+  const add = (x,y) => {
+    const fx = x/W, fy = y/H, tol = 0.02;
+    if (fx < -tol || fx > 1+tol || fy < -tol || fy > 1+tol) return;
+    marks.push({ type:'pocket', fx: Math.max(0,Math.min(1,fx)), fy: Math.max(0,Math.min(1,fy)), fromBox:true });
+    placed++;
+  };
+  window._alignPlaced = () => placed;
   dst.forEach(p => add(p.x, p.y));                        // 4 corner pockets
   // side pockets on the LONGER pair of rails (orientation-aware)
   const topLen  = Math.hypot(dst[1].x-dst[0].x, dst[1].y-dst[0].y);
@@ -2955,13 +2981,20 @@ function startAlign() {
   marks = marks.filter(m => m.type !== 'corner' && m.type !== 'pocket');
   window._tableH = null;
   aligning = true;
+  updateAlignChrome();
   renderCanvas(); hideSuggestion();
-  setStatus('Align: tap the TOP-LEFT corner of the table (1 of 4)','gold');
+  setStatus('Align: tap the table\'s TOP-LEFT corner (1 of 4). Corner cut off? Tap the nearest edge, then fine-tune by dragging','gold');
+}
+// Hide the top-right canvas buttons while aligning so they don't intercept corner taps.
+function updateAlignChrome() {
+  var b = document.querySelector('.canvas-top-btns');
+  if (b) b.style.display = aligning ? 'none' : 'flex';
 }
 function clearAlign() {
   marks = marks.filter(m => m.type !== 'corner');
   aligning = false;
   window._tableH = null;
+  updateAlignChrome();
   renderCanvas();
   setStatus('Alignment cleared','gold');
 }
@@ -3111,6 +3144,52 @@ function findComboShot(cue, targets, pockets) {
 }
 
 /* ═══════════════════════════════════════════
+   CONTACT-POINT AIM KEY (1–7)
+   A little object-ball face with 7 vertical lines. Lights up where to strike:
+   4 = full/center, 3/5 = quarter, 2/6 = half-ball, 1/7 = thin edge. The side is
+   whichever the ball must be driven away from (hit the opposite side).
+═══════════════════════════════════════════ */
+function contactKeyInfo(cue, ball, pocket) {
+  const ax = ball.fx - cue.fx, ay = ball.fy - cue.fy;
+  const px = pocket.fx - ball.fx, py = pocket.fy - ball.fy;
+  const al = Math.hypot(ax,ay), pl = Math.hypot(px,py);
+  if (al < 1e-6 || pl < 1e-6) return { line:4, side:'center', off:0, cut:0, label:'center — full hit' };
+  const anx=ax/al, any=ay/al, pnx=px/pl, pny=py/pl;
+  let dot = anx*pnx + any*pny; dot = Math.max(-1, Math.min(1, dot));
+  const cut = Math.acos(dot) * 180/Math.PI;
+  const cross = anx*pny - any*pnx;            // >0 → hit LEFT side, <0 → hit RIGHT side
+  let off; if (cut < 7) off=0; else if (cut < 20) off=1; else if (cut < 40) off=2; else off=3;
+  let line, side;
+  if (off===0){ line=4; side='center'; }
+  else if (cross>0){ line=4-off; side='left'; }
+  else { line=4+off; side='right'; }
+  const names={0:'full / center hit',1:'quarter-ball',2:'half-ball',3:'thin edge'};
+  return { line, side, off, cut:Math.round(cut), label:(off===0?'center — full hit':names[off]+' — '+side) };
+}
+function renderContactKey(info, ballType) {
+  const el = document.getElementById('contact-key');
+  if (!el) return;
+  if (!info) { el.style.display='none'; return; }
+  const fill    = ballType==='eight' ? '#111' : ballType==='stripe' ? '#e8e0d0' : ballType==='cue' ? '#f0f0f0' : '#cc1111';
+  const strokeC = ballType==='eight' ? '#555' : ballType==='stripe' ? '#c06010' : ballType==='cue' ? '#c8b890' : '#aa0000';
+  const cx=48, cy=48, R=40, span=R*1.7, step=span/6, x0=cx-span/2;
+  let lines='', nums='';
+  for (let i=1;i<=7;i++){
+    const x = x0 + (i-1)*step, hit = (i===info.line);
+    lines += `<line x1="${x}" y1="9" x2="${x}" y2="87" stroke="${hit?'#2dff8a':'rgba(255,255,255,0.42)'}" stroke-width="${hit?4:2.4}"/>`;
+    nums  += `<text x="${x}" y="105" fill="${hit?'#2dff8a':'#8ba394'}" font-size="${hit?13:10}" font-weight="700" text-anchor="middle" font-family="Barlow Condensed">${i}</text>`;
+  }
+  el.innerHTML =
+    `<svg width="86" height="100" viewBox="0 0 96 112" aria-label="Contact point ${info.line}">`
+    + `<clipPath id="ckclip"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath>`
+    + `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${fill}" stroke="${strokeC}" stroke-width="2"/>`
+    + `<g clip-path="url(#ckclip)">${lines}</g>${nums}</svg>`
+    + `<div style="font-size:12px;color:#40ceff;font-weight:700;margin-top:1px;line-height:1.1">Hit at ${info.line}</div>`
+    + `<div style="font-size:10px;color:var(--text-muted);max-width:88px;line-height:1.2">${info.label}</div>`;
+  el.style.display='block';
+}
+
+/* ═══════════════════════════════════════════
    SHOT SUGGESTION
 ═══════════════════════════════════════════ */
 function suggestShot() {
@@ -3124,17 +3203,18 @@ function suggestShot() {
   const body=document.getElementById('sug-body');
   const geo=document.getElementById('geo-badges');
   geo.innerHTML=''; hideSuggestion();
+  var _ck = document.getElementById('contact-key'); if (_ck) _ck.style.display='none';
 
   if (!sourceImg) {
     titl.textContent = 'Take a Picture First';
     body.textContent = 'Start the camera or tap 📁 Upload Photo to load your table — then Suggest Best Shot can read the shot.';
-    sug.classList.add('show'); return;
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
 
   if (!cue) {
     titl.textContent='Mark the Cue Ball First';
     body.textContent='Tap the canvas to place the cue ball marker (C) — the app needs to know where you\'re shooting from before it can read the shot.';
-    sug.classList.add('show'); return;
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
 
 // Build the crown's candidate pool, applying 8-Ball group filter.
@@ -3153,7 +3233,7 @@ function suggestShot() {
   if (!allTargets || allTargets.length === 0) {
     titl.textContent = 'No Balls to Aim At';
     body.textContent = 'Mark at least one object ball — or tap 🤖 AI Detect to find them automatically — so the app has a target to read.';
-    sug.classList.add('show'); return;
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
   let targetBall=null,cutAngle=null,pocketInfo=null,cueToTarget=null;
 
@@ -3170,6 +3250,10 @@ function suggestShot() {
       cueToTarget = dist(cue, targetBall);
       cutAngle = top.cut;
       pocketInfo = getPocketType(top.pocket);
+      // Contact-point aim key — where to strike the object ball (skip on blocked shots)
+      if (!top.blocked && top.pocket) {
+        renderContactKey(contactKeyInfo(cue, top.ball, top.pocket), top.ball.type);
+      }
       // tag balls with their rank for canvas crown
       marks.forEach(m=>{ delete m._rank; });
       result.ranked.forEach((r,i)=>{ r.ball._rank = i; });
@@ -3283,7 +3367,7 @@ function suggestShot() {
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
   body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote;
-  sug.classList.add('show');
+  sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
   var coachBox = document.getElementById('coaching-box');
@@ -3488,9 +3572,25 @@ function showMiniMap(cx, cy, clientX, clientY) {
 }
 function hideMiniMap(){ const mm=document.getElementById('minimap'); if(mm) mm.style.display='none'; }
 
+// A second finger (pinch/scroll) must NEVER place a mark or move a ball.
+// e.isPrimary is false for any finger after the first — the browser tracks it,
+// so unlike a manual counter it can never get stuck out of sync.
+
 canvas.addEventListener('pointerdown', function(e) {
   if (!sourceImg) return;
   if (e.button && e.button !== 0) return;   // ignore right/middle mouse buttons (laptop)
+  if (!e.isPrimary) {
+    // Second finger down → pinch/scroll gesture, not a mark.
+    if (dragCtx) {
+      // Undo anything a drag already did, then abort silently.
+      if (dragCtx.isNew && dragCtx.moved && dragCtx.mark) {
+        const ix = marks.indexOf(dragCtx.mark); if (ix !== -1) marks.splice(ix,1);
+      }
+      try { canvas.releasePointerCapture(dragCtx.pointerId); } catch(_) {}
+      dragCtx = null; hideMiniMap(); renderCanvas();
+    }
+    return;
+  }
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
   const fx = ((e.clientX-rect.left)*(canvas.width/rect.width))/canvas.width;
@@ -3502,8 +3602,10 @@ canvas.addEventListener('pointerdown', function(e) {
     marks.push({ type:'corner', idx, fx, fy });
     if (idx + 1 >= 4) {
       aligning = false;
+      updateAlignChrome();
       rebuildFromCorners();
-      setStatus('✓ Table aligned — 6 pockets placed. Drag any corner to fine-tune.','live');
+      var _pc = window._alignPlaced ? window._alignPlaced() : 6;
+      setStatus('✓ Table aligned — '+_pc+' pocket'+(_pc===1?'':'s')+' placed'+(_pc<6?' (rest are outside the photo — add any by hand in Advanced)':'')+'. Drag any corner to fine-tune.','live');
     } else {
       const names = ['TOP-LEFT','TOP-RIGHT','BOTTOM-RIGHT','BOTTOM-LEFT'];
       renderCanvas();
@@ -3691,7 +3793,7 @@ function undoMark() {
     // Mid-alignment: undo removes the last placed corner (or exits align mode).
     const cs = marks.filter(m=>m.type==='corner');
     if (cs.length) { marks.splice(marks.indexOf(cs[cs.length-1]), 1); }
-    if (!marks.some(m=>m.type==='corner')) { aligning = false; setStatus('Alignment cancelled',''); }
+    if (!marks.some(m=>m.type==='corner')) { aligning = false; updateAlignChrome(); setStatus('Alignment cancelled',''); }
     else setStatus('Corner removed — '+marks.filter(m=>m.type==='corner').length+' of 4 placed','gold');
     if (sourceImg) renderCanvas(); hideSuggestion();
     return;
@@ -4050,10 +4152,6 @@ function loadSettings() {
     if (s.conf) { document.getElementById('conf-slider').value = s.conf; document.getElementById('conf-val').textContent = s.conf+'%'; CONF_THRESHOLD = parseInt(s.conf)/100; }
     if (s.english !== undefined) {
       document.getElementById('english-toggle').checked = s.english;
-      if (s.english) {
-        var sb = document.getElementById('settings-spin-ball');
-        if (sb) sb.style.display = 'block';
-      }
     }
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
     if (s.gameMode) {
@@ -4176,6 +4274,7 @@ try {
   loadModel();
   console.log('DEBUG: loadModel called');
  drawEnglishSVG(currentEnglish);
+  toggleEnglish(false);   // draw the settings spin ball (dimmed if off), no popup
   updateGroupFilterVisibility();
   updateGroupFilterDesc();
   applyAdvancedVisibility();
@@ -4223,7 +4322,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">3️⃣</div>
-          <div><div class="help-item-title">Mark your pocket</div><div class="help-item-desc">Tap <strong>Target Pocket</strong>, then tap where you want the ball to go.</div></div>
+          <div><div class="help-item-title">Align the table</div><div class="help-item-desc">Tap <strong>📐 Align Table</strong>, then tap the table's 4 corners. Every pocket gets placed for you automatically.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">4️⃣</div>
@@ -4237,15 +4336,15 @@ try {
       <div class="help-section" style="margin-top:16px">
         <div class="help-section-title">✨ Simple vs Advanced</div>
         <div class="help-item">
-          <div class="help-icon">🎯</div>
+          <div class="help-icon">✨</div>
           <div><div class="help-item-title">Simple View — just the essentials</div><div class="help-item-desc">The app always opens in <strong>Simple View</strong>. It shows only what you need to make the ball: the crowned best shot, the ghost-ball aim ring, and your cue line — a clean read with nothing extra to sort through.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">📊</div>
+          <div class="help-icon">🎛️</div>
           <div><div class="help-item-title">Advanced View — the full read</div><div class="help-item-desc">Switch to <strong>Advanced</strong> for the complete picture: every ball's lines, cut-angle color coding, English (spin) control, coaching notes, combo shots, and all aiming aids. Drop back to Simple any time for a clean table.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🔄</div>
+          <div class="help-icon">🧹</div>
           <div><div class="help-item-title">Resets to Simple each visit</div><div class="help-item-desc">The app returns to Simple View every time you open it, so you always start with a clean, uncluttered read. Advanced is a choice you opt into per session.</div></div>
         </div>
       </div>
@@ -4263,15 +4362,37 @@ try {
           <div><div class="help-item-title">Upload a Photo (folder button)</div><div class="help-item-desc">Tap the yellow folder to pick a photo already on your phone — handy for reviewing a shot later or if the lighting is better in a saved picture.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">⚡</div>
+          <div class="help-icon">⏱️</div>
           <div><div class="help-item-title">Auto-Scan</div><div class="help-item-desc">When on, the app snaps a picture by itself whenever the balls stop moving. Great if your phone is on a stand or tripod.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🎯</div>
+          <div class="help-icon">⚡</div>
           <div><div class="help-item-title">Scan Now</div><div class="help-item-desc">Grabs the current camera picture right away, without waiting.</div></div>
         </div>
       </div>
       <div class="help-tip">💡 <strong>Tripod tip:</strong> Mount the phone overhead, turn on Auto-Scan, and the app reads the table every time the balls stop.</div>
+
+      <div class="help-divider"></div>
+
+      <div class="help-section" style="margin-top:16px">
+        <div class="help-section-title">📐 Align Table</div>
+        <div class="help-item">
+          <div class="help-icon">🔲</div>
+          <div><div class="help-item-title">Tap the 4 corners</div><div class="help-item-desc">Tap <strong>📐 Align Table</strong>, then tap the table's corners in order: top-left, top-right, bottom-right, bottom-left. The app maps the whole playing surface and places every visible pocket automatically — no manual pocket marking needed.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🤏</div>
+          <div><div class="help-item-title">Fine-tune by dragging</div><div class="help-item-desc">Drag any corner to nudge it — the zoom window helps you land it exactly, and the pockets update as you go.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">✂️</div>
+          <div><div class="help-item-title">Table partly cut off?</div><div class="help-item-desc">If a corner or rail is outside your photo, tap the nearest edge and fine-tune from there. Only pockets that are actually in the photo get placed — you can add the rest by hand in Advanced.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">↔️</div>
+          <div><div class="help-item-title">Works from any angle</div><div class="help-item-desc">Overhead shots and natural playing-angle shots both work — the box fits whatever shape the table makes in your photo.</div></div>
+        </div>
+      </div>
 
       <div class="help-divider"></div>
 
@@ -4286,7 +4407,7 @@ try {
           <div><div class="help-item-title">Re-detect</div><div class="help-item-desc">Not happy with the result? Tap Re-detect to clear the AI markers and try again.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">📊</div>
+          <div class="help-icon">🎚️</div>
           <div><div class="help-item-title">AI Confidence Slider</div><div class="help-item-desc">Low (10–30%) finds more balls but may guess. High (60%+) only marks balls it's very sure about.</div></div>
         </div>
         <div class="help-item">
@@ -4318,10 +4439,10 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🕳️</div>
-          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc">Mark where you want to sink the ball. This unlocks the cut angle, aim lines, and ghost ball.</div></div>
+          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc"><strong>📐 Align Table places all the pockets for you</strong> — but in Advanced you can also place one by hand: open "Mark balls or pockets manually" and tap the felt. Pockets unlock the cut angle, aim lines, and ghost ball.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🕳️🕳️</div>
+          <div class="help-icon">6️⃣</div>
           <div><div class="help-item-title">Mark Several Pockets</div><div class="help-item-desc">You can place up to 6 pockets. With Auto-Evaluate on, the app checks every pocket and picks the best one for each ball.</div></div>
         </div>
         <div class="help-item">
@@ -4339,12 +4460,12 @@ try {
           <div><div class="help-item-title">Auto-Evaluate Best Shot</div><div class="help-item-desc">Turn this on (in Settings) and the app scores every ball on the table, then crowns your easiest shot.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🟢</div>
+          <div class="help-icon">👑</div>
           <div><div class="help-item-title">The Green Crown</div><div class="help-item-desc">A glowing green ring labeled <strong>★ BEST</strong> appears on the easiest ball right on the table picture, so you can see your best option at a glance.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🎯</div>
-          <div><div class="help-item-title">Sharper with pockets</div><div class="help-item-desc">If you haven't marked pockets, the app assumes standard table pockets. Mark your own pockets for more accurate picks.</div></div>
+          <div class="help-icon">📌</div>
+          <div><div class="help-item-title">Sharper with pockets</div><div class="help-item-desc">Without pockets the app assumes standard positions. Run <strong>📐 Align Table</strong> (or place pockets by hand in Advanced) for far more accurate picks.</div></div>
         </div>
       </div>
 
@@ -4357,7 +4478,7 @@ try {
           <div><div class="help-item-title">Player View</div><div class="help-item-desc">For pictures taken from where you stand. Angles are approximate — the camera angle bends the geometry — so advice is a helpful guide, not exact.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🚁</div>
+          <div class="help-icon">🗺️</div>
           <div><div class="help-item-title">Overhead View</div><div class="help-item-desc">For pictures taken straight down over the table (phone on a stand above it). This gives precise cut angles and the most accurate geometry.</div></div>
         </div>
       </div>
@@ -4368,11 +4489,11 @@ try {
       <div class="help-section" style="margin-top:16px">
         <div class="help-section-title">🎱 English / Spin Control</div>
         <div class="help-item">
-          <div class="help-icon">🔛</div>
+          <div class="help-icon">🔘</div>
           <div><div class="help-item-title">Turn it on</div><div class="help-item-desc">Toggle English/Spin Control in settings. A cue ball diagram pops up so you can choose where you'll strike the ball.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🎱</div>
+          <div class="help-icon">🌀</div>
           <div><div class="help-item-title">Pick your contact point</div><div class="help-item-desc">Tap a zone: Follow (top), Draw (bottom), Stun (just below center), Left, Right, or Center. Each changes how the cue ball behaves after contact.</div></div>
         </div>
         <div class="help-item">
@@ -4405,7 +4526,11 @@ try {
           <div><div class="help-item-title">Cut Angle</div><div class="help-item-desc">0° = straight in (easiest). 90° = maximum cut (hardest). Color coded green / amber / red.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🎯</div>
+          <div class="help-icon">🔢</div>
+          <div><div class="help-item-title">Contact Aim Key (1–7)</div><div class="help-item-desc">A small ball face with 7 vertical lines shows exactly where to strike the object ball — <strong>4 is dead center</strong>, 3/5 a quarter-ball, 2/6 a half-ball, 1/7 a thin edge. The green line is your spot, like the alignment lines on a marked ball.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔟</div>
           <div><div class="help-item-title">Difficulty Rating</div><div class="help-item-desc">A 1–10 score from cut angle, distance, and spin. 1–3 Easy · 4–6 Moderate · 7–10 Difficult.</div></div>
         </div>
         <div class="help-item">
@@ -4413,7 +4538,7 @@ try {
           <div><div class="help-item-title">Safety Suggestion</div><div class="help-item-desc">On really hard shots (7+), the app suggests playing a safety instead — a smart defensive move.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🎯</div>
+          <div class="help-icon">🔗</div>
           <div><div class="help-item-title">Combo Shots</div><div class="help-item-desc">When there's no clear direct shot (blocked, or an extreme cut), Advanced mode looks for a 2-ball combo — hit ball ① into ball ② to send it to the pocket. It's drawn as a cyan line and only appears as an escape, never over a makeable direct shot.</div></div>
         </div>
         <div class="help-item">
@@ -4421,7 +4546,7 @@ try {
           <div><div class="help-item-title">Game Modes</div><div class="help-item-desc">8-Ball, 9-Ball (always hit the lowest ball first), and Straight Pool each change the advice.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🏫</div>
+          <div class="help-icon">📣</div>
           <div><div class="help-item-title">Coaching Mode</div><div class="help-item-desc">Turn on to get a plain-English explanation of WHY a shot has its difficulty rating.</div></div>
         </div>
       </div>
@@ -4445,7 +4570,7 @@ try {
           <div><div class="help-item-title">A father-and-son project</div><div class="help-item-desc">Built by Adam &amp; Bill Curran, third generation of William J. Curran &amp; Son Opticians in Drexel Hill, PA — serving since 1952.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🎱</div>
+          <div class="help-icon">👓</div>
           <div><div class="help-item-title">Why an optical shop built this</div><div class="help-item-desc">We make custom prescription <strong>billiard glasses</strong> for players who look up at a table all night. Helping you see the table clearly and read your next shot is the same mission — just taken one step further.</div></div>
         </div>
         <div class="help-item">
