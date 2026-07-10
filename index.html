@@ -1116,7 +1116,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.7.1139</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.10.0224</span></div>
       </div>
       <button class="help-btn" onclick="showWelcome()" title="Welcome tour" style="margin-right:6px"><span style="font-size:14px">👋</span> Tour</button>
       <button class="help-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
@@ -1180,6 +1180,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">2</span> Line up the table
   </div>
   <button class="btn" id="step2-anchor" onclick="startAlign()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff"><span style="font-size:16px">📐</span> Align Table <span style="opacity:.65;font-weight:400">— auto-place 6 pockets</span></button>
+  <div style="font-size:11.5px;color:var(--text-muted);margin:5px 2px 0;line-height:1.4">Align places every visible pocket at once — or add pockets one at a time with <strong style="color:#9fe4ff">＋ Pocket</strong> (above the table). Tap a pocket twice to remove it.</div>
 
     <!-- VIEW MODE -->
     <div class="card adv-only" id="view-mode-card">
@@ -1332,6 +1333,9 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         <div style="font-size:12.5px;color:#9fe4ff;line-height:1.4;border-top:1px solid var(--border);padding-top:8px">
           ✓ All set? Tap <strong>🔍 Suggest Best Shot</strong> in the bar at the bottom of your screen.
         </div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.4;margin-top:7px">
+          🎬 Heads-up: Shot Reader reads an <strong style="color:var(--cream)">open table</strong> — it can&rsquo;t plan the break shot itself. Break first, then snap the table.
+        </div>
       </div>
     </div>
 
@@ -1345,6 +1349,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <!-- CANVAS TOOLBAR (above the image so it never blocks taps) -->
     <div class="canvas-toolbar" id="canvas-toolbar" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
       <button class="btn" onclick="quickAddPocket()" style="background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:7px 12px;font-size:13px">＋ Pocket</button>
+      <button class="btn" onclick="enlargeCanvas()" style="background:#12271a;color:#eadfc8;border:1px solid #1f3a2a;padding:7px 12px;font-size:13px">⛶ Enlarge</button>
       <div style="flex:1"></div>
       <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
       <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
@@ -1518,8 +1523,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 
     <!-- STICKY ACTION BAR -->
     <div class="sticky-action-bar" style="flex-direction:column;gap:6px">
-      <div style="display:flex;align-items:center;gap:8px;width:100%">
-        <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;letter-spacing:.3px">AI Confidence</span>
+      <div style="display:flex;align-items:center;gap:8px;width:100%;background:rgba(14,30,21,.92);border:1px solid var(--border);border-radius:10px;padding:6px 11px">
+        <span style="font-size:11.5px;color:var(--cream);font-weight:600;white-space:nowrap;letter-spacing:.3px">🎚️ AI Confidence</span>
         <input type="range" id="conf-slider-sticky" min="10" max="80" value="35" style="flex:1;accent-color:var(--gold)"
           oninput="syncConf(this.value)">
         <span style="font-size:11px;color:var(--gold);font-weight:700;min-width:34px;text-align:right" id="conf-val-sticky">35%</span>
@@ -3043,6 +3048,21 @@ function updateAlignChrome() {
 }
 // One-tap pocket drop (works in Simple, no digging into Advanced). Lands near the
 // top rail; the user drags it onto the real pocket with the zoom mini-map.
+// View-only fullscreen: shows the current table (with all lines/marks) as large
+// as the screen allows. Nothing is interactive — no accidental marks possible.
+function enlargeCanvas() {
+  if (!sourceImg) { setStatus('Take or upload a photo first','warn'); return; }
+  var ov = document.getElementById('enlarge-overlay'), im = document.getElementById('enlarge-img');
+  im.src = canvas.toDataURL('image/jpeg', 0.92);
+  // Fit the long side to the screen so "everything" is visible at max size
+  var vw = window.innerWidth - 20, vh = window.innerHeight - 20;
+  var scale = Math.min(vw / canvas.width, vh / canvas.height);
+  im.style.width  = Math.round(canvas.width  * scale) + 'px';
+  im.style.height = Math.round(canvas.height * scale) + 'px';
+  ov.style.display = 'flex';
+}
+function closeEnlarge() { document.getElementById('enlarge-overlay').style.display = 'none'; }
+
 function quickAddPocket() {
   if (!sourceImg) { setStatus('Take or upload a photo first','warn'); return; }
   placeMarkAt('pocket', 0.5, 0.07);
@@ -3269,6 +3289,13 @@ function suggestShot() {
     sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
 
+  var _cues = marks.filter(function(m){ return m.type === 'cue'; });
+  if (_cues.length > 1) {
+    titl.textContent = 'More Than One Cue Ball';
+    body.textContent = 'There can only be one cue ball on the table. Tap one of the extra white balls to change it (it becomes a Solid), or use ↩ Undo to remove it — then Suggest again.';
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
+  }
+
   if (!cue) {
     titl.textContent='Mark the Cue Ball First';
     body.textContent='Tap the canvas to place the cue ball marker (C) — the app needs to know where you\'re shooting from before it can read the shot.';
@@ -3334,6 +3361,9 @@ function suggestShot() {
   var _bd = window._bestShotResult && window._bestShotResult.ranked.length > 0
             ? window._bestShotResult.ranked[0] : null;
   var _noDirect = _bd && (_bd.blocked || _bd.cut >= 72);
+  if (simpleMode && bestShotOn && _noDirect && allTargets.length >= 2) {
+    comboNote = '\n\n\ud83d\udca1 No clean direct shot here \u2014 switch to Advanced (the toggle up top) and Suggest again to see combo-shot options.';
+  }
   if (!simpleMode && bestShotOn && _noDirect && allTargets.length >= 2) {
     var combo = findComboShot(cue, allTargets, STANDARD_POCKETS);
     if (combo && combo.difficulty <= 8) {
@@ -3582,6 +3612,34 @@ function handleTap(fx, fy) {
   const tapX = fx*canvas.width, tapY = fy*canvas.height;
   const englishEl = document.getElementById('english-toggle');
   const englishOn = !!(englishEl && englishEl.checked);
+  // POCKETS: first tap arms removal, second tap on the same pocket removes it.
+  // (Also fixes a bug where tapping a pocket placed a new ball on top of it.)
+  for (let i = marks.length-1; i>=0; i--) {
+    const m = marks[i];
+    if (m.type !== 'pocket') continue;
+    if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < R*2) {
+      if (window._pendingPocketRemove === m) {
+        marks.splice(marks.indexOf(m), 1);
+        window._pendingPocketRemove = null;
+        renderCanvas(); hideSuggestion();
+        setStatus('Pocket removed','gold');
+      } else {
+        window._pendingPocketRemove = m;
+        setStatus('Tap this pocket again to remove it — or drag it to move it','gold');
+      }
+      return;
+    }
+  }
+  window._pendingPocketRemove = null;
+  // CORNERS: taps do nothing (drag to adjust) — never place a ball on a corner.
+  for (let i = marks.length-1; i>=0; i--) {
+    const m = marks[i];
+    if (m.type !== 'corner') continue;
+    if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < R*2) {
+      setStatus('Drag a corner to adjust the table box','gold');
+      return;
+    }
+  }
   for (let i = marks.length-1; i>=0; i--) {
     const m = marks[i];
     if (m.type === 'pocket' || m.type === 'corner') continue;
@@ -4677,6 +4735,10 @@ try {
           <div><div class="help-item-title">Contact Aim Key (1–7)</div><div class="help-item-desc">A small ball face with 7 vertical lines shows exactly where to strike the object ball — <strong>4 is dead center</strong>, 3/5 a quarter-ball, 2/6 a half-ball, 1/7 a thin edge. The green line is your spot, like the alignment lines on a marked ball.</div></div>
         </div>
         <div class="help-item">
+          <div class="help-icon">🎬</div>
+          <div><div class="help-item-title">Not for the break shot</div><div class="help-item-desc">Shot Reader analyzes an open table — cue ball, object balls, pockets. It can&rsquo;t plan the break itself (a racked cluster has no single &ldquo;best shot&rdquo;). Break first, then take your picture.</div></div>
+        </div>
+        <div class="help-item">
           <div class="help-icon">🔟</div>
           <div><div class="help-item-title">Difficulty Rating</div><div class="help-item-desc">A 1–10 score from cut angle, distance, and spin. 1–3 Easy · 4–6 Moderate · 7–10 Difficult.</div></div>
         </div>
@@ -4686,7 +4748,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🔗</div>
-          <div><div class="help-item-title">Combo Shots</div><div class="help-item-desc">When there's no clear direct shot (blocked, or an extreme cut), Advanced mode looks for a 2-ball combo — hit ball ① into ball ② to send it to the pocket. It's drawn as a cyan line and only appears as an escape, never over a makeable direct shot.</div></div>
+          <div><div class="help-item-title">Combo Shots</div><div class="help-item-desc">When there's no clear direct shot (blocked, or an extreme cut), <strong>Advanced view</strong> (the Simple/Advanced switch up top) looks for a 2-ball combo — hit ball ① into ball ② to send it to the pocket. It's drawn as a cyan line and only appears as an escape, never over a makeable direct shot.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎮</div>
@@ -4758,6 +4820,11 @@ try {
       <button class="welcome-skip" onclick="dismissWelcome()">Skip &mdash; I'll explore on my own</button>
     </div>
   </div>
+</div>
+<div id="enlarge-overlay" onclick="closeEnlarge()" style="display:none;position:fixed;inset:0;z-index:9980;background:rgba(3,8,5,.96);align-items:center;justify-content:center;padding:10px;overflow:auto">
+  <div style="position:fixed;top:12px;right:14px;background:rgba(200,151,46,.18);border:1.5px solid #9c7a34;color:#e8c07a;border-radius:16px;padding:6px 14px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700">✕ Close</div>
+  <div style="position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#8ba394;font-family:'Barlow Condensed',sans-serif;font-size:12.5px">View only — nothing can be marked or moved here. Tap anywhere to close.</div>
+  <img id="enlarge-img" alt="Table view" style="max-width:none;width:auto;height:auto;max-height:none;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.7)">
 </div>
 <div class="tour-dim" id="tour-dim" onclick="endTour()"></div>
 <div class="tour-spot" id="tour-spot"></div>
