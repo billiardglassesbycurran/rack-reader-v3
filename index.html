@@ -1136,7 +1136,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.14.1051</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.15.0302</span></div>
       </div>
       <button class="help-btn" onclick="showWelcome()" title="Welcome tour" style="margin-right:6px"><span style="font-size:14px">👋</span> Tour</button>
       <button class="help-btn" onclick="toggleRules()" title="Official game rules" style="margin-right:6px"><span style="font-size:14px">📜</span> Rules</button>
@@ -2822,22 +2822,39 @@ function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
   const shotDist = Math.hypot(shotDx, shotDy);
   const shotNx = shotDx / shotDist, shotNy = shotDy / shotDist; // normalized
 
-  // Contact point on object ball surface (where cue ball touches it)
-  // = center of object ball minus R*2 along shot direction
-  const contactX = ox - shotNx * R * 2;
-  const contactY = oy - shotNy * R * 2;
+  // Contact (kiss) point + ghost center. The kiss point sits on the object
+  // ball's SURFACE facing the ghost ball — i.e. directly opposite the POCKET
+  // direction — not facing the cue (that's only true on a dead-straight shot).
+  let contactX, contactY, ghostX, ghostY;
+  if (px !== null) {
+    const pdx = px - ox, pdy = py - oy;
+    const pd = Math.hypot(pdx, pdy) || 1;
+    const pnx = pdx / pd, pny = pdy / pd;          // ball → pocket unit
+    ghostX   = ox - pnx * R * 2;                    // cue-ball CENTER at contact
+    ghostY   = oy - pny * R * 2;
+    contactX = ox - pnx * R;                        // kiss point on the surface
+    contactY = oy - pny * R;
+  } else {
+    // No pocket marked: assume straight — kiss faces the cue.
+    ghostX   = ox - shotNx * R * 2;
+    ghostY   = oy - shotNy * R * 2;
+    contactX = ox - shotNx * R;
+    contactY = oy - shotNy * R;
+  }
 
   // ── 1. TARGET LINE ──
   if (aimToggle('aim-targetline') && px !== null) {
     ctx.save();
-    // Full aim line: from cue ball back through contact point to pocket
-    // Extended back behind cue ball
-    const backX = cx - shotNx * R * 4;
-    const backY = cy - shotNy * R * 4;
-    // Object ball → pocket line (yellow target line)
+    // TRUE aim ray: from behind the cue ball to the GHOST center (where the
+    // cue ball's middle must arrive). Cue→ball-center is the undercut line.
+    const gdx = ghostX - cx, gdy = ghostY - cy;
+    const gd = Math.hypot(gdx, gdy) || 1;
+    const gnx = gdx / gd, gny = gdy / gd;
+    const backX = cx - gnx * R * 4;
+    const backY = cy - gny * R * 4;
     ctx.beginPath();
     ctx.moveTo(backX, backY);
-    ctx.lineTo(contactX, contactY);
+    ctx.lineTo(ghostX, ghostY);
     ctx.strokeStyle = 'rgba(255, 220, 0, 0.85)';
     ctx.lineWidth = 2;
     ctx.setLineDash([]);
