@@ -1136,7 +1136,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.15.0302</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.15.0351</span></div>
       </div>
       <button class="help-btn" onclick="showWelcome()" title="Welcome tour" style="margin-right:6px"><span style="font-size:14px">👋</span> Tour</button>
       <button class="help-btn" onclick="toggleRules()" title="Official game rules" style="margin-right:6px"><span style="font-size:14px">📜</span> Rules</button>
@@ -1456,6 +1456,16 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         </div>
         <label class="toggle">
           <input type="checkbox" id="autoscan-toggle" checked onchange="autoScan=this.checked">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">🚶 Person check</div>
+          <div class="autoscan-desc">Wait for a clear view before capturing. Busy room with players all around? Turn this off.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="personcheck-toggle" checked onchange="saveSettings()">
           <div class="toggle-track"></div>
         </label>
       </div>
@@ -2160,6 +2170,7 @@ async function toggleCamera() {
 }
 
 async function startCamera() {
+  ensurePersonModel();   // background load; camera never waits on it
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     setStatus('Camera not supported — use photo upload', 'err'); return;
   }
@@ -2261,11 +2272,63 @@ function setMotionBar(pct) {
 /* ═══════════════════════════════════════════
    CAPTURE
 ═══════════════════════════════════════════ */
+/* ── PERSON-IN-FRAME CHECK (camera only) ──
+   A lite COCO-SSD loads in the background when the camera starts. At capture,
+   if a person occupies a meaningful chunk of the frame (someone leaning over
+   or walking through — not just the shooter's arm at the edge), the frame is
+   rejected: auto-scan re-arms and waits; manual scan offers a tap-again
+   override. Fails OPEN: if the model isn't ready, captures proceed normally. */
+var personModel = null, _personLoading = false, _personOverrideUntil = 0;
+async function ensurePersonModel() {
+  if (personModel || _personLoading) return;
+  _personLoading = true;
+  try {
+    if (typeof cocoSsd === 'undefined') {
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js');
+    }
+    personModel = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+    console.log('DEBUG: person-check model ready');
+  } catch (e) { console.log('DEBUG: person model failed to load (check disabled)', e); }
+  _personLoading = false;
+}
+async function personBlocking(videoEl) {
+  var t = document.getElementById('personcheck-toggle');
+  if (t && !t.checked) return false;                 // user turned it off (busy room)
+  if (!personModel) return false;                    // fail open
+  try {
+    const dets = await personModel.detect(videoEl, 8);
+    const W = videoEl.videoWidth, H = videoEl.videoHeight, fa = W * H;
+    for (const d of dets) {
+      if (d.class !== 'person' || d.score < 0.55) continue;
+      const [bx, by, bw, bh] = d.bbox;
+      const area = (bw * bh) / fa;
+      const cx = (bx + bw/2) / W, cy = (by + bh/2) / H;
+      const central = cx > 0.20 && cx < 0.80 && cy > 0.12 && cy < 0.88;
+      // Bystanders hug the frame edges — only a big presence anywhere, or a
+      // medium presence over the CENTER (where the table is), blocks capture.
+      if (area >= 0.18 || (area >= 0.06 && central)) return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
 function triggerManualScan() { if (cameraOn) captureFrame('manual'); }
 
-function captureFrame(mode) {
+async function captureFrame(mode) {
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) { setStatus('Video not ready — wait a moment', 'warn'); return; }
+  // Person-in-frame gate (camera captures only; override window skips it)
+  if (Date.now() > _personOverrideUntil && await personBlocking(video)) {
+    if (mode === 'auto') {
+      setStatus('🧍 Player in frame — waiting for a clear view of the table…', 'warn');
+      stillCounter = 0;
+      lastScanTime = Date.now() + 2500;   // re-arm shortly
+    } else {
+      setStatus('🧍 Person in frame — tap ⚡ SCAN NOW again within 5s to capture anyway', 'warn');
+      _personOverrideUntil = Date.now() + 5000;
+    }
+    return;
+  }
   document.getElementById('scan-overlay').classList.add('active');
   setTimeout(() => document.getElementById('scan-overlay').classList.remove('active'), 900);
   const flash = document.getElementById('capture-flash');
@@ -4422,10 +4485,11 @@ function saveSettings() {
   try {
     localStorage.setItem('rr_settings', JSON.stringify({
       autoscan:  document.getElementById('autoscan-toggle').checked,
+      personCheck: (document.getElementById('personcheck-toggle')||{checked:true}).checked,
       sens:      document.getElementById('sens-slider').value,
       delay:     document.getElementById('delay-slider').value,
       chime:     document.getElementById('chime-toggle').checked,
-      conf:      document.getElementById('conf-slider').value,
+      conf:      (document.getElementById('conf-slider-sticky')||{value:35}).value,
       english:   document.getElementById('english-toggle').checked,
       coaching:  document.getElementById('coaching-toggle').checked,
       gameMode:  gameMode,
@@ -4453,6 +4517,7 @@ function loadSettings() {
       document.getElementById('english-toggle').checked = s.english;
     }
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
+    if (s.personCheck !== undefined) { var _pc = document.getElementById('personcheck-toggle'); if (_pc) _pc.checked = s.personCheck; }
     if (s.gameMode) {
       gameMode = s.gameMode;
       _modeChosen = true;
@@ -4544,9 +4609,12 @@ window.addEventListener('DOMContentLoaded', function() {
 function buildCoachingText(cutAngle, difficulty, cueToTarget, spin) {
   var lines = [];
 
-  // Player view disclaimer
-  if (viewMode === 'player') {
-    lines.push('<strong>Player View mode:</strong> Angles here are approximate — your camera angle bends the geometry. Use this as a read on the shot, not exact degrees. For precise angles, hold the phone above the table and switch to Overhead View.');
+  // Perspective status: aligned tables have TRUE angles (Build 2); the
+  // approximate-angles warning only applies when unaligned in player view.
+  if (window._tHinv) {
+    lines.push('<strong>📐 Table aligned:</strong> Angles and difficulty are perspective-corrected — computed on the real table, not the photo. These are true degrees.');
+  } else if (viewMode === 'player') {
+    lines.push('<strong>Player View mode:</strong> Angles here are approximate — your camera angle bends the geometry. Use this as a read on the shot, not exact degrees. For true angles, tap 📐 Align Table (or hold the phone overhead and switch to Overhead View).');
   }
 
   // ── WHY this difficulty? (combines the factors instead of repeating each) ──
@@ -4906,6 +4974,10 @@ try {
         <div class="help-item">
           <div class="help-icon">🔢</div>
           <div><div class="help-item-title">Contact Aim Key (1–7)</div><div class="help-item-desc">A small ball face with 7 vertical lines shows exactly where to strike the object ball — <strong>4 is dead center</strong>, 3/5 a quarter-ball, 2/6 a half-ball, 1/7 a thin edge. The green line is your spot, like the alignment lines on a marked ball.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🚶</div>
+          <div><div class="help-item-title">Person-in-frame check (camera)</div><div class="help-item-desc">When capturing from the camera, Shot Reader waits if someone is leaning over or walking through the shot — you&rsquo;ll see &ldquo;Player in frame&rdquo; and auto-scan re-arms on its own. People at the edges of the frame (players at the next table) are ignored — only someone over YOUR table blocks. Need the photo anyway? Tap <strong>⚡ SCAN NOW</strong> twice — or turn the check off in the camera settings for busy rooms. Uploaded photos are never checked.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎬</div>
