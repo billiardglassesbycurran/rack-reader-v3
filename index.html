@@ -1074,7 +1074,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .welcome-overlay.show{ display:flex; }
 .welcome-card{ width:100%; max-width:340px; background:linear-gradient(180deg,#13271b,#0a1710); border:1px solid #9c7a34;
   border-radius:20px; padding:22px 20px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.7);}
-.welcome-hero{ width:100%; height:158px; object-fit:cover; object-position:50% 30%; border-radius:12px; border:1px solid #9c7a34; margin-bottom:14px; box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.welcome-hero{ width:100%; height:200px; object-fit:cover; object-position:50% 30%; border-radius:12px; border:1px solid #9c7a34; margin-bottom:14px; box-shadow:0 6px 20px rgba(0,0,0,.5);}
 .welcome-since{ font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#9c7a34; font-weight:700;}
 .welcome-card h2{ font-family:'Playfair Display',serif; font-weight:800; color:#c8963e; font-size:23px; margin:6px 0 4px; line-height:1.1;}
 .welcome-by{ font-size:14px; color:#eadfc8; margin-bottom:12px;} .welcome-by strong{ color:#e8c07a;}
@@ -1083,7 +1083,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .welcome-skip{ background:none; border:none; color:#8ba394; font-size:13px; font-weight:600; cursor:pointer;}
 @media (orientation:landscape) and (max-height:560px){
   .welcome-card{ max-width:600px; display:flex; gap:18px; align-items:center; text-align:left; padding:18px;}
-  .welcome-hero{ width:230px; height:200px; flex-shrink:0; margin-bottom:0;}
+  .welcome-hero{ width:250px; height:240px; flex-shrink:0; margin-bottom:0;}
   .welcome-right{ flex:1;}
 }
 .tour-dim{ position:fixed; inset:0; z-index:9990; background:rgba(4,10,7,.82); display:none;}
@@ -1101,6 +1101,26 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .tour-dot.on{ background:#c8963e; width:16px; border-radius:3px;}
 .tour-skip{ color:#8ba394; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer;}
 .tour-next{ background:#c8963e; color:#0b1811; font-weight:700; border:none; border-radius:16px; padding:6px 15px; font-size:13px; cursor:pointer;}
+
+/* ── LANDSCAPE: dashboard split. Right stage NEVER scrolls (status + toolbar +
+   table + actions always visible); the left rail is the single page scroll,
+   and it receives the AI results + shot advice. Portrait untouched. ── */
+@media (orientation: landscape) and (max-height: 600px) {
+  body { padding-right: 56vw; }
+  #app { max-width: none; padding-bottom: 40px; }
+  #table-stage { display: contents; }   /* detections + advice fall into the rail flow */
+  #stage-core {
+    position: fixed; top: 0; right: 0; width: 56vw; height: 100vh;
+    background: var(--felt); border-left: 1px solid var(--border);
+    z-index: 5; padding: 8px 10px 96px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  #stage-core .canvas-card { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 0; }
+  #main-canvas { max-height: calc(100vh - 200px); max-width: 100%; }
+  .sticky-action-bar {
+    left: auto; right: 0; transform: none; width: 56vw; max-width: none; z-index: 6;
+  }
+}
 </style>
 </head>
 <body>
@@ -1116,9 +1136,10 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.10.0224</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.14.1051</span></div>
       </div>
       <button class="help-btn" onclick="showWelcome()" title="Welcome tour" style="margin-right:6px"><span style="font-size:14px">👋</span> Tour</button>
+      <button class="help-btn" onclick="toggleRules()" title="Official game rules" style="margin-right:6px"><span style="font-size:14px">📜</span> Rules</button>
       <button class="help-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
     </div>
   </header>
@@ -1299,11 +1320,16 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div class="card">
       <div class="card-label">Game Mode</div>
       <div class="pills">
-        <div class="pill active" onclick="setGame('8ball',this)">8-Ball</div>
+        <div class="pill" onclick="setGame('8ball',this)">8-Ball</div>
         <div class="pill"        onclick="setGame('9ball',this)">9-Ball</div>
         <div class="pill"        onclick="setGame('straight',this)">Straight</div>
       </div>
 
+      <!-- 9-BALL: must-hit lowest ball (rule: contact lowest-numbered ball first) -->
+      <div id="nineball-target-row" style="display:none;margin:2px 0 8px">
+        <button class="btn" onclick="pickLowestBall()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:9px">🎯 Set Lowest Ball <span style="opacity:.65;font-weight:400">— the ball you must hit first</span></button>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">9-ball rule: the cue ball must contact the <strong style="color:var(--cream)">lowest-numbered ball</strong> first. The AI can't read numbers yet — tap this, then tap that ball, and the suggestion will plan it.</div>
+      </div>
       <!-- GROUP FILTER (8-Ball only) -->
       <div id="group-filter-wrap" style="margin-top:10px">
         <div class="card-label" style="margin-bottom:7px">Which balls? · 8-Ball rules</div>
@@ -1341,6 +1367,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 
 
     <!-- TABLE VIEW (canvas + status, moved after controls) -->
+    <div id="table-stage">
+    <div id="stage-core">
   <div class="status-strip">
     <div class="s-pip" id="s-pip"></div>
     <div class="s-text" id="s-text">Loading AI model...</div>
@@ -1366,6 +1394,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       </div>
       <div class="capture-flash" id="capture-flash"></div>
     </div>
+    </div><!-- /stage-core -->
 
     <!-- COLOR LEGEND -->
     <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
@@ -1397,6 +1426,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         <div class="sug-body"   id="sug-body"></div>
         <div class="coaching-box" id="coaching-box"></div>
       </div>
+    </div><!-- /table-stage -->
 
 
     <!-- SETTINGS (moved below the workflow) -->
@@ -1498,7 +1528,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div class="autoscan-row adv-only">
         <div>
           <div class="autoscan-label">🎱 Contact Point</div>
-          <div class="autoscan-desc">Crosshair on the exact hit point of the object ball</div>
+          <div class="autoscan-desc">Shows where the two balls will touch. For understanding the cut only — always AIM at the dotted ghost ring, never at this point</div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="aim-contactpoint" onchange="renderCanvas()">
@@ -1675,6 +1705,11 @@ function setModelStatus(msg, state) {
    AI DETECTION
 ═══════════════════════════════════════════ */
 async function runDetection() {
+  if (!_modeChosen) {
+    setStatus('Pick your game first — 8-Ball, 9-Ball, or Straight (Step 4)','warn');
+    var gm = document.querySelector('.pills'); if (gm) try{ gm.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+    return;
+  }
   if (!modelReady || !sourceImg) {
     setStatus(!modelReady ? 'AI model not ready yet' : 'Capture a frame first', 'warn');
     return;
@@ -2240,7 +2275,7 @@ function captureFrame(mode) {
   tmp.getContext('2d').drawImage(video, 0, 0, vw, vh);
   const img = new Image();
   img.onload = () => {
-    sourceImg = img; marks = []; aligning = false; window._tableH = null;
+    sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; _pickingLowest = false; window._pendingPocketRemove = null;
     renderCanvas();
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
@@ -2285,7 +2320,7 @@ function loadImageFile(file) {
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
-    stopCamera(); sourceImg = img; marks = []; aligning = false; window._tableH = null;
+    stopCamera(); sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; _pickingLowest = false; window._pendingPocketRemove = null;
     renderCanvas();
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
@@ -2681,6 +2716,17 @@ function renderCanvas() {
     ctx.setLineDash([]);
     ctx.font=`bold ${Math.round(R*.75)}px Barlow Condensed,sans-serif`;
     ctx.textAlign='center'; ctx.textBaseline='middle';
+    // 9-ball must-hit ball: cyan double ring so it's unmistakable
+    if (m._mustHit && gameMode === '9ball') {
+      ctx.save();
+      ctx.strokeStyle='rgba(64,206,255,0.95)'; ctx.lineWidth=2.5; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(x, y, mR*1.75, 0, Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='rgba(64,206,255,0.45)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(x, y, mR*2.15, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle='rgba(64,206,255,0.95)'; ctx.font='700 '+(mR*0.7)+'px Barlow Condensed';
+      ctx.textAlign='center'; ctx.fillText('LOWEST', x, y - mR*2.45);
+      ctx.restore();
+    }
     const lbl = {cue:'C',obj:'S',eight:'8',stripe:'T',pocket:'P'}[m.type];
     const lc  = {cue:'#1a1508',obj:'#fff',eight:'#fff',stripe:'#1a0808',pocket:'#c8972e'}[m.type];
     ctx.fillStyle=lc; ctx.fillText(lbl, x, y+.5);
@@ -2714,7 +2760,18 @@ function renderCanvas() {
 /* ═══════════════════════════════════════════
    GEOMETRY
 ═══════════════════════════════════════════ */
+// BUILD 2: when the table is aligned, all shot MATH runs in true top-down
+// table coordinates (perspective removed). Without alignment, photo space
+// is used exactly as before.
+function geoP(m) {
+  if (window._tHinv) {
+    const p = applyHomography(window._tHinv, m.fx, m.fy);
+    return { fx: p.x, fy: p.y };
+  }
+  return m;
+}
 function computeCutAngle(cue, obj, pocket) {
+  cue = geoP(cue); obj = geoP(obj); pocket = geoP(pocket);
   if (!cue || !obj || !pocket) return null;
   const dxIn = obj.fx-cue.fx, dyIn = obj.fy-cue.fy;
   const dxOut= pocket.fx-obj.fx, dyOut= pocket.fy-obj.fy;
@@ -2731,7 +2788,7 @@ function getPocketType(pocket) {
   return {label:'Pocket',corner:false};
 }
 
-function dist(a,b) { return Math.hypot(a.fx-b.fx, a.fy-b.fy); }
+function dist(a,b) { a=geoP(a); b=geoP(b); return Math.hypot(a.fx-b.fx, a.fy-b.fy); }
 function closestTo(origin, pool) { return pool.reduce((best,b)=>dist(origin,b)<dist(origin,best)?b:best,pool[0]); }
 function rangeWord(d) { return d<.22?'close-range':d<.5?'mid-range':'long-range'; }
 
@@ -3006,6 +3063,19 @@ function rebuildFromCorners() {
   const canon = [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
   const Hm = computeHomography(canon, dst);
   window._tableH = Hm;
+  // BUILD 2: fraction-space homographies for perspective-TRUE geometry.
+  // Canonical table keeps the real 2:1 shape (1 x 0.5), oriented by whichever
+  // rail pair is longer, so cut angles computed there match the real table.
+  {
+    const dstF = corners.map(c => ({ x: c.fx, y: c.fy }));
+    const tl = Math.hypot(dstF[1].x-dstF[0].x, dstF[1].y-dstF[0].y);
+    const ll = Math.hypot(dstF[3].x-dstF[0].x, dstF[3].y-dstF[0].y);
+    const canonF = (tl >= ll)
+      ? [{x:0,y:0},{x:1,y:0},{x:1,y:0.5},{x:0,y:0.5}]
+      : [{x:0,y:0},{x:0.5,y:0},{x:0.5,y:1},{x:0,y:1}];
+    window._tHf  = computeHomography(canonF, dstF);
+    window._tHinv = computeHomography(dstF, canonF);
+  }
   if (!Hm) { setStatus('Corners are too skewed to align — spread them out','warn'); return; }
   // Replace the box's own pockets (a corner moved → rebuild them). Pockets the
   // user hand-placed AFTER aligning are kept — Option A's full clean slate
@@ -3035,7 +3105,7 @@ function startAlign() {
   if (!sourceImg) { setStatus('Load or capture a photo first','warn'); return; }
   // Option A: aligning starts a clean slate — old pockets and any old box go.
   marks = marks.filter(m => m.type !== 'corner' && m.type !== 'pocket');
-  window._tableH = null;
+  window._tableH = null; window._tHf = null; window._tHinv = null;
   aligning = true;
   updateAlignChrome();
   renderCanvas(); hideSuggestion();
@@ -3071,7 +3141,7 @@ function quickAddPocket() {
 function clearAlign() {
   marks = marks.filter(m => m.type !== 'corner');
   aligning = false;
-  window._tableH = null;
+  window._tableH = null; window._tHf = null; window._tHinv = null;
   updateAlignChrome();
   renderCanvas();
   setStatus('Alignment cleared','gold');
@@ -3090,6 +3160,7 @@ function pointToSegmentDist(p, a, b) {
 const BALL_RADIUS = 0.024;
 const BLOCK_THRESHOLD = BALL_RADIUS*2;
 function pathBlocked(ball, pocket, allBalls) {
+  ball = geoP(ball); pocket = geoP(pocket); allBalls = allBalls.map(geoP);
   if (!allBalls) return false;
   for (const other of allBalls) {
     if (other === ball) continue;
@@ -3228,6 +3299,7 @@ function findComboShot(cue, targets, pockets) {
    whichever the ball must be driven away from (hit the opposite side).
 ═══════════════════════════════════════════ */
 function contactKeyInfo(cue, ball, pocket) {
+  cue = geoP(cue); ball = geoP(ball); pocket = geoP(pocket);
   const ax = ball.fx - cue.fx, ay = ball.fy - cue.fy;
   const px = pocket.fx - ball.fx, py = pocket.fy - ball.fy;
   const al = Math.hypot(ax,ay), pl = Math.hypot(px,py);
@@ -3283,12 +3355,24 @@ function suggestShot() {
   geo.innerHTML=''; hideSuggestion();
   var _ck = document.getElementById('contact-key'); if (_ck) _ck.style.display='none';
 
+  if (!_modeChosen) {
+    titl.textContent = 'Pick Your Game First';
+    body.textContent = 'Choose 8-Ball, 9-Ball, or Straight in Step 4 before suggesting — the rules change which ball you should shoot.';
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
+  }
+
   if (!sourceImg) {
     titl.textContent = 'Take a Picture First';
     body.textContent = 'Start the camera or tap 📁 Upload Photo to load your table — then Suggest Best Shot can read the shot.';
     sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
 
+  var _eights = marks.filter(function(m){ return m.type === 'eight'; });
+  if (_eights.length > 1) {
+    titl.textContent = 'More Than One 8-Ball';
+    body.textContent = 'There\u2019s only one 8-ball in the game. Tap one of the extra black balls to change it (it becomes a Cue, then keep tapping to cycle), or use \u21a9 Undo \u2014 then Suggest again.';
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
+  }
   var _cues = marks.filter(function(m){ return m.type === 'cue'; });
   if (_cues.length > 1) {
     titl.textContent = 'More Than One Cue Ball';
@@ -3311,7 +3395,12 @@ function suggestShot() {
     allTargets = solidsOnly.length > 0 ? solidsOnly : (eight ? [eight] : []);
   } else if (gameMode === '8ball' && groupFilter === 'stripes') {
     allTargets = stripesOnly.length > 0 ? stripesOnly : (eight ? [eight] : []);
+  } else if (gameMode === '8ball') {
+    // "All balls" (open table / no group picked yet): the 8 is NEVER a legal
+    // first target while other balls remain — only when it's the last one.
+    allTargets = objs.length > 0 ? [...objs] : (eight ? [eight] : []);
   } else {
+    // Straight pool (and any other mode): every ball counts, 8 included.
     allTargets = [...objs, ...(eight ? [eight] : [])];
   }
 
@@ -3357,14 +3446,29 @@ function suggestShot() {
   // Combos scan all 6 standard pockets (an escape may use a pocket the direct
   // shot can't), even when the user has marked a specific pocket for direct aim.
   window._comboShot = null;
+  var eightNote = '';
+  if (gameMode === '8ball' && allTargets.length && allTargets.every(function(t){ return t.type === 'eight'; })) {
+    eightNote = '\n\n\ud83c\udfb1 8-BALL TO WIN: your group is clear \u2014 call your pocket before you shoot. Pocketing the 8 wins; scratching or pocketing it in the wrong pocket loses.';
+  }
+  var nineNote = '';
+  if (gameMode === '9ball') {
+    var _mh = marks.find(function(m){ return m._mustHit && (m.type==='obj'||m.type==='stripe'||m.type==='eight'); });
+    if (_mh && allTargets && allTargets.indexOf(_mh) === -1 && marks.indexOf(_mh) !== -1) allTargets.push(_mh);
+    if (_mh) {
+      allTargets = [_mh];
+      nineNote = '\n\n\u2705 9-Ball: planning your marked lowest ball (the \ud83c\udfaf ring).';
+    } else {
+      nineNote = '\n\n\u26a0\ufe0f 9-Ball rule: you must hit the LOWEST-numbered ball first. The AI can\u2019t read ball numbers \u2014 this is the easiest makeable shot, so confirm it IS the lowest, or tap \ud83c\udfaf Set Lowest Ball (Step 4).';
+    }
+  }
   var comboNote = '';
   var _bd = window._bestShotResult && window._bestShotResult.ranked.length > 0
             ? window._bestShotResult.ranked[0] : null;
   var _noDirect = _bd && (_bd.blocked || _bd.cut >= 72);
-  if (simpleMode && bestShotOn && _noDirect && allTargets.length >= 2) {
+  if (gameMode !== '9ball' && simpleMode && bestShotOn && _noDirect && allTargets.length >= 2) {
     comboNote = '\n\n\ud83d\udca1 No clean direct shot here \u2014 switch to Advanced (the toggle up top) and Suggest again to see combo-shot options.';
   }
-  if (!simpleMode && bestShotOn && _noDirect && allTargets.length >= 2) {
+  if (gameMode !== '9ball' && !simpleMode && bestShotOn && _noDirect && allTargets.length >= 2) {
     var combo = findComboShot(cue, allTargets, STANDARD_POCKETS);
     if (combo && combo.difficulty <= 8) {
       window._comboShot = combo;
@@ -3454,7 +3558,7 @@ function suggestShot() {
   else if (difficulty <= 6) plainHeadline = '⚖️ This is a moderate shot — focus and commit.\n\n';
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
-  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote;
+  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote + nineNote + eightNote;
   sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
@@ -3612,6 +3716,23 @@ function handleTap(fx, fy) {
   const tapX = fx*canvas.width, tapY = fy*canvas.height;
   const englishEl = document.getElementById('english-toggle');
   const englishOn = !!(englishEl && englishEl.checked);
+  // 9-BALL: picking the must-hit lowest ball — the next ball tap sets it.
+  if (_pickingLowest) {
+    _pickingLowest = false;
+    for (let i = marks.length-1; i>=0; i--) {
+      const m = marks[i];
+      if (m.type!=='obj' && m.type!=='stripe' && m.type!=='eight') continue;
+      if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < R*2) {
+        marks.forEach(function(mm){ delete mm._mustHit; });
+        m._mustHit = true;
+        renderCanvas(); hideSuggestion();
+        setStatus('Lowest ball set (🎯) — Suggest will plan this ball','live');
+        return;
+      }
+    }
+    setStatus('No ball there — tap 🎯 Set Lowest Ball to try again','warn');
+    return;
+  }
   // POCKETS: first tap arms removal, second tap on the same pocket removes it.
   // (Also fixes a bug where tapping a pocket placed a new ball on top of it.)
   for (let i = marks.length-1; i>=0; i--) {
@@ -3808,7 +3929,25 @@ function setMode(mode) {
   document.querySelectorAll('.mark-chip').forEach(c=>c.classList.toggle('active',c.dataset.mode===mode));
 }
 
+var _modeChosen = false;      // must pick a game before AI Detect / Suggest
+var _pickingLowest = false;   // 9-ball: next ball tap sets the must-hit ball
+
+function pickLowestBall() {
+  var balls = marks.filter(function(m){ return m.type==='obj'||m.type==='stripe'||m.type==='eight'; });
+  if (!balls.length) { setStatus('Mark or AI-detect the balls first','warn'); return; }
+  _pickingLowest = true;
+  setStatus('Tap the LOWEST-numbered ball on the table','gold');
+}
+function toggleRules() {
+  var o = document.getElementById('rules-overlay');
+  if (o) o.style.display = (o.style.display === 'flex') ? 'none' : 'flex';
+}
 function setGame(mode,el) {
+  _modeChosen = true;
+  _pickingLowest = false;
+  if (mode !== '9ball') { marks.forEach(function(m){ delete m._mustHit; }); if (sourceImg) renderCanvas(); }
+  var nr = document.getElementById('nineball-target-row');
+  if (nr) nr.style.display = (mode === '9ball') ? 'block' : 'none';
   gameMode=mode;
   // Only clear the game-mode pills, not the group-filter pills
   document.querySelectorAll('.pills .pill').forEach(p=>{
@@ -3942,7 +4081,7 @@ function undoMark() {
     // Undoing the alignment: remove the whole box + its auto-pockets as one unit,
     // so we never leave a half-broken 3-corner box or 5 auto-pockets behind.
     marks = marks.filter(m => m.type !== 'corner' && !m.fromBox);
-    window._tableH = null;
+    window._tableH = null; window._tHf = null; window._tHinv = null;
     setStatus('Table alignment removed','gold');
   } else {
     marks.pop();
@@ -3952,14 +4091,16 @@ function undoMark() {
 }
 
 function clearMarks() {
-  marks=[]; aligning=false; window._tableH=null;
+  marks=[]; aligning=false; window._tableH=null; window._tHf=null; window._tHinv=null;
+  _pickingLowest=false; window._pendingPocketRemove=null;
   if (sourceImg) renderCanvas(); hideSuggestion();
   document.getElementById('detections-box').classList.remove('show');
   setStatus('Marks cleared','');
 }
 
 function discardFrame() {
-  marks=[]; sourceImg=null; aligning=false; window._tableH=null;
+  marks=[]; sourceImg=null; aligning=false; window._tableH=null; window._tHf=null; window._tHinv=null;
+  _pickingLowest=false; window._pendingPocketRemove=null;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   canvas.style.display='none'; placeholder.style.display='';
   document.getElementById('detections-box').classList.remove('show');
@@ -4297,6 +4438,9 @@ function loadSettings() {
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
     if (s.gameMode) {
       gameMode = s.gameMode;
+      _modeChosen = true;
+      var _nr = document.getElementById('nineball-target-row');
+      if (_nr) _nr.style.display = (gameMode === '9ball') ? 'block' : 'none';
       document.querySelectorAll('.pill[onclick*="setGame"]').forEach(p => p.classList.toggle('active', p.textContent.toLowerCase().replace('-','').includes(s.gameMode.replace('ball',''))));
     }
     if (s.viewMode) { viewMode = s.viewMode; setViewMode(s.viewMode); }
@@ -4523,7 +4667,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">2️⃣</div>
-          <div><div class="help-item-title">Tap AI Detect</div><div class="help-item-desc">The AI finds the balls and marks them for you. You can fix any it gets wrong (see Marking Balls below).</div></div>
+          <div><div class="help-item-title">Pick your game, then AI Detect</div><div class="help-item-desc">Choose <strong>8-Ball, 9-Ball, or Straight</strong> in Step 4 (the rules change which ball you should shoot), then tap <strong>🤖 AI Detect</strong> in the bottom bar. The AI finds and marks the balls — tap any it gets wrong to fix it.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">3️⃣</div>
@@ -4531,7 +4675,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">4️⃣</div>
-          <div><div class="help-item-title">Tap Suggest Best Shot</div><div class="help-item-desc">The app reads the shot, rates how hard it is, and coaches you through it.</div></div>
+          <div><div class="help-item-title">Tap Suggest Best Shot</div><div class="help-item-desc">It's in the bar at the bottom of your screen. The app reads the shot, rates how hard it is, and coaches you through it.</div></div>
         </div>
       </div>
       <div class="help-tip">💡 <strong>That's it!</strong> Everything below explains each feature in more detail.</div>
@@ -4644,7 +4788,19 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🕳️</div>
-          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc"><strong>📐 Align Table places all the pockets for you</strong> — but in Advanced you can also place one by hand: open "Mark balls or pockets manually" and tap the felt. Pockets unlock the cut angle, aim lines, and ghost ball.</div></div>
+          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc"><strong>📐 Align Table places all the pockets for you</strong> — but in Advanced you can also place one by hand: open "Mark balls or pockets manually" and tap the felt. Pockets unlock the cut angle, aim lines, and ghost ball. To remove a pocket, <strong>tap it twice</strong>; to move it, drag it.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">⛶</div>
+          <div><div class="help-item-title">Enlarge — look without touching</div><div class="help-item-desc">Tap <strong>⛶ Enlarge</strong> above the table to see the whole layout full-screen, lines and all. It&rsquo;s view-only — nothing can be marked or moved — so it&rsquo;s safe to study the shot up close. Tap anywhere to close.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📜</div>
+          <div><div class="help-item-title">Rules button</div><div class="help-item-desc">Tap <strong>📜 Rules</strong> up top for quick official summaries of 8-Ball, 9-Ball, and Straight Pool — handy when a game-mode question comes up mid-match.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📱</div>
+          <div><div class="help-item-title">Turn your phone sideways</div><div class="help-item-desc">Landscape mode splits the screen: your steps and advice on the left, the table always visible on the right. Great for working a shot — the table never scrolls away.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">6️⃣</div>
@@ -4717,7 +4873,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🎯</div>
-          <div><div class="help-item-title">Contact Point</div><div class="help-item-desc">Puts a crosshair on the exact spot where the cue ball should strike the object ball.</div></div>
+          <div><div class="help-item-title">Contact Point</div><div class="help-item-desc">A crosshair showing the exact spot where the cue ball will <strong>touch</strong> the object ball. It explains the cut — but because balls have width, aiming your cue AT this point undercuts every cut shot. <strong>Aim at the dotted ghost ring instead;</strong> this marker is for understanding, not aiming.</div></div>
         </div>
       </div>
       <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they're the easiest to read.</div>
@@ -4737,6 +4893,10 @@ try {
         <div class="help-item">
           <div class="help-icon">🎬</div>
           <div><div class="help-item-title">Not for the break shot</div><div class="help-item-desc">Shot Reader analyzes an open table — cue ball, object balls, pockets. It can&rsquo;t plan the break itself (a racked cluster has no single &ldquo;best shot&rdquo;). Break first, then take your picture.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🥇</div>
+          <div><div class="help-item-title">9-Ball: set your lowest ball</div><div class="help-item-desc">In 9-Ball you must hit the <strong>lowest-numbered ball</strong> first — and the AI can&rsquo;t read numbers yet. Tap <strong>🎯 Set Lowest Ball</strong> (Step 4), then tap that ball; it gets a cyan LOWEST ring and the suggestion plans it. Skip this and the app shows the easiest shot with a reminder to confirm it&rsquo;s legal.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🔟</div>
@@ -4807,6 +4967,27 @@ try {
   </div>
 
 
+<!-- RULES OVERLAY -->
+<div id="rules-overlay" onclick="if(event.target===this)toggleRules()" style="display:none;position:fixed;inset:0;z-index:9970;background:rgba(4,10,7,.96);align-items:flex-start;justify-content:center;padding:18px;overflow-y:auto">
+  <div style="width:100%;max-width:560px;background:linear-gradient(180deg,#13271b,#0a1710);border:1px solid #9c7a34;border-radius:18px;padding:20px 18px;margin:10px 0 40px;font-family:'Barlow Condensed',sans-serif">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div style="font-family:'Playfair Display',serif;font-weight:800;color:#c8963e;font-size:21px">📜 Game Rules</div>
+      <button onclick="toggleRules()" style="background:rgba(200,151,46,.15);border:1.5px solid #9c7a34;color:#e8c07a;border-radius:16px;padding:5px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed'">✕ Close</button>
+    </div>
+    <div style="font-size:12px;color:#8ba394;margin-bottom:14px">Quick summaries based on WPA World Standardized Rules — house rules vary, so agree before you break.</div>
+
+    <div style="font-family:'Playfair Display',serif;font-weight:700;color:#eadfc8;font-size:16px;margin:12px 0 5px">🎱 8-Ball</div>
+    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Fifteen balls: one player pockets the <strong style="color:#eadfc8">solids (1–7)</strong>, the other the <strong style="color:#eadfc8">stripes (9–15)</strong>. Groups are decided by the first legally pocketed ball after the break (the table is "open" until then). Pocket your whole group, then legally pocket the <strong style="color:#eadfc8">8-ball in a called pocket</strong> to win. Pocketing the 8 early, or scratching while shooting the 8, loses the game. On each shot you must hit one of your own balls first and then drive any ball to a rail or pocket one — otherwise it's a foul (cue ball in hand for your opponent in most rule sets).</div>
+
+    <div style="font-family:'Playfair Display',serif;font-weight:700;color:#eadfc8;font-size:16px;margin:14px 0 5px">🔢 9-Ball</div>
+    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Played with balls <strong style="color:#eadfc8">1–9</strong>. On every shot the cue ball must contact the <strong style="color:#eadfc8">lowest-numbered ball on the table first</strong> — that's the whole game. Balls don't have to drop in order: a combo off the lowest ball counts, and <strong style="color:#eadfc8">pocketing the 9 legally at any time wins</strong>. Fouls (wrong ball first, no rail after contact, scratch) give your opponent ball-in-hand anywhere. Three consecutive fouls loses the rack in most rule sets.</div>
+
+    <div style="font-family:'Playfair Display',serif;font-weight:700;color:#eadfc8;font-size:16px;margin:14px 0 5px">1️⃣4️⃣.1️⃣ Straight Pool (14.1 Continuous)</div>
+    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Every ball counts <strong style="color:#eadfc8">one point</strong>; first to the agreed score (often 100) wins. You must <strong style="color:#eadfc8">call ball and pocket</strong> on every shot. When 14 balls are pocketed, they're re-racked with the 15th left in place and the run continues — big runs are the whole art. Fouls cost a point; three consecutive fouls costs 15 plus a re-rack break.</div>
+
+    <div style="font-size:11.5px;color:#8ba394;margin-top:16px;border-top:1px solid #1f3a2a;padding-top:10px">Shot Reader tip: pick your game in Step 4 first — the rules change which ball you should be shooting at.</div>
+  </div>
+</div>
 <!-- WELCOME + TOUR OVERLAYS -->
 <div class="welcome-overlay" id="welcome-overlay">
   <div class="welcome-card">
