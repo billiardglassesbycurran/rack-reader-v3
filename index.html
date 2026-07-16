@@ -84,6 +84,7 @@ body::before {
   padding-bottom: calc(158px + env(safe-area-inset-bottom));
 }
 
+.hdr-inner { flex-wrap: wrap; }
 .hdr {
   background: var(--rail);
   padding: 13px 16px 11px;
@@ -1136,11 +1137,13 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.15.0351</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.15.0947</span></div>
       </div>
-      <button class="help-btn" onclick="showWelcome()" title="Welcome tour" style="margin-right:6px"><span style="font-size:14px">👋</span> Tour</button>
-      <button class="help-btn" onclick="toggleRules()" title="Official game rules" style="margin-right:6px"><span style="font-size:14px">📜</span> Rules</button>
-      <button class="help-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
+      <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
+        <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
+        <button class="help-btn" onclick="toggleRules()" title="Official game rules"><span style="font-size:14px">📜</span> Rules</button>
+        <button class="help-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
+      </div>
     </div>
   </header>
 
@@ -1158,6 +1161,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     </div>
     <video id="live-video" autoplay playsinline muted style="display:none"></video>
     <div class="scan-overlay" id="scan-overlay">
+      <canvas id="table-outline" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
       <div class="scan-line"></div>
       <div class="corner tl"></div><div class="corner tr"></div>
       <div class="corner bl"></div><div class="corner br"></div>
@@ -1200,8 +1204,22 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:14px 2px 8px;display:flex;align-items:center;gap:8px">
     <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">2</span> Line up the table
   </div>
-  <button class="btn" id="step2-anchor" onclick="startAlign()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff"><span style="font-size:16px">📐</span> Align Table <span style="opacity:.65;font-weight:400">— auto-place 6 pockets</span></button>
-  <div style="font-size:11.5px;color:var(--text-muted);margin:5px 2px 0;line-height:1.4">Align places every visible pocket at once — or add pockets one at a time with <strong style="color:#9fe4ff">＋ Pocket</strong> (above the table). Tap a pocket twice to remove it.</div>
+  <div style="display:flex;gap:7px">
+    <button class="btn" id="step2-anchor" onclick="startAlign()" style="flex:1;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff"><span style="font-size:16px">📐</span> Align Table <span style="opacity:.65;font-weight:400">— tap 4 corners</span></button>
+    <button class="btn" onclick="autoAlignTable()" title="Let the app find the table" style="flex-shrink:0;background:linear-gradient(180deg,#2a2410,#1c1808);color:var(--gold-lt);border:1px solid var(--gold-dim);padding:0 14px">✨ Auto</button>
+  </div>
+  <div style="font-size:11.5px;color:var(--text-muted);margin:5px 2px 0;line-height:1.4"><strong style="color:var(--gold-lt)">✨ Auto</strong> finds the table for you (drag corners to fine-tune) — or tap 📐 and tap the 4 corners yourself. Either way every visible pocket is placed; add singles with <strong style="color:#9fe4ff">＋ Pocket</strong>, tap a pocket twice to remove it.</div>
+  <div style="margin-top:9px"><div id="tablesize-row" style="margin-bottom:12px">
+        <div class="autoscan-label" style="margin-bottom:6px">📏 Table Size</div>
+        <div class="pills" style="display:flex;gap:6px">
+          <div class="pill" onclick="setTableSize('6',this)" style="flex:1;text-align:center">6-ft</div>
+          <div class="pill active" onclick="setTableSize('7',this)" style="flex:1;text-align:center">7-ft Bar</div>
+          <div class="pill" onclick="setTableSize('8',this)" style="flex:1;text-align:center">8-ft</div>
+          <div class="pill" onclick="setTableSize('9',this)" style="flex:1;text-align:center">9-ft</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">Balls are the same size on every table — so they crowd a bar box more than a 9-footer. This sharpens blocked-path checks on aligned tables.</div>
+      </div>
+</div>
 
     <!-- VIEW MODE -->
     <div class="card adv-only" id="view-mode-card">
@@ -1391,6 +1409,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="canvas-placeholder" id="canvas-placeholder">
         <div class="big">🎯</div>
         <div>Captured frame appears here</div>
+        <button onclick="startSampleShot()" style="margin-top:12px;background:linear-gradient(180deg,#1a3a52,#0d2430);color:#9fe4ff;border:1.5px solid #40ceff;border-radius:12px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;box-shadow:0 4px 18px rgba(64,206,255,.15)">🎓 No table? Try a Sample Shot</button>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">A practice layout loads instantly — see how Shot Reader thinks</div>
       </div>
       <div class="capture-flash" id="capture-flash"></div>
     </div>
@@ -1436,7 +1456,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <!-- Simple/Advanced lives in the top pill now; keep the hidden state holder -->
       <input type="checkbox" id="simplemode-toggle" checked style="display:none">
       <!-- Best Shot — core setting, always visible, first -->
-      <div class="autoscan-row">
+            <div class="autoscan-row">
         <div>
           <div class="autoscan-label">&#11088; Auto-Evaluate Best Shot</div>
           <div class="autoscan-desc">Scores every ball and crowns your easiest shot. Place pockets for sharper results.</div>
@@ -1718,6 +1738,10 @@ async function runDetection() {
   if (!_modeChosen) {
     setStatus('Pick your game first — 8-Ball, 9-Ball, or Straight (Step 4)','warn');
     var gm = document.querySelector('.pills'); if (gm) try{ gm.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+    return;
+  }
+  if (_sampleMode) {
+    setStatus('🎓 Sample mode — the balls are already marked. Tap 🔍 Suggest Best Shot', 'gold');
     return;
   }
   if (!modelReady || !sourceImg) {
@@ -2206,6 +2230,7 @@ function stopCamera() {
   var asb = document.getElementById('autoscan-block'); if (asb) asb.style.display = 'none';
   document.getElementById('still-badge').classList.remove('show');
   document.getElementById('scan-overlay').classList.remove('active');
+  try { drawLiveOutline(null); } catch (_) {}
   cameraOn = false;
   camBtn.textContent = '📷 Start Camera'; camBtn.className = 'btn btn-green';
   scanBtn.disabled = true;
@@ -2219,6 +2244,61 @@ function stopCamera() {
 function updateSensitivity() { motionThreshold = 1.0 + (10 - parseInt(document.getElementById('sens-slider').value)) * 1.2; }
 function updateDelay()       { stillFramesNeeded = parseInt(document.getElementById('delay-slider').value); }
 
+var _lastOutline = 0;
+function drawLiveOutline(C) {
+  const oc = document.getElementById('table-outline');
+  if (!oc) return;
+  const cw = oc.clientWidth, ch = oc.clientHeight;
+  if (!cw || !ch) return;
+  if (oc.width !== cw) oc.width = cw;
+  if (oc.height !== ch) oc.height = ch;
+  const g = oc.getContext('2d');
+  g.clearRect(0, 0, cw, ch);
+  if (!C) {
+    // No lock yet — say so, so the scanner never looks broken or absent.
+    if (typeof cameraOn !== 'undefined' && cameraOn) {
+      const t = '\ud83d\udd0d Scanning for table\u2026 center the felt in frame';
+      g.save();
+      g.font = '600 12px Barlow Condensed, sans-serif';
+      const tw2 = g.measureText(t).width + 20;
+      g.fillStyle = 'rgba(8,20,13,0.62)';
+      g.beginPath(); g.roundRect((cw - tw2)/2, 10, tw2, 22, 11); g.fill();
+      g.fillStyle = 'rgba(200,220,205,0.85)'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(t, cw/2, 21);
+      g.restore();
+    }
+    return;
+  }
+  // #live-video uses object-fit: cover — map video coords through the crop.
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const s = Math.max(cw / vw, ch / vh);
+  const offX = (cw - vw * s) / 2, offY = (ch - vh * s) / 2;
+  const M = p => [p.fx * vw * s + offX, p.fy * vh * s + offY];
+  const pts = C.map(M);
+  g.save();
+  g.strokeStyle = 'rgba(255,255,255,0.95)';
+  g.lineWidth = 3; g.setLineDash([12, 9]);
+  g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 6;
+  g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < 4; i++) g.lineTo(pts[i][0], pts[i][1]);
+  g.closePath(); g.stroke();
+  // pocket hints: 4 corners + long-rail midpoints
+  g.setLineDash([]); g.lineWidth = 2.5;
+  const mids = [[(pts[0][0]+pts[1][0])/2, (pts[0][1]+pts[1][1])/2],
+                [(pts[2][0]+pts[3][0])/2, (pts[2][1]+pts[3][1])/2]];
+  pts.concat(mids).forEach(function(p) {
+    g.beginPath(); g.arc(p[0], p[1], 13, 0, 7); g.stroke();
+  });
+  // confidence chip
+  const label = '\u2713 Table found \u2014 SCAN when ready';
+  g.font = '700 13px Barlow Condensed, sans-serif';
+  const tw = g.measureText(label).width + 22;
+  g.shadowBlur = 0; g.fillStyle = 'rgba(8,20,13,0.82)';
+  g.beginPath(); g.roundRect((cw - tw)/2, 10, tw, 24, 12); g.fill();
+  g.fillStyle = '#9df7c3'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(label, cw/2, 22);
+  g.restore();
+}
 function startMotionLoop() {
   let lastCheck = 0;
   function loop(ts) {
@@ -2227,6 +2307,12 @@ function startMotionLoop() {
     if (ts - lastCheck < 200) return;
     lastCheck = ts;
     analyzeMotion();
+    // live table scan (~every 600ms; cheap: 200px thumbnail flood fill)
+    if (ts - _lastOutline > 600) {
+      _lastOutline = ts;
+      try { drawLiveOutline(_detectTableCorners(video, video.videoWidth, video.videoHeight)); }
+      catch (_) { drawLiveOutline(null); }
+    }
   }
   motionRAF = requestAnimationFrame(loop);
 }
@@ -2338,8 +2424,11 @@ async function captureFrame(mode) {
   tmp.getContext('2d').drawImage(video, 0, 0, vw, vh);
   const img = new Image();
   img.onload = () => {
-    sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; _pickingLowest = false; window._pendingPocketRemove = null;
+    sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; _pickingLowest = false; window._pendingPocketRemove = null; _sampleMode = false;
     renderCanvas();
+    // Camera capture: auto-align immediately (fail-open — worst case is the
+    // normal "couldn't find the table" guidance and manual align as before)
+    setTimeout(function(){ try { autoAlignTable(); } catch(_) {} }, 80);
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
     document.getElementById('detections-box').classList.remove('show');
@@ -3181,6 +3270,77 @@ function rebuildFromCorners() {
   s.forEach(p => add(p.x, p.y));
   renderCanvas();
 }
+/* ── ✨ AUTO-ALIGN (assist) ──
+   Finds the felt by colour: samples the photo's centre, flood-fills the
+   connected felt region, takes its four extreme corners, and nudges them
+   outward to the rail line. Proposes the SAME corner marks manual align
+   creates, then runs the same rebuild — so drag-to-fine-tune, pockets, and
+   Build-2 geometry all work identically. Fails open to manual align. */
+function _rgb2hsv(r,g,b){ r/=255; g/=255; b/=255;
+  const M=Math.max(r,g,b), m=Math.min(r,g,b), d=M-m;
+  let hh=0; if(d){ if(M===r)hh=((g-b)/d)%6; else if(M===g)hh=(b-r)/d+2; else hh=(r-g)/d+4; hh*=60; if(hh<0)hh+=360; }
+  return [hh, M?d/M:0, M];
+}
+function _detectTableCorners(el, natW, natH) {
+  // Core felt-finder. Works on any drawable (photo or live video frame).
+  // Returns 4 corners as {fx,fy} in TL,TR,BR,BL order, or null.
+  const SW = 200, SH = Math.max(60, Math.round(SW * natH / natW));
+  const sc = _detectTableCorners._c || (_detectTableCorners._c = document.createElement('canvas'));
+  sc.width = SW; sc.height = SH;
+  const sx = sc.getContext('2d', { willReadFrequently: true });
+  sx.drawImage(el, 0, 0, SW, SH);
+  const data = sx.getImageData(0, 0, SW, SH).data;
+  const P = (x, y) => { const i = (y * SW + x) * 4; return [data[i], data[i+1], data[i+2]]; };
+  const hs = [], ss = [], vs = [];
+  for (let y = Math.floor(SH*0.38); y < SH*0.62; y++)
+    for (let x = Math.floor(SW*0.38); x < SW*0.62; x++) {
+      const [r,g,b] = P(x,y); const [hh,s,v] = _rgb2hsv(r,g,b);
+      hs.push(hh); ss.push(s); vs.push(v);
+    }
+  hs.sort((a,b)=>a-b); ss.sort((a,b)=>a-b); vs.sort((a,b)=>a-b);
+  const rh = hs[hs.length>>1], rs = ss[ss.length>>1], rv = vs[vs.length>>1];
+  const match = (x, y) => { const [r,g,b] = P(x,y); const [hh,s,v] = _rgb2hsv(r,g,b);
+    let dh = Math.abs(hh - rh); if (dh > 180) dh = 360 - dh;
+    return dh < 30 && Math.abs(s - rs) < 0.4 && Math.abs(v - rv) < 0.45 && s > 0.15; };
+  if (!match(SW>>1, SH>>1)) return null;
+  const seen = new Uint8Array(SW*SH); const q = [[SW>>1, SH>>1]]; const pts = [];
+  seen[(SH>>1)*SW + (SW>>1)] = 1;
+  while (q.length) { const [x,y] = q.pop(); pts.push([x,y]);
+    if (x>0     && !seen[y*SW+x-1]   && match(x-1,y)) { seen[y*SW+x-1]=1;   q.push([x-1,y]); }
+    if (x<SW-1  && !seen[y*SW+x+1]   && match(x+1,y)) { seen[y*SW+x+1]=1;   q.push([x+1,y]); }
+    if (y>0     && !seen[(y-1)*SW+x] && match(x,y-1)) { seen[(y-1)*SW+x]=1; q.push([x,y-1]); }
+    if (y<SH-1  && !seen[(y+1)*SW+x] && match(x,y+1)) { seen[(y+1)*SW+x]=1; q.push([x,y+1]); }
+  }
+  if (pts.length < SW*SH*0.10) return null;
+  let tl=pts[0], tr=pts[0], br=pts[0], bl=pts[0];
+  for (const p of pts) { const [x,y]=p;
+    if (x+y < tl[0]+tl[1]) tl=p; if (x-y > tr[0]-tr[1]) tr=p;
+    if (x+y > br[0]+br[1]) br=p; if (y-x > bl[1]-bl[0]) bl=p; }
+  const cx=(tl[0]+tr[0]+br[0]+bl[0])/4, cy=(tl[1]+tr[1]+br[1]+bl[1])/4;
+  const ex = p => ({ fx: Math.min(.995, Math.max(.005, (p[0]+(p[0]-cx)*0.035)/SW)),
+                     fy: Math.min(.995, Math.max(.005, (p[1]+(p[1]-cy)*0.035)/SH)) });
+  const C = [ex(tl), ex(tr), ex(br), ex(bl)];
+  const area = Math.abs((C[1].fx-C[0].fx)*(C[3].fy-C[0].fy) - (C[3].fx-C[0].fx)*(C[1].fy-C[0].fy));
+  if (area < 0.10) return null;
+  return C;
+}
+function autoAlignTable() {
+  if (!sourceImg) { setStatus('Load or capture a photo first','warn'); return; }
+  try {
+    const C = _detectTableCorners(sourceImg, sourceImg.width, sourceImg.height);
+    if (!C) { setStatus('Couldn\u2019t find the table \u2014 tap \ud83d\udcd0 Align Table and tap the 4 corners yourself','warn'); return; }
+    marks = marks.filter(m => m.type !== 'corner' && m.type !== 'pocket');
+    aligning = false; updateAlignChrome();
+    C.forEach((c, idx) => marks.push({ type:'corner', idx, fx:c.fx, fy:c.fy }));
+    rebuildFromCorners();
+    renderCanvas(); hideSuggestion();
+    var _pc = window._alignPlaced ? window._alignPlaced() : 6;
+    setStatus('\u2728 Table found \u2014 '+_pc+' pocket'+(_pc===1?'':'s')+' placed. Drag any corner to fine-tune, or \ud83d\udcd0 Align Table to redo by hand.','live');
+  } catch (e) {
+    console.log('DEBUG: autoAlign failed', e);
+    setStatus('Auto-align hit a snag \u2014 tap \ud83d\udcd0 Align Table and tap the 4 corners','warn');
+  }
+}
 function startAlign() {
   if (!sourceImg) { setStatus('Load or capture a photo first','warn'); return; }
   // Option A: aligning starts a clean slate — old pockets and any old box go.
@@ -3237,15 +3397,33 @@ function pointToSegmentDist(p, a, b) {
   return Math.hypot(p.fx-(a.fx+t*vx), p.fy-(a.fy+t*vy));
 }
 // ── Is the object→pocket path blocked by another ball? ──
-const BALL_RADIUS = 0.024;
-const BLOCK_THRESHOLD = BALL_RADIUS*2;
+/* ── TABLE SIZE ──
+   Every standard table is 2:1, so alignment/outline never change with size —
+   but the BALLS don't scale (always 2.25"), so a ball takes up more of a
+   7-foot bar box than a 9-foot tournament table. When the table is ALIGNED,
+   geometry runs in canonical table units and these radii become exact:
+   radius fraction = 1.125" / playing length. Unaligned photo-space keeps the
+   legacy tuned constant so nothing changes for un-aligned photos. */
+var TABLE_SIZE = '7';                       // '6' | '7' | '8' | '9' (feet)
+const TABLE_LEN_IN = { '6': 70, '7': 78, '8': 88, '9': 100 };
+const LEGACY_BALL_RADIUS = 0.024;           // photo-space tuning (unaligned)
+function BALL_R() {
+  return window._tHinv ? (1.125 / (TABLE_LEN_IN[TABLE_SIZE] || 78)) : LEGACY_BALL_RADIUS;
+}
+function setTableSize(sz, el) {
+  TABLE_SIZE = sz;
+  if (el) { document.querySelectorAll('#tablesize-row .pill').forEach(p => p.classList.remove('active')); el.classList.add('active'); }
+  if (typeof saveSettings === 'function') saveSettings();
+  if (sourceImg) { renderCanvas(); hideSuggestion(); }
+  setStatus('Table size set to ' + sz + '-foot — affects blocking and clearance on aligned tables', 'gold');
+}
 function pathBlocked(ball, pocket, allBalls) {
   ball = geoP(ball); pocket = geoP(pocket); allBalls = allBalls.map(geoP);
   if (!allBalls) return false;
   for (const other of allBalls) {
     if (other === ball) continue;
-    if (dist(other, ball) < BALL_RADIUS*0.5) continue;
-    if (pointToSegmentDist(other, ball, pocket) < BLOCK_THRESHOLD) {
+    if (dist(other, ball) < BALL_R()*0.5) continue;
+    if (pointToSegmentDist(other, ball, pocket) < BALL_R()*2) {
       const along = (other.fx-ball.fx)*(pocket.fx-ball.fx) + (other.fy-ball.fy)*(pocket.fy-ball.fy);
       const segLen2 = (pocket.fx-ball.fx)**2 + (pocket.fy-ball.fy)**2;
       const t = segLen2>0 ? along/segLen2 : -1;
@@ -3303,7 +3481,7 @@ function comboLaneClear(ax, ay, bx, by, balls, ignore) {
   for (const o of balls) {
     if (ignore.indexOf(o) !== -1) continue;
     const d = pointToSegmentDist({fx:o.fx, fy:o.fy}, {fx:ax, fy:ay}, {fx:bx, fy:by});
-    if (d < BLOCK_THRESHOLD) {
+    if (d < LEGACY_BALL_RADIUS*2) {   // combo helpers work in photo space
       const along = (o.fx-ax)*(bx-ax) + (o.fy-ay)*(by-ay);
       const segLen2 = (bx-ax)**2 + (by-ay)**2;
       const t = segLen2 > 0 ? along/segLen2 : -1;
@@ -3332,7 +3510,7 @@ function comboPosHint(m) {
 function findComboShot(cue, targets, pockets) {
   if (!cue || !targets || targets.length < 2) return null;
   let best = null;
-  const twoR = BALL_RADIUS * 2;
+  const twoR = LEGACY_BALL_RADIUS * 2;   // combo ghost math is photo-space
   for (const B of targets) {                 // ball we want to pocket
     for (const P of pockets) {
       const bpx = P.fx - B.fx, bpy = P.fy - B.fy;
@@ -3526,6 +3704,9 @@ function suggestShot() {
   // Combos scan all 6 standard pockets (an escape may use a pocket the direct
   // shot can't), even when the user has marked a specific pocket for direct aim.
   window._comboShot = null;
+  var sampleNote = _sampleMode
+    ? '\n\n\ud83c\udf93 SAMPLE SHOT \u2014 nothing was photographed; this is a practice layout. At a real table: snap a photo, align it, and this exact analysis runs on your shot.'
+    : '';
   var eightNote = '';
   if (gameMode === '8ball' && allTargets.length && allTargets.every(function(t){ return t.type === 'eight'; })) {
     eightNote = '\n\n\ud83c\udfb1 8-BALL TO WIN: your group is clear \u2014 call your pocket before you shoot. Pocketing the 8 wins; scratching or pocketing it in the wrong pocket loses.';
@@ -3638,7 +3819,7 @@ function suggestShot() {
   else if (difficulty <= 6) plainHeadline = '⚖️ This is a moderate shot — focus and commit.\n\n';
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
-  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote + nineNote + eightNote;
+  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote + nineNote + eightNote + sampleNote;
   sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
@@ -4011,12 +4192,86 @@ function setMode(mode) {
 
 var _modeChosen = false;      // must pick a game before AI Detect / Suggest
 var _pickingLowest = false;   // 9-ball: next ball tap sets the must-hit ball
+var _sampleMode = false;      // sample-shot layout loaded (drawn table, no photo)
 
 function pickLowestBall() {
   var balls = marks.filter(function(m){ return m.type==='obj'||m.type==='stripe'||m.type==='eight'; });
   if (!balls.length) { setStatus('Mark or AI-detect the balls first','warn'); return; }
   _pickingLowest = true;
   setStatus('Tap the LOWEST-numbered ball on the table','gold');
+}
+// ── DRILLS PHASE A: "Try a Sample Shot" ──
+// Draws a clean top-down table as an image, loads it as the photo, and places
+// a 5-ball layout as ordinary marks — so the REAL engine (crown, ghost, key,
+// difficulty) runs on it untouched. Nothing is photographed or downloaded.
+function buildSampleTableImage() {
+  const W = 1200, Hh = 680, c = document.createElement('canvas');
+  c.width = W; c.height = Hh;
+  const x = c.getContext('2d');
+  // wood rails
+  const wg = x.createLinearGradient(0, 0, W, Hh);
+  wg.addColorStop(0, '#6e2420'); wg.addColorStop(0.5, '#5a1d18'); wg.addColorStop(1, '#4a1713');
+  x.fillStyle = wg; x.fillRect(0, 0, W, Hh);
+  x.strokeStyle = 'rgba(255,255,255,0.04)'; x.lineWidth = 1;
+  for (let i = 0; i < 26; i++) { x.beginPath(); x.moveTo(0, i * 30); x.lineTo(W, i * 30 + 14); x.stroke(); }
+  // felt
+  const m = 64;
+  const fg = x.createRadialGradient(W * .45, Hh * .42, 80, W * .5, Hh * .5, W * .62);
+  fg.addColorStop(0, '#217f4f'); fg.addColorStop(0.7, '#186340'); fg.addColorStop(1, '#123a27');
+  x.fillStyle = fg; x.fillRect(m, m, W - 2 * m, Hh - 2 * m);
+  // felt wear
+  x.fillStyle = 'rgba(255,255,255,0.025)';
+  for (let i = 0; i < 40; i++) { x.beginPath(); x.arc(m + Math.random() * (W - 2 * m), m + Math.random() * (Hh - 2 * m), 6 + Math.random() * 24, 0, 7); x.fill(); }
+  // pockets (fractions match the marks below)
+  const pf = [[.053,.094],[.5,.062],[.947,.094],[.053,.906],[.5,.938],[.947,.906]];
+  pf.forEach(function(p) {
+    const px = p[0] * W, py = p[1] * Hh;
+    x.beginPath(); x.arc(px, py, 24, 0, 7); x.fillStyle = '#070707'; x.fill();
+    x.lineWidth = 5; x.strokeStyle = '#262626'; x.stroke();
+  });
+  // diamonds
+  x.fillStyle = 'rgba(240,230,200,0.8)';
+  for (let i = 1; i < 8; i++) { if (i === 4) continue; dt(m + (W - 2 * m) * i / 8, m / 2); dt(m + (W - 2 * m) * i / 8, Hh - m / 2); }
+  for (let i = 1; i < 4; i++) { if (i === 2) continue; dt(m / 2, m + (Hh - 2 * m) * i / 4); dt(W - m / 2, m + (Hh - 2 * m) * i / 4); }
+  function dt(px, py) { x.beginPath(); x.arc(px, py, 4, 0, 7); x.fill(); }
+  return c.toDataURL('image/jpeg', 0.9);
+}
+function startSampleShot() {
+  const img = new Image();
+  img.onload = function() {
+    if (typeof cameraOn !== 'undefined' && cameraOn && typeof stopCamera === 'function') stopCamera();
+    sourceImg = img; marks = []; aligning = false;
+    window._tableH = null; window._tHf = null; window._tHinv = null;
+    _pickingLowest = false; window._pendingPocketRemove = null;
+    _sampleMode = true;
+    viewMode = 'overhead'; if (typeof syncViewPills === 'function') syncViewPills();
+    // Auto-pick 8-Ball so the mode gate never blocks the demo
+    if (!_modeChosen) {
+      let pill = null;
+      document.querySelectorAll('.pills .pill').forEach(function(p) { if (p.textContent.trim() === '8-Ball') pill = p; });
+      if (pill) setGame('8ball', pill);
+    }
+    // pockets (match the drawn image)
+    [[.053,.094],[.5,.062],[.947,.094],[.053,.906],[.5,.938],[.947,.906]].forEach(function(p) {
+      marks.push({ type: 'pocket', fx: p[0], fy: p[1] });
+    });
+    // the 5-ball layout: cue, two solids, a stripe, and the 8 (which the
+    // 8-Ball guard correctly refuses to crown — a live rules demo)
+    marks.push({ type: 'cue',    fx: .30, fy: .70 });
+    marks.push({ type: 'obj',    fx: .55, fy: .40 });
+    marks.push({ type: 'obj',    fx: .72, fy: .62 });
+    marks.push({ type: 'stripe', fx: .42, fy: .24 });
+    marks.push({ type: 'eight',  fx: .62, fy: .78 });
+    renderCanvas();
+    document.getElementById('canvas-placeholder').style.display = 'none';
+    canvas.style.display = 'block';
+    hideSuggestion();
+    document.getElementById('detections-box').classList.remove('show');
+    document.getElementById('redetect-btn').style.display = 'none';
+    setStatus('🎓 Sample shot loaded — tap 🔍 Suggest Best Shot below', 'gold');
+    try { document.getElementById('canvas-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+  };
+  img.src = buildSampleTableImage();
 }
 function toggleRules() {
   var o = document.getElementById('rules-overlay');
@@ -4032,6 +4287,7 @@ function setGame(mode,el) {
   // Only clear the game-mode pills, not the group-filter pills
   document.querySelectorAll('.pills .pill').forEach(p=>{
     if (p.id==='grp-all'||p.id==='grp-solids'||p.id==='grp-stripes') return;
+    if (p.closest && p.closest('#tablesize-row')) return;   // table size is separate
     p.classList.remove('active');
   });
   el.classList.add('active'); hideSuggestion();
@@ -4180,7 +4436,7 @@ function clearMarks() {
 
 function discardFrame() {
   marks=[]; sourceImg=null; aligning=false; window._tableH=null; window._tHf=null; window._tHinv=null;
-  _pickingLowest=false; window._pendingPocketRemove=null;
+  _pickingLowest=false; window._pendingPocketRemove=null; _sampleMode=false;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   canvas.style.display='none'; placeholder.style.display='';
   document.getElementById('detections-box').classList.remove('show');
@@ -4486,6 +4742,7 @@ function saveSettings() {
     localStorage.setItem('rr_settings', JSON.stringify({
       autoscan:  document.getElementById('autoscan-toggle').checked,
       personCheck: (document.getElementById('personcheck-toggle')||{checked:true}).checked,
+      tableSize: TABLE_SIZE,
       sens:      document.getElementById('sens-slider').value,
       delay:     document.getElementById('delay-slider').value,
       chime:     document.getElementById('chime-toggle').checked,
@@ -4518,6 +4775,10 @@ function loadSettings() {
     }
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
     if (s.personCheck !== undefined) { var _pc = document.getElementById('personcheck-toggle'); if (_pc) _pc.checked = s.personCheck; }
+    if (s.tableSize && TABLE_LEN_IN[s.tableSize]) {
+      TABLE_SIZE = s.tableSize;
+      document.querySelectorAll('#tablesize-row .pill').forEach(function(p){ p.classList.toggle('active', p.textContent.indexOf(s.tableSize + '-ft') === 0); });
+    }
     if (s.gameMode) {
       gameMode = s.gameMode;
       _modeChosen = true;
@@ -4974,6 +5235,18 @@ try {
         <div class="help-item">
           <div class="help-icon">🔢</div>
           <div><div class="help-item-title">Contact Aim Key (1–7)</div><div class="help-item-desc">A small ball face with 7 vertical lines shows exactly where to strike the object ball — <strong>4 is dead center</strong>, 3/5 a quarter-ball, 2/6 a half-ball, 1/7 a thin edge. The green line is your spot, like the alignment lines on a marked ball.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📏</div>
+          <div><div class="help-item-title">Table Size (Settings)</div><div class="help-item-desc">Pick your table — <strong>7-ft bar box</strong>, 8-ft home, 9-ft tournament, or 6-ft. The outline and angles are identical on all of them (every standard table is 2:1!), but balls don&rsquo;t scale — they crowd a small table more — so this sharpens the blocked-path and clearance checks once you&rsquo;ve aligned.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🪄</div>
+          <div><div class="help-item-title">Auto-Align — the app finds the table</div><div class="help-item-desc">Tap <strong>✨ Auto</strong> next to Align Table and Shot Reader looks for the felt and drops all four corners for you — then just drag any that are off. Works best when the whole table is visible and the felt colour stands out. In <strong>camera mode</strong> the outline appears live on the video as you frame the table, and every capture auto-aligns itself. If it can&rsquo;t find the table, nothing changes — manual Align is always there.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🎓</div>
+          <div><div class="help-item-title">Try a Sample Shot</div><div class="help-item-desc">No table around? Tap <strong>🎓 Try a Sample Shot</strong> on the empty frame — a practice layout loads on a drawn table and the full analysis runs on it: crown, ghost ring, contact key, difficulty. Great for showing a friend what the app does. Load any real photo to leave sample mode.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🚶</div>
