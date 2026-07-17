@@ -13,6 +13,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a1208">
+<link rel="apple-touch-icon" href="icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Curran's Shot Reader</title>
 
@@ -1137,12 +1140,13 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.15.0947</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.16.0721</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
         <button class="help-btn" onclick="toggleRules()" title="Official game rules"><span style="font-size:14px">📜</span> Rules</button>
         <button class="help-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
+        <button class="help-btn" id="install-btn" onclick="promptInstall()" title="Install Shot Reader" style="display:none;border-color:#40ceff;color:#9fe4ff"><span style="font-size:14px">📲</span> Install</button>
       </div>
     </div>
   </header>
@@ -1160,8 +1164,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div>Camera off — press <strong>Start Camera</strong> or upload a photo</div>
     </div>
     <video id="live-video" autoplay playsinline muted style="display:none"></video>
+    <canvas id="table-outline" style="display:none;position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3"></canvas>
     <div class="scan-overlay" id="scan-overlay">
-      <canvas id="table-outline" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
       <div class="scan-line"></div>
       <div class="corner tl"></div><div class="corner tr"></div>
       <div class="corner bl"></div><div class="corner br"></div>
@@ -1208,8 +1212,9 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <button class="btn" id="step2-anchor" onclick="startAlign()" style="flex:1;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff"><span style="font-size:16px">📐</span> Align Table <span style="opacity:.65;font-weight:400">— tap 4 corners</span></button>
     <button class="btn" onclick="autoAlignTable()" title="Let the app find the table" style="flex-shrink:0;background:linear-gradient(180deg,#2a2410,#1c1808);color:var(--gold-lt);border:1px solid var(--gold-dim);padding:0 14px">✨ Auto</button>
   </div>
-  <div style="font-size:11.5px;color:var(--text-muted);margin:5px 2px 0;line-height:1.4"><strong style="color:var(--gold-lt)">✨ Auto</strong> finds the table for you (drag corners to fine-tune) — or tap 📐 and tap the 4 corners yourself. Either way every visible pocket is placed; add singles with <strong style="color:#9fe4ff">＋ Pocket</strong>, tap a pocket twice to remove it.</div>
-  <div style="margin-top:9px"><div id="tablesize-row" style="margin-bottom:12px">
+  <div style="font-size:11.5px;color:var(--text-muted);margin:5px 2px 0;line-height:1.4"><strong style="color:var(--gold-lt)">✨ Auto</strong> finds the table for you — or tap 📐 and tap the 4 corners. Every visible pocket gets placed.</div>
+  <div class="adv-only" style="font-size:11.5px;color:var(--text-muted);margin:3px 2px 0;line-height:1.4">Drag corners to fine-tune · add single pockets with <strong style="color:#9fe4ff">＋ Pocket</strong> · tap a pocket twice to remove it.</div>
+  <div style="margin-top:9px"><div id="tablesize-row" class="adv-only" style="margin-bottom:12px">
         <div class="autoscan-label" style="margin-bottom:6px">📏 Table Size</div>
         <div class="pills" style="display:flex;gap:6px">
           <div class="pill" onclick="setTableSize('6',this)" style="flex:1;text-align:center">6-ft</div>
@@ -2195,6 +2200,7 @@ async function toggleCamera() {
 
 async function startCamera() {
   ensurePersonModel();   // background load; camera never waits on it
+  var _to = document.getElementById('table-outline'); if (_to) _to.style.display = 'block';
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     setStatus('Camera not supported — use photo upload', 'err'); return;
   }
@@ -2230,7 +2236,8 @@ function stopCamera() {
   var asb = document.getElementById('autoscan-block'); if (asb) asb.style.display = 'none';
   document.getElementById('still-badge').classList.remove('show');
   document.getElementById('scan-overlay').classList.remove('active');
-  try { drawLiveOutline(null); } catch (_) {}
+  var _to2 = document.getElementById('table-outline');
+  if (_to2) { const _g = _to2.getContext('2d'); _g && _g.clearRect(0,0,_to2.width,_to2.height); _to2.style.display = 'none'; }
   cameraOn = false;
   camBtn.textContent = '📷 Start Camera'; camBtn.className = 'btn btn-green';
   scanBtn.disabled = true;
@@ -4796,6 +4803,54 @@ function loadSettings() {
 // Auto-save settings on any change — deferred so all functions are defined
 
 /* ── WELCOME + GUIDED TOUR ── */
+/* ── PWA: install + offline (network-first — live site always wins) ── */
+var _deferredInstall = null;
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').then(function (reg) {
+      console.log('DEBUG: service worker registered (network-first)');
+      reg.addEventListener('updatefound', function () {
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function () {
+          // A new worker installed while an old one controls the page →
+          // offer a one-tap refresh to finish the swap.
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            var t = document.getElementById('update-toast');
+            if (t) t.style.display = 'flex';
+          }
+        });
+      });
+    }).catch(function (e) { console.log('DEBUG: SW registration failed', e); });
+  });
+}
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  _deferredInstall = e;
+  var b = document.getElementById('install-btn');
+  if (b) b.style.display = '';
+});
+function promptInstall() {
+  if (!_deferredInstall) return;
+  _deferredInstall.prompt();
+  _deferredInstall.userChoice.then(function () {
+    _deferredInstall = null;
+    var b = document.getElementById('install-btn');
+    if (b) b.style.display = 'none';
+  });
+}
+window.addEventListener('offline', function () {
+  setStatus('\ud83d\udcf4 Offline \u2014 using your saved copy. Everything you\u2019ve loaded before still works.', 'warn');
+});
+window.addEventListener('online', function () {
+  setStatus('\ud83c\udf10 Back online \u2014 you\u2019re on the latest version automatically', 'live');
+});
+window.addEventListener('appinstalled', function () {
+  var b = document.getElementById('install-btn');
+  if (b) b.style.display = 'none';
+  setStatus('\ud83d\udcf2 Installed! Shot Reader is on your home screen', 'live');
+});
+
 var TOUR_STEPS = [
   { sel:'#step1-anchor', n:'1 · Take a picture', d:'Start here. Snap a photo of your table, or upload one you already have. Overhead shots work best.' },
   { sel:'#step2-anchor', n:'2 · Line up the table', d:'Tap the four corners of the table and we place every pocket for you \u2014 no fiddly manual marking.' },
@@ -5237,6 +5292,10 @@ try {
           <div><div class="help-item-title">Contact Aim Key (1–7)</div><div class="help-item-desc">A small ball face with 7 vertical lines shows exactly where to strike the object ball — <strong>4 is dead center</strong>, 3/5 a quarter-ball, 2/6 a half-ball, 1/7 a thin edge. The green line is your spot, like the alignment lines on a marked ball.</div></div>
         </div>
         <div class="help-item">
+          <div class="help-icon">📲</div>
+          <div><div class="help-item-title">Install to your home screen</div><div class="help-item-desc">Shot Reader can live on your phone like a real app. <strong>Android:</strong> tap 📲 Install up top (or Chrome menu → Add to Home screen). <strong>iPhone:</strong> Safari Share button → <strong>Add to Home Screen</strong>. Once installed, the app — and after your first online session, even the AI — keeps working with no signal. Updates load automatically whenever you&rsquo;re online — nothing to manage. If a 🔄 &ldquo;new version ready&rdquo; note ever appears, one tap on <strong>Refresh</strong> finishes it. Offline, the status line tells you you&rsquo;re on your saved copy.</div></div>
+        </div>
+        <div class="help-item">
           <div class="help-icon">📏</div>
           <div><div class="help-item-title">Table Size (Settings)</div><div class="help-item-desc">Pick your table — <strong>7-ft bar box</strong>, 8-ft home, 9-ft tournament, or 6-ft. The outline and angles are identical on all of them (every standard table is 2:1!), but balls don&rsquo;t scale — they crowd a small table more — so this sharpens the blocked-path and clearance checks once you&rsquo;ve aligned.</div></div>
         </div>
@@ -5349,6 +5408,12 @@ try {
 
     <div style="font-size:11.5px;color:#8ba394;margin-top:16px;border-top:1px solid #1f3a2a;padding-top:10px">Shot Reader tip: pick your game in Step 4 first — the rules change which ball you should be shooting at.</div>
   </div>
+</div>
+<!-- SW UPDATE TOAST -->
+<div id="update-toast" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9960;background:linear-gradient(180deg,#13271b,#0a1710);border:1px solid #9c7a34;border-radius:14px;padding:10px 14px;align-items:center;gap:12px;box-shadow:0 10px 34px rgba(0,0,0,.6);font-family:'Barlow Condensed',sans-serif;max-width:92vw">
+  <span style="font-size:13.5px;color:#eadfc8">🔄 A new version of Shot Reader is ready</span>
+  <button onclick="location.reload()" style="background:#c8963e;color:#0b1811;font-weight:700;border:none;border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:'Barlow Condensed'">Refresh</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#8ba394;font-size:15px;cursor:pointer;padding:2px 4px">✕</button>
 </div>
 <!-- WELCOME + TOUR OVERLAYS -->
 <div class="welcome-overlay" id="welcome-overlay">
