@@ -1,0 +1,15 @@
+{
+  "name": "Curran's Shot Reader",
+  "short_name": "Shot Reader",
+  "description": "See the table. Read the shot. Free billiards shot analysis by Curran Opticians — since 1952.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c1c13",
+  "theme_color": "#1a1208",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
