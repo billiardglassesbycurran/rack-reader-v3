@@ -1140,7 +1140,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.20.0831</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.20.0855</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1571,7 +1571,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="div adv-only"></div>
     <div class="autoscan-row adv-only">
         <div>
-          <div class="autoscan-label">💠 Diamond System</div>
+          <div class="autoscan-label">💠 Diamond System <span onclick="event.stopPropagation();var e=document.getElementById('diamond-explainer');if(e)e.style.display='block';" style="cursor:pointer;color:#9fe4ff;font-size:12px;border:1px solid #33507e;border-radius:50%;padding:0 5px;margin-left:4px">?</span></div>
           <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap 📐 Align Table or ✨ Auto, then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
         </div>
         <label class="toggle">
@@ -3092,6 +3092,17 @@ function drawDiamondSystem(ctx, W, H) {
   ctx.restore();
 }
 function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.fill(); }
+function dismissDiamondExplainer() {
+  var e = document.getElementById('diamond-explainer'); if (e) e.style.display = 'none';
+  try { localStorage.setItem('curran_diamond_explained', '1'); } catch(_) {}
+}
+function maybeShowDiamondExplainer() {
+  var t = document.getElementById('aim-diamonds');
+  if (!t || !t.checked || !window._tHf) return;      // only when diamonds truly show
+  var seen = false; try { seen = localStorage.getItem('curran_diamond_explained') === '1'; } catch(_) {}
+  if (seen) return;
+  var e = document.getElementById('diamond-explainer'); if (e) e.style.display = 'block';
+}
 function toggleDiamonds() {
   var t = document.getElementById('aim-diamonds');
   if (t && t.checked && !window._tHf) {
@@ -3100,6 +3111,7 @@ function toggleDiamonds() {
     try { var a = document.getElementById('step2-anchor'); if (a && sourceImg) a.scrollIntoView({ behavior:'smooth', block:'center' }); } catch (_) {}
   } else if (t && t.checked) {
     setStatus('💠 Diamond System on — Corner-5 rail numbers (a learning estimate)', 'gold');
+    maybeShowDiamondExplainer();
   }
   if (typeof saveSettings === 'function') saveSettings();
   renderCanvas();
@@ -3393,6 +3405,7 @@ function rebuildFromCorners() {
     window._tCanonMax  = (tl >= ll) ? {x:1, y:0.5} : {x:0.5, y:1};
     window._tHf  = computeHomography(canonF, dstF);
     window._tHinv = computeHomography(dstF, canonF);
+    try { maybeShowDiamondExplainer(); } catch(_) {}
   }
   if (!Hm) { setStatus('Corners are too skewed to align — spread them out','warn'); return; }
   // Replace the box's own pockets (a corner moved → rebuild them). Pockets the
@@ -5575,6 +5588,18 @@ try {
   </div>
 </div>
 <!-- SW UPDATE TOAST -->
+<div id="diamond-explainer" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9962;background:linear-gradient(180deg,#14271b,#0a1710);border:1px solid var(--gold-dim);border-radius:14px;padding:13px 15px;box-shadow:0 12px 38px rgba(0,0,0,.65);font-family:'Barlow Condensed',sans-serif;max-width:340px;width:92vw">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+    <span style="font-family:'Playfair Display',serif;font-weight:700;color:var(--gold-lt);font-size:15px">💠 How to use the Diamond System</span>
+    <button onclick="dismissDiamondExplainer()" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px;line-height:1">✕</button>
+  </div>
+  <div style="font-size:13px;color:#cdddd0;line-height:1.55">
+    The rails are numbered. For a <b style="color:var(--cream)">kick or bank shot</b>, use the rule:<br>
+    <div style="text-align:center;margin:8px 0;padding:7px;background:#0b1811;border-radius:9px;border:1px solid var(--border);color:#ffe08a;font-weight:700;font-size:14px">cue-ball # − target # = aim diamond</div>
+    Find the diamond number nearest your <b style="color:var(--cream)">cue ball</b>, subtract the number where you want the ball to <b style="color:var(--cream)">arrive</b>, and aim through the diamond that equals the difference.
+    <div style="margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.45">📎 It's a <b style="color:#cdddd0">starting estimate</b> (assumes a rolling cue ball with running English). Every table plays a little differently — feel it out and adjust. Full details in 📖 Guide.</div>
+  </div>
+</div>
 <div id="update-toast" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9960;background:linear-gradient(180deg,#13271b,#0a1710);border:1px solid #9c7a34;border-radius:14px;padding:10px 14px;align-items:center;gap:12px;box-shadow:0 10px 34px rgba(0,0,0,.6);font-family:'Barlow Condensed',sans-serif;max-width:92vw">
   <span style="font-size:13.5px;color:#eadfc8">🔄 A new version of Shot Reader is ready</span>
   <button onclick="location.reload()" style="background:#c8963e;color:#0b1811;font-weight:700;border:none;border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:'Barlow Condensed'">Refresh</button>
