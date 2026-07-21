@@ -1140,7 +1140,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.16.0721</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.20.0831</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1203,6 +1203,76 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div id="viewpill-adv"    onclick="setSimpleView(false)" style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;color:#9fe4ff">Advanced</div>
   </div>
   <div style="text-align:center;font-size:11px;color:var(--text-muted);margin:5px 2px 2px;line-height:1.4">Switch to <span style="color:#9fe4ff;font-weight:600">Advanced</span> to unlock extra features &amp; settings below</div>
+
+    <div id="table-stage">
+    <div id="stage-core">
+  <div class="status-strip">
+    <div class="s-pip" id="s-pip"></div>
+    <div class="s-text" id="s-text">Loading AI model...</div>
+  </div>
+
+    <!-- CANVAS TOOLBAR (above the image so it never blocks taps) -->
+    <div class="canvas-toolbar" id="canvas-toolbar" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <button class="btn" onclick="quickAddPocket()" style="background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:7px 12px;font-size:13px">＋ Pocket</button>
+      <button class="btn" onclick="enlargeCanvas()" style="background:#12271a;color:#eadfc8;border:1px solid #1f3a2a;padding:7px 12px;font-size:13px">⛶ Enlarge</button>
+      <div style="flex:1"></div>
+      <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
+      <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
+      <div class="icon-btn" title="Discard frame" onclick="discardFrame()">✕</div>
+    </div>
+
+    <!-- CANVAS -->
+    <div class="canvas-card" id="canvas-card">
+      <canvas id="main-canvas" style="display:none"></canvas>
+      <canvas id="minimap" width="260" height="260" style="position:fixed;width:132px;height:132px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.7);display:none;z-index:60;pointer-events:none;background:#06100a"></canvas>
+      <div class="canvas-placeholder" id="canvas-placeholder">
+        <div class="big">🎯</div>
+        <div>Captured frame appears here</div>
+        <button onclick="startSampleShot()" style="margin-top:12px;background:linear-gradient(180deg,#1a3a52,#0d2430);color:#9fe4ff;border:1.5px solid #40ceff;border-radius:12px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;box-shadow:0 4px 18px rgba(64,206,255,.15)">🎓 No table? Try a Sample Shot</button>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">A practice layout loads instantly — see how Shot Reader thinks</div>
+      </div>
+      <div class="capture-flash" id="capture-flash"></div>
+    </div>
+    </div><!-- /stage-core -->
+
+    <!-- COLOR LEGEND -->
+    <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
+        <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
+        <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
+        <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
+        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
+        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
+        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
+        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
+        <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
+      </div>
+    </div>
+
+    <!-- AI DETECTIONS -->
+    <div id="quickmode-row" style="display:none;align-items:center;gap:8px;margin:8px 0 2px;background:#0b1811;border:1px solid var(--gold-dim);border-radius:12px;padding:8px 10px">
+      <span style="font-size:12px;font-weight:700;color:var(--gold-lt);letter-spacing:.5px;white-space:nowrap">🎱 PLAYING:</span>
+      <button onclick="quickSetGame('8ball')"    style="flex:1;background:#12271a;border:1px solid var(--border);color:var(--cream);border-radius:16px;padding:8px 4px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:'Barlow Condensed',sans-serif">8-Ball</button>
+      <button onclick="quickSetGame('9ball')"    style="flex:1;background:#12271a;border:1px solid var(--border);color:var(--cream);border-radius:16px;padding:8px 4px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:'Barlow Condensed',sans-serif">9-Ball</button>
+      <button onclick="quickSetGame('straight')" style="flex:1;background:#12271a;border:1px solid var(--border);color:var(--cream);border-radius:16px;padding:8px 4px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:'Barlow Condensed',sans-serif">Straight</button>
+    </div>
+    <div class="detections-box" id="detections-box">
+      <div class="det-title">🤖 AI Detected</div>
+      <div class="det-list" id="det-list"></div>
+      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
+    </div>
+
+    <!-- SHOT ADVICE — sits right under the table it describes -->
+      <div class="suggestion" id="suggestion">
+        <div class="geo-badges" id="geo-badges"></div>
+        <div class="sug-title"  id="sug-title"></div>
+        <div class="contact-key" id="contact-key" style="display:none;float:right;margin:0 0 8px 12px;text-align:center"></div>
+        <div class="sug-body"   id="sug-body"></div>
+        <div class="coaching-box" id="coaching-box"></div>
+      </div>
+    </div><!-- /table-stage -->
+
 
   <!-- STEP 2: ALIGN TABLE -->
   <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:14px 2px 8px;display:flex;align-items:center;gap:8px">
@@ -1390,68 +1460,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 
 
     <!-- TABLE VIEW (canvas + status, moved after controls) -->
-    <div id="table-stage">
-    <div id="stage-core">
-  <div class="status-strip">
-    <div class="s-pip" id="s-pip"></div>
-    <div class="s-text" id="s-text">Loading AI model...</div>
-  </div>
 
-    <!-- CANVAS TOOLBAR (above the image so it never blocks taps) -->
-    <div class="canvas-toolbar" id="canvas-toolbar" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
-      <button class="btn" onclick="quickAddPocket()" style="background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:7px 12px;font-size:13px">＋ Pocket</button>
-      <button class="btn" onclick="enlargeCanvas()" style="background:#12271a;color:#eadfc8;border:1px solid #1f3a2a;padding:7px 12px;font-size:13px">⛶ Enlarge</button>
-      <div style="flex:1"></div>
-      <div class="icon-btn undo-btn" title="Undo last mark" onclick="undoMark()">↩ Undo</div>
-      <div class="icon-btn" title="Clear all marks" onclick="clearMarks()">⊘</div>
-      <div class="icon-btn" title="Discard frame" onclick="discardFrame()">✕</div>
-    </div>
-
-    <!-- CANVAS -->
-    <div class="canvas-card" id="canvas-card">
-      <canvas id="main-canvas" style="display:none"></canvas>
-      <canvas id="minimap" width="260" height="260" style="position:fixed;width:132px;height:132px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.7);display:none;z-index:60;pointer-events:none;background:#06100a"></canvas>
-      <div class="canvas-placeholder" id="canvas-placeholder">
-        <div class="big">🎯</div>
-        <div>Captured frame appears here</div>
-        <button onclick="startSampleShot()" style="margin-top:12px;background:linear-gradient(180deg,#1a3a52,#0d2430);color:#9fe4ff;border:1.5px solid #40ceff;border-radius:12px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;box-shadow:0 4px 18px rgba(64,206,255,.15)">🎓 No table? Try a Sample Shot</button>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">A practice layout loads instantly — see how Shot Reader thinks</div>
-      </div>
-      <div class="capture-flash" id="capture-flash"></div>
-    </div>
-    </div><!-- /stage-core -->
-
-    <!-- COLOR LEGEND -->
-    <div id="color-legend" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-top:-4px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">What the lines mean</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--text-dim);line-height:1.4">
-        <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
-        <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
-        <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
-        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
-        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
-        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
-        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
-        <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
-      </div>
-    </div>
-
-    <!-- AI DETECTIONS -->
-    <div class="detections-box" id="detections-box">
-      <div class="det-title">🤖 AI Detected</div>
-      <div class="det-list" id="det-list"></div>
-      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
-    </div>
-
-    <!-- SHOT ADVICE — sits right under the table it describes -->
-      <div class="suggestion" id="suggestion">
-        <div class="geo-badges" id="geo-badges"></div>
-        <div class="sug-title"  id="sug-title"></div>
-        <div class="contact-key" id="contact-key" style="display:none;float:right;margin:0 0 8px 12px;text-align:center"></div>
-        <div class="sug-body"   id="sug-body"></div>
-        <div class="coaching-box" id="coaching-box"></div>
-      </div>
-    </div><!-- /table-stage -->
 
 
     <!-- SETTINGS (moved below the workflow) -->
@@ -1556,6 +1565,17 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         </div>
         <label class="toggle">
          <input type="checkbox" id="aim-targetline" checked onchange="renderCanvas()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div adv-only"></div>
+    <div class="autoscan-row adv-only">
+        <div>
+          <div class="autoscan-label">💠 Diamond System</div>
+          <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap 📐 Align Table or ✨ Auto, then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aim-diamonds" onchange="toggleDiamonds()">
           <div class="toggle-track"></div>
         </label>
       </div>
@@ -1766,7 +1786,10 @@ async function runDetection() {
     const inferCanvas = document.createElement('canvas');
     inferCanvas.width = 640; inferCanvas.height = 640;
     const inferCtx = inferCanvas.getContext('2d');
-    inferCtx.drawImage(canvas, 0, 0, 640, 640);
+    // Draw the ORIGINAL photo, not the on-screen canvas — the canvas has aiming
+    // lines and Diamond System numbers painted on it, which the model would
+    // otherwise detect as balls. Detection must only ever see the clean image.
+    inferCtx.drawImage(sourceImg, 0, 0, 640, 640);
 
     if (tfModel.detect) {
       // COCO-SSD style
@@ -2431,8 +2454,9 @@ async function captureFrame(mode) {
   tmp.getContext('2d').drawImage(video, 0, 0, vw, vh);
   const img = new Image();
   img.onload = () => {
-    sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; _pickingLowest = false; window._pendingPocketRemove = null; _sampleMode = false;
+    sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null; _pickingLowest = false; window._pendingPocketRemove = null; _sampleMode = false;
     renderCanvas();
+    updateQuickModeRow();
     // Camera capture: auto-align immediately (fail-open — worst case is the
     // normal "couldn't find the table" guidance and manual align as before)
     setTimeout(function(){ try { autoAlignTable(); } catch(_) {} }, 80);
@@ -2479,8 +2503,9 @@ function loadImageFile(file) {
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
-    stopCamera(); sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; _pickingLowest = false; window._pendingPocketRemove = null;
+    stopCamera(); sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null; _pickingLowest = false; window._pendingPocketRemove = null; _sampleMode = false;
     renderCanvas();
+    updateQuickModeRow();
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
     document.getElementById('detections-box').classList.remove('show');
@@ -2592,6 +2617,26 @@ function renderCanvas() {
       }
     });
   }
+
+  // ── DIAMOND SYSTEM overlay (Advanced toggle · aligned tables only) ──
+  drawDiamondSystem(ctx, W, H);
+
+  // ── NEXT-STEP chip: teach at the point of focus, since nobody reads first ──
+  (function(){
+    var ballMarks = marks.some(function(m){ return m.type!=='pocket' && m.type!=='corner'; });
+    var msg = null;
+    if (!_modeChosen) msg = '\u2b07 Next: pick your game below, then \ud83e\udd16 AI Detect';
+    else if (!ballMarks) msg = 'Next: tap \ud83e\udd16 AI Detect in the bottom bar';
+    if (!msg) return;
+    ctx.save();
+    ctx.font = '600 ' + Math.max(11, Math.round(W*0.019)) + 'px Barlow Condensed, sans-serif';
+    var tw = ctx.measureText(msg).width + 26;
+    ctx.fillStyle = 'rgba(8,20,13,0.82)';
+    _rr(ctx, (W - tw)/2, H - 40, tw, 27, 13);
+    ctx.fillStyle = '#ffe08a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(msg, W/2, H - 26.5);
+    ctx.restore();
+  })();
 
   // ── AIMING AIDS ── (use the crowned ball's chosen pocket, not just the first)
   const _crown = objs.find(o => o._rank === 0);
@@ -2964,6 +3009,101 @@ function aimToggle(id) {
   return el && el.checked;
 }
 
+/* ── DIAMOND SYSTEM (official Corner-5 numbering) ──
+   Requires an aligned table (window._tHf). Draws diamond markers just OUTSIDE
+   the four rails, mapped from canonical table space through the homography so
+   they land on the real rail line at any camera angle. Numbering per Dr. Dave's
+   Corner-5 System: the corner pocket = 5, increasing by 1/2 per diamond along
+   the short-rail direction; the long rail carries 1..8. It's a learning overlay
+   and an APPROXIMATION (assumes rolling CB + running English), never an aim dot. */
+function drawDiamondSystem(ctx, W, H) {
+  var t = document.getElementById('aim-diamonds');
+  if (!t || !t.checked) return;
+  if (!window._tHf) {
+    // Toggle is ON but the table isn't aligned — say so ON THE PHOTO, where
+    // the user is actually looking for the numbers.
+    ctx.save();
+    var msg = '\ud83d\udca0 Align the table to show diamonds \u2014 tap \ud83d\udcd0 Align Table or \u2728 Auto';
+    ctx.font = '600 ' + Math.max(11, Math.round(W*0.018)) + 'px Barlow Condensed, sans-serif';
+    var tw = ctx.measureText(msg).width + 24;
+    ctx.fillStyle = 'rgba(8,20,13,0.80)';
+    _rr(ctx, (W - tw)/2, 12, tw, 26, 13);
+    ctx.fillStyle = '#ffe08a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(msg, W/2, 25);
+    ctx.restore();
+    return;
+  }
+  var longAxis = window._tCanonLong || 'x';
+  var maxX = (window._tCanonMax && window._tCanonMax.x) || (longAxis==='x'?1:0.5);
+  var maxY = (window._tCanonMax && window._tCanonMax.y) || (longAxis==='x'?0.5:1);
+  // canonical → canvas pixels
+  function CP(cx, cy){ var p = applyHomography(window._tHf, cx, cy); return [p.x*W, p.y*H]; }
+  // push a rail point slightly OUTWARD (into the rail frame) along the outward normal
+  function outward(cx, cy, nx, ny, amt){ return CP(cx + nx*amt, cy + ny*amt); }
+
+  ctx.save();
+  ctx.font = '700 ' + Math.max(12, Math.round(W*0.022)) + 'px Barlow Condensed, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+  // Build the 4 rails as canonical segments with diamond counts + outward normals.
+  // Long rails: 8 diamonds. Short rails: 4 diamonds. Corner-5: corner=5.
+  var OUT = (longAxis==='x' ? maxY : maxX) * 0.11;   // outward offset (~11% of width)
+  var rails = [];
+  if (longAxis === 'x') {
+    rails.push({ p0:[0,0],    p1:[maxX,0],    n:[0,-1], count:8, kind:'long' });   // top long
+    rails.push({ p0:[0,maxY], p1:[maxX,maxY], n:[0, 1], count:8, kind:'long' });   // bottom long
+    rails.push({ p0:[0,0],    p1:[0,maxY],    n:[-1,0], count:4, kind:'short' });  // left short
+    rails.push({ p0:[maxX,0], p1:[maxX,maxY], n:[ 1,0], count:4, kind:'short' });  // right short
+  } else {
+    rails.push({ p0:[0,0],    p1:[0,maxY],    n:[-1,0], count:8, kind:'long' });
+    rails.push({ p0:[maxX,0], p1:[maxX,maxY], n:[ 1,0], count:8, kind:'long' });
+    rails.push({ p0:[0,0],    p1:[maxX,0],    n:[0,-1], count:4, kind:'short' });
+    rails.push({ p0:[0,maxY], p1:[maxX,maxY], n:[0, 1], count:4, kind:'short' });
+  }
+
+  rails.forEach(function(rl){
+    for (var i=0;i<=rl.count;i++){
+      var f = i/rl.count;
+      var isCorner = (i===0 || i===rl.count);
+      var isSidePkt = (rl.kind==='long' && i===rl.count/2);
+      var cx = rl.p0[0] + (rl.p1[0]-rl.p0[0])*f;
+      var cy = rl.p0[1] + (rl.p1[1]-rl.p0[1])*f;
+      // Diamond GLYPH only where real tables have diamonds — never at pockets.
+      if (!isCorner && !isSidePkt) {
+        var pos = outward(cx, cy, rl.n[0], rl.n[1], OUT*0.45);
+        ctx.save(); ctx.translate(pos[0], pos[1]); ctx.rotate(Math.PI/4);
+        var s = Math.max(4, W*0.008);
+        ctx.fillStyle='rgba(200,150,62,0.20)'; ctx.strokeStyle='rgba(200,150,62,0.6)'; ctx.lineWidth=1;
+        ctx.fillRect(-s,-s,2*s,2*s); ctx.strokeRect(-s,-s,2*s,2*s); ctx.restore();
+      }
+      // Corner-5 reference numbers: long rail 0–8 (0/8 at the corners, 4 at the
+      // side pocket); short rail 5·4·3·4·5 with the corner-pocket "5"s.
+      var num = (rl.kind==='long') ? String(i) : String([5,4,3,4,5][i]);
+      // Numbers sit INSIDE the rail (negative offset along the outward normal):
+      // photos crop tight to the table, so outside-the-rail labels get clipped
+      // off the canvas. Inside placement is also the classic diagram style.
+      var lbl = outward(cx, cy, rl.n[0], rl.n[1], -OUT*0.55);
+      var tw = ctx.measureText(num).width + 12;
+      ctx.fillStyle='rgba(8,20,13,0.82)';
+      _rr(ctx, lbl[0]-tw/2, lbl[1]-11, tw, 22, 10);
+      ctx.fillStyle='#ffe9b8'; ctx.fillText(num, lbl[0], lbl[1]);
+    }
+  });
+  ctx.restore();
+}
+function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.fill(); }
+function toggleDiamonds() {
+  var t = document.getElementById('aim-diamonds');
+  if (t && t.checked && !window._tHf) {
+    setStatus('💠 Diamonds need the whole table aligned — capture all four rails, then tap 📐 Align Table (or ✨ Auto)', 'warn');
+    // Bring the Align buttons to the user — the warning is only useful if seen.
+    try { var a = document.getElementById('step2-anchor'); if (a && sourceImg) a.scrollIntoView({ behavior:'smooth', block:'center' }); } catch (_) {}
+  } else if (t && t.checked) {
+    setStatus('💠 Diamond System on — Corner-5 rail numbers (a learning estimate)', 'gold');
+  }
+  if (typeof saveSettings === 'function') saveSettings();
+  renderCanvas();
+}
 function drawAimingAids(ctx, cue, objs, pkt, R, W, H) {
   if (!cue || objs.length === 0) return;
 
@@ -3249,6 +3389,8 @@ function rebuildFromCorners() {
     const canonF = (tl >= ll)
       ? [{x:0,y:0},{x:1,y:0},{x:1,y:0.5},{x:0,y:0.5}]
       : [{x:0,y:0},{x:0.5,y:0},{x:0.5,y:1},{x:0,y:1}];
+    window._tCanonLong = (tl >= ll) ? 'x' : 'y';   // which axis is the LONG rail
+    window._tCanonMax  = (tl >= ll) ? {x:1, y:0.5} : {x:0.5, y:1};
     window._tHf  = computeHomography(canonF, dstF);
     window._tHinv = computeHomography(dstF, canonF);
   }
@@ -3352,7 +3494,7 @@ function startAlign() {
   if (!sourceImg) { setStatus('Load or capture a photo first','warn'); return; }
   // Option A: aligning starts a clean slate — old pockets and any old box go.
   marks = marks.filter(m => m.type !== 'corner' && m.type !== 'pocket');
-  window._tableH = null; window._tHf = null; window._tHinv = null;
+  window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null;
   aligning = true;
   updateAlignChrome();
   renderCanvas(); hideSuggestion();
@@ -3388,7 +3530,7 @@ function quickAddPocket() {
 function clearAlign() {
   marks = marks.filter(m => m.type !== 'corner');
   aligning = false;
-  window._tableH = null; window._tHf = null; window._tHinv = null;
+  window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null;
   updateAlignChrome();
   renderCanvas();
   setStatus('Alignment cleared','gold');
@@ -4248,7 +4390,7 @@ function startSampleShot() {
   img.onload = function() {
     if (typeof cameraOn !== 'undefined' && cameraOn && typeof stopCamera === 'function') stopCamera();
     sourceImg = img; marks = []; aligning = false;
-    window._tableH = null; window._tHf = null; window._tHinv = null;
+    window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null;
     _pickingLowest = false; window._pendingPocketRemove = null;
     _sampleMode = true;
     viewMode = 'overhead'; if (typeof syncViewPills === 'function') syncViewPills();
@@ -4284,6 +4426,21 @@ function toggleRules() {
   var o = document.getElementById('rules-overlay');
   if (o) o.style.display = (o.style.display === 'flex') ? 'none' : 'flex';
 }
+function quickSetGame(mode) {
+  // Find the main game pill by its onclick and route through setGame, so the
+  // main row's active state, persistence, and all guards stay the one truth.
+  var pill = null;
+  document.querySelectorAll('.pills .pill').forEach(function(p){
+    var oc = p.getAttribute('onclick') || '';
+    if (oc.indexOf("setGame('" + mode + "'") !== -1) pill = p;
+  });
+  setGame(mode, pill);
+  updateQuickModeRow();
+}
+function updateQuickModeRow() {
+  var r = document.getElementById('quickmode-row');
+  if (r) r.style.display = (sourceImg && !_modeChosen) ? 'flex' : 'none';
+}
 function setGame(mode,el) {
   _modeChosen = true;
   _pickingLowest = false;
@@ -4291,6 +4448,7 @@ function setGame(mode,el) {
   var nr = document.getElementById('nineball-target-row');
   if (nr) nr.style.display = (mode === '9ball') ? 'block' : 'none';
   gameMode=mode;
+  if (typeof updateQuickModeRow === 'function') updateQuickModeRow();
   // Only clear the game-mode pills, not the group-filter pills
   document.querySelectorAll('.pills .pill').forEach(p=>{
     if (p.id==='grp-all'||p.id==='grp-solids'||p.id==='grp-stripes') return;
@@ -4424,7 +4582,7 @@ function undoMark() {
     // Undoing the alignment: remove the whole box + its auto-pockets as one unit,
     // so we never leave a half-broken 3-corner box or 5 auto-pockets behind.
     marks = marks.filter(m => m.type !== 'corner' && !m.fromBox);
-    window._tableH = null; window._tHf = null; window._tHinv = null;
+    window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null;
     setStatus('Table alignment removed','gold');
   } else {
     marks.pop();
@@ -4434,7 +4592,7 @@ function undoMark() {
 }
 
 function clearMarks() {
-  marks=[]; aligning=false; window._tableH=null; window._tHf=null; window._tHinv=null;
+  marks=[]; aligning=false; window._tableH=null; window._tHf=null; window._tHinv=null; window._tCanonLong=null;
   _pickingLowest=false; window._pendingPocketRemove=null;
   if (sourceImg) renderCanvas(); hideSuggestion();
   document.getElementById('detections-box').classList.remove('show');
@@ -4442,7 +4600,8 @@ function clearMarks() {
 }
 
 function discardFrame() {
-  marks=[]; sourceImg=null; aligning=false; window._tableH=null; window._tHf=null; window._tHinv=null;
+  var _qr = document.getElementById('quickmode-row'); if (_qr) _qr.style.display='none';
+  marks=[]; sourceImg=null; aligning=false; window._tableH=null; window._tHf=null; window._tHinv=null; window._tCanonLong=null;
   _pickingLowest=false; window._pendingPocketRemove=null; _sampleMode=false;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   canvas.style.display='none'; placeholder.style.display='';
@@ -4750,6 +4909,7 @@ function saveSettings() {
       autoscan:  document.getElementById('autoscan-toggle').checked,
       personCheck: (document.getElementById('personcheck-toggle')||{checked:true}).checked,
       tableSize: TABLE_SIZE,
+      diamonds: (document.getElementById('aim-diamonds')||{checked:false}).checked,
       sens:      document.getElementById('sens-slider').value,
       delay:     document.getElementById('delay-slider').value,
       chime:     document.getElementById('chime-toggle').checked,
@@ -4782,6 +4942,7 @@ function loadSettings() {
     }
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
     if (s.personCheck !== undefined) { var _pc = document.getElementById('personcheck-toggle'); if (_pc) _pc.checked = s.personCheck; }
+    if (s.diamonds !== undefined) { var _dm = document.getElementById('aim-diamonds'); if (_dm) _dm.checked = s.diamonds; }
     if (s.tableSize && TABLE_LEN_IN[s.tableSize]) {
       TABLE_SIZE = s.tableSize;
       document.querySelectorAll('#tablesize-row .pill').forEach(function(p){ p.classList.toggle('active', p.textContent.indexOf(s.tableSize + '-ft') === 0); });
@@ -5275,6 +5436,10 @@ try {
         <div class="help-item">
           <div class="help-icon">🎯</div>
           <div><div class="help-item-title">Contact Point</div><div class="help-item-desc">A crosshair showing the exact spot where the cue ball will <strong>touch</strong> the object ball. It explains the cut — but because balls have width, aiming your cue AT this point undercuts every cut shot. <strong>Aim at the dotted ghost ring instead;</strong> this marker is for understanding, not aiming.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">💠</div>
+          <div><div class="help-item-title">Diamond System (Advanced)</div><div class="help-item-desc">Turns on the classic <strong>Corner-5 rail numbers</strong> — a learning overlay for kick and bank shots. Numbers follow Dr. Dave&rsquo;s standard: the corner pocket is <strong>5</strong>, and the long rail runs 0–8. The rule of thumb is <strong>cue-ball number − target number = the diamond to aim through</strong>. Honest caveat straight from the pros: it&rsquo;s a <strong>starting estimate</strong> that assumes a rolling cue ball with running English, and every table plays a little differently — feel the table and adjust. <strong>Needs a fully aligned table</strong> (all four rails in the photo); it won&rsquo;t show on a partial view.</div></div>
         </div>
       </div>
       <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they're the easiest to read.</div>
