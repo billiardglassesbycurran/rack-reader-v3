@@ -1175,7 +1175,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.22.1225</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.22.0403</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1907,7 +1907,10 @@ async function runDetection() {
        stripe luma 183 / sat 0.65 / SD 31.9. Thresholds sit between, wide. */
     const CUE_MIN_LUMA  = 150;    // must be genuinely bright
     const CUE_MAX_SAT   = 0.45;   // ...and whitish, not a colour
-    const CUE_MAX_SD    = 22;     // ...and uniform — this is what rules out stripes
+    const CUE_MIN_WHITE = 0.65;   // ...and MOSTLY white by pixel count. Measured on a real
+                                  // spotted cue ball: 0.90 white vs 0.41 for a yellow stripe.
+                                  // Counting whitish PIXELS survives a red dot/logo, whereas a
+                                  // uniformity test does not — a spotted cue ball isn't uniform.
     const CUE_MARGIN    = 20;     // ...and clearly brighter than the next candidate
 
     function sampleRadius(boxW, boxH) {
@@ -1923,12 +1926,12 @@ async function runDetection() {
       const r  = Math.max(2, rIn || 5);
       const x0 = Math.max(0, cx - r), y0 = Math.max(0, cy - r);
       const sw = Math.min(640 - x0, r * 2), sh = Math.min(640 - y0, r * 2);
-      const FAIL = { luma: 255, sat: 1, sd: 999 };   // fail-open: never crowned as 8 OR cue
+      const FAIL = { luma: 255, sat: 1, sd: 999, white: 0 };  // fail-open: never crowned as 8 OR cue
       if (sw <= 0 || sh <= 0) return FAIL;
       let px;
       try { px = inferCtx.getImageData(x0, y0, sw, sh).data; }
       catch (e) { return FAIL; }
-      let sR = 0, sG = 0, sB = 0, sL = 0, sL2 = 0, n = 0;
+      let sR = 0, sG = 0, sB = 0, sL = 0, sL2 = 0, n = 0, whiteN = 0;
       for (let yy = 0; yy < sh; yy++) {
         for (let xx = 0; xx < sw; xx++) {
           const dx = (x0 + xx) - cx, dy = (y0 + yy) - cy;
@@ -1936,6 +1939,10 @@ async function runDetection() {
           const i = (yy * sw + xx) * 4;
           if (px[i + 3] === 0) continue;
           const L = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+          // per-PIXEL whiteness test (not the mean) — tolerant of a spot or logo
+          const pmx = Math.max(px[i], px[i + 1], px[i + 2]);
+          const pmn = Math.min(px[i], px[i + 1], px[i + 2]);
+          if (L > 150 && (pmx > 0 ? (pmx - pmn) / pmx : 0) < 0.42) whiteN++;
           sR += px[i]; sG += px[i + 1]; sB += px[i + 2];
           sL += L; sL2 += L * L; n++;
         }
@@ -1946,7 +1953,7 @@ async function runDetection() {
       const mx = Math.max(R, G, B), mn = Math.min(R, G, B);
       const sat = mx > 0 ? (mx - mn) / mx : 0;           // HSV saturation
       const sd  = Math.sqrt(Math.max(0, sL2 / n - (sL / n) * (sL / n)));  // uniformity
-      return { luma, sat, sd };
+      return { luma, sat, sd, white: whiteN / n };
     }
     // ───────────────────────────────────────────────────────────────────
 
@@ -1963,7 +1970,7 @@ async function runDetection() {
       // Keep the model's RAW eight-confidence for the cross-check below.
       const eightScore = (cls.markType === 'eight') ? (det.score || 0) : 0;
       marks.push({ type: cls.markType, fx, fy, aiDetected: true, className: cls.name,
-                   _luma: col.luma, _sat: col.sat, _sd: col.sd, _eightScore: eightScore });
+                   _luma: col.luma, _sat: col.sat, _sd: col.sd, _white: col.white, _eightScore: eightScore });
 
       const chip = document.createElement('div');
       chip.className = 'det-chip';
@@ -2046,7 +2053,7 @@ async function runDetection() {
           let ok = true, why = '';
           if (top._luma < CUE_MIN_LUMA)      { ok = false; why = 'no ball bright enough'; }
           else if (top._sat > CUE_MAX_SAT)   { ok = false; why = 'brightest ball is coloured'; }
-          else if (top._sd  > CUE_MAX_SD)    { ok = false; why = 'brightest ball looks striped'; }
+          else if (top._white < CUE_MIN_WHITE) { ok = false; why = 'brightest ball looks striped'; }
           else if (next && (top._luma - next._luma) < CUE_MARGIN) {
             ok = false; why = 'two balls equally white';
           }
@@ -2061,7 +2068,7 @@ async function runDetection() {
         }
       }
       // cleanup: scratch data, don't leave it on marks
-      for (const m of marks) { delete m._luma; delete m._sat; delete m._sd; delete m._eightScore; }
+      for (const m of marks) { delete m._luma; delete m._sat; delete m._sd; delete m._white; delete m._eightScore; }
     }
     // ───────────────────────────────────────────────────────────────────
 
