@@ -1124,10 +1124,45 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   .sticky-action-bar {
     left: auto; right: 0; transform: none; width: 56vw; max-width: none; z-index: 6;
   }
+
+  /* ── LANDSCAPE SIDE SWAP ──────────────────────────────────────────────
+     Default = table pinned RIGHT. When body has .ls-flip, mirror the four
+     properties that position the split so the table sits on the LEFT and
+     the scrolling advice rail moves to the right. Pure layout — the canvas
+     and all aiming geometry render identically, only the panel side moves. */
+  body.ls-flip { padding-right: 0; padding-left: 56vw; }
+  body.ls-flip #stage-core {
+    right: auto; left: 0;
+    border-left: none; border-right: 1px solid var(--border);
+  }
+  body.ls-flip .sticky-action-bar { right: auto; left: 0; }
+
+  /* Floating swap button — only visible in phone landscape, sits on the
+     divider between the two panels. Hidden entirely in portrait. */
+  #ls-swap-btn {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    right: calc(56vw - 20px);           /* on the seam, table-on-right default */
+    z-index: 20; width: 40px; height: 40px; border-radius: 50%;
+    background: #c8963e; color: #0b1811; border: 2px solid #0b1811;
+    box-shadow: 0 3px 12px rgba(0,0,0,.5);
+    display: none; align-items: center; justify-content: center;
+    font-size: 20px; cursor: pointer; padding: 0; line-height: 1;
+  }
+  body.ls-flip #ls-swap-btn { right: auto; left: calc(56vw - 20px); }
+  #ls-swap-btn:active { transform: translateY(-50%) scale(.9); }
+  @media (orientation: landscape) and (max-height: 600px) {
+    #ls-swap-btn { display: flex; }
+  }
+  @keyframes lsSwapPulse {
+    0%,100% { box-shadow: 0 3px 12px rgba(0,0,0,.5); }
+    50%     { box-shadow: 0 0 0 8px rgba(200,150,62,.35), 0 3px 12px rgba(0,0,0,.5); }
+  }
+  #ls-swap-btn.pulse { animation: lsSwapPulse 1s ease-in-out 3; }
 }
 </style>
 </head>
 <body>
+<button id="ls-swap-btn" aria-label="Swap table to the other side of the screen" title="Swap sides" onclick="toggleLandscapeSide()">&#8646;</button>
 <div id="app">
 
  <header class="hdr">
@@ -1140,7 +1175,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.21.0344</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.22.1225</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1847,26 +1882,71 @@ async function runDetection() {
     // on inferCanvas above) and, after placement, relabel the darkest
     // genuinely-black ball as the eight. Fail-open: if nothing is clearly
     // black, we leave the model's own labels untouched.
-    const BALL_R_FRAC = 0.018;          // sample radius as fraction of the 640 infer image
-    const BLACK_THRESHOLD = 62;         // mean luma below this counts as "black" (0-255)
-    function sampleBrightness(fx, fy) {
-      // fx,fy are 0-1 on the main canvas; inferCanvas is the clean 640x640 photo
+    /* GUARD CONSTANTS — conservative defaults, to be tuned against real
+       bar-table photos with the test harness. Every guard fails OPEN: if any
+       check is inconclusive we leave the model's own labels alone rather than
+       crown a wrong ball. A confident-wrong 8 is worse than no auto-assign. */
+    /* Sample radius is derived from EACH BALL'S OWN detection box, not a fixed
+       fraction of the canvas. The photo is squashed into a 640x640 square, so a
+       ball can end up ~20px wide but ~34px tall; a fixed radius then spans the
+       whole width and drags in the rim and felt, which destroys the uniformity
+       reading the cue guard depends on (measured: cue SD 75 at r=9 vs 4 at r=5). */
+    const SAMPLE_FRAC   = 0.25;   // fraction of the ball's smallest apparent diameter
+    const ABS_BLACK     = 58;     // darkest ball must be at least this dark (luma 0-255)
+    const MAX_SAT       = 0.40;   // ...and low-chroma. A dark 4 (purple) / 7 (maroon) is a dark COLOR, not black
+    const BLACK_FLOOR   = 42;     // below this it IS black — chroma maths is meaningless at near-zero luma
+                                  // (a real 8-ball reads sat 0.4+ purely from green felt cast)
+    const DARK_MARGIN   = 12;     // ...and this much darker than the runner-up, or it's ambiguous
+    const MODEL_CONFIRM = 0.30;   // model eight-confidence that can rescue an ambiguous margin
+    const MODEL_CONFLICT= 0.55;   // model confidently calls a DIFFERENT ball the eight → back off
+    /* CUE-BALL guards. White is NOT unique (stripes show white faces), so
+       brightness alone is unsafe. The separator is UNIFORMITY: a cue ball is
+       evenly white edge to edge, a stripe has a coloured band so its pixels
+       vary far more. Measured on a real bar-table photo (yellowed cue ball vs
+       a yellow stripe, the hardest case): cue luma 241 / sat 0.34 / SD 8.2,
+       stripe luma 183 / sat 0.65 / SD 31.9. Thresholds sit between, wide. */
+    const CUE_MIN_LUMA  = 150;    // must be genuinely bright
+    const CUE_MAX_SAT   = 0.45;   // ...and whitish, not a colour
+    const CUE_MAX_SD    = 22;     // ...and uniform — this is what rules out stripes
+    const CUE_MARGIN    = 20;     // ...and clearly brighter than the next candidate
+
+    function sampleRadius(boxW, boxH) {
+      const w640 = (boxW / W) * 640, h640 = (boxH / H) * 640;
+      const d = Math.min(w640, h640);            // smallest apparent diameter
+      if (!isFinite(d) || d <= 0) return 5;
+      return Math.max(3, Math.min(10, Math.round(SAMPLE_FRAC * d)));
+    }
+    function sampleBallColor(fx, fy, rIn) {
+      // fx,fy are 0-1 on the main canvas; inferCanvas holds the clean 640x640 photo.
+      // Circular mask (not a square) so corner felt doesn't skew luma/saturation.
       const cx = Math.round(fx * 640), cy = Math.round(fy * 640);
-      const r = Math.max(2, Math.round(BALL_R_FRAC * 640));
+      const r  = Math.max(2, rIn || 5);
       const x0 = Math.max(0, cx - r), y0 = Math.max(0, cy - r);
       const sw = Math.min(640 - x0, r * 2), sh = Math.min(640 - y0, r * 2);
-      if (sw <= 0 || sh <= 0) return 255;
+      const FAIL = { luma: 255, sat: 1, sd: 999 };   // fail-open: never crowned as 8 OR cue
+      if (sw <= 0 || sh <= 0) return FAIL;
       let px;
       try { px = inferCtx.getImageData(x0, y0, sw, sh).data; }
-      catch (e) { return 255; }        // fail-open: treat as bright → won't be crowned
-      let sum = 0, n = 0;
-      for (let i = 0; i < px.length; i += 4) {
-        // Rec.601 luma; ignore fully transparent pixels
-        if (px[i + 3] === 0) continue;
-        sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-        n++;
+      catch (e) { return FAIL; }
+      let sR = 0, sG = 0, sB = 0, sL = 0, sL2 = 0, n = 0;
+      for (let yy = 0; yy < sh; yy++) {
+        for (let xx = 0; xx < sw; xx++) {
+          const dx = (x0 + xx) - cx, dy = (y0 + yy) - cy;
+          if (dx * dx + dy * dy > r * r) continue;   // outside the circle → skip
+          const i = (yy * sw + xx) * 4;
+          if (px[i + 3] === 0) continue;
+          const L = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+          sR += px[i]; sG += px[i + 1]; sB += px[i + 2];
+          sL += L; sL2 += L * L; n++;
+        }
       }
-      return n ? sum / n : 255;
+      if (!n) return FAIL;
+      const R = sR / n, G = sG / n, B = sB / n;
+      const luma = 0.299 * R + 0.587 * G + 0.114 * B;   // Rec.601
+      const mx = Math.max(R, G, B), mn = Math.min(R, G, B);
+      const sat = mx > 0 ? (mx - mn) / mx : 0;           // HSV saturation
+      const sd  = Math.sqrt(Math.max(0, sL2 / n - (sL / n) * (sL / n)));  // uniformity
+      return { luma, sat, sd };
     }
     // ───────────────────────────────────────────────────────────────────
 
@@ -1879,8 +1959,11 @@ async function runDetection() {
       if (tooClose) return;
 
       const cls = CLASSES[det.class] || CLASSES[1];
-      const brightness = sampleBrightness(fx, fy);
-      marks.push({ type: cls.markType, fx, fy, aiDetected: true, className: cls.name, _brightness: brightness });
+      const col = sampleBallColor(fx, fy, sampleRadius(w, h));
+      // Keep the model's RAW eight-confidence for the cross-check below.
+      const eightScore = (cls.markType === 'eight') ? (det.score || 0) : 0;
+      marks.push({ type: cls.markType, fx, fy, aiDetected: true, className: cls.name,
+                   _luma: col.luma, _sat: col.sat, _sd: col.sd, _eightScore: eightScore });
 
       const chip = document.createElement('div');
       chip.className = 'det-chip';
@@ -1889,35 +1972,124 @@ async function runDetection() {
       added++;
     });
 
-    // ── 8-ball darkness heuristic (decision) ───────────────────────────
-    // Among AI-placed balls (cue/obj/stripe/eight — never pockets/corners),
-    // find the darkest. If it's clearly black, it's the 8: promote it and
-    // demote any OTHER ball the model mislabeled as eight (there is only one
-    // 8-ball). If the current darkest isn't black enough, and the model
-    // called something "eight" anyway, trust neither — leave as-is (fail-open).
+    /* ── 8-ball identification: THREE guards, all must clear ──────────────
+       The 8 is the only near-black ball, but the 4 (purple) and 7 (maroon)
+       read dark under bar lighting — so darkness alone is not enough.
+         1. ABSOLUTE  — must be genuinely dark AND low-chroma (black, not a
+                        dark colour). Separates the 8 from a dim 4/7.
+         2. MARGIN    — must be clearly darker than the next-darkest ball.
+                        Neck-and-neck = ambiguous = don't guess.
+         3. MODEL     — cross-checked against the model's RAW eight-confidence.
+                        Agreement can rescue a thin margin; a confident model
+                        eight on a DIFFERENT ball vetoes the whole thing.
+       Any failure → leave the model's labels untouched (fail-open). */
     {
-      const ballTypes = new Set(['cue', 'obj', 'stripe', 'eight']);
+      window._eightGuardWhy = null;
+      // NOTE: 'cue' is deliberately NOT eligible. There is exactly one cue ball
+      // and it is white — a shadowed cue ball must never be crowned as the 8,
+      // because losing the cue mark breaks shot suggestion entirely.
+      const ballTypes = new Set(['obj', 'stripe', 'eight']);
       const aiBalls = marks.filter(m => m.aiDetected && ballTypes.has(m.type));
       if (aiBalls.length) {
-        let darkest = aiBalls[0];
-        for (const m of aiBalls) if (m._brightness < darkest._brightness) darkest = m;
-        if (darkest._brightness <= BLACK_THRESHOLD) {
-          // Demote every other ball currently typed as eight
+        const sorted = aiBalls.slice().sort((a, b) => a._luma - b._luma);
+        const darkest  = sorted[0];
+        const runnerUp = sorted[1] || null;
+
+        // The ball the MODEL most confidently thinks is the eight (if any).
+        let modelEight = null;
+        for (const m of aiBalls) {
+          if (m._eightScore > 0 && (!modelEight || m._eightScore > modelEight._eightScore)) modelEight = m;
+        }
+
+        let ok = true, why = '';
+        // Guard 1 — absolute darkness + low chroma
+        if (darkest._luma > ABS_BLACK) { ok = false; why = 'not dark enough'; }
+        else if (darkest._luma > BLACK_FLOOR && darkest._sat > MAX_SAT) {
+          ok = false; why = 'dark but coloured (likely the 4 or 7)';
+        }
+        // Guard 2 — margin over the runner-up, unless the model agrees
+        if (ok && runnerUp && (runnerUp._luma - darkest._luma) < DARK_MARGIN) {
+          const modelAgrees = modelEight === darkest && darkest._eightScore >= MODEL_CONFIRM;
+          if (!modelAgrees) { ok = false; why = 'two balls equally dark'; }
+        }
+        // Guard 3 — model confidently names a different ball
+        if (ok && modelEight && modelEight !== darkest && modelEight._eightScore >= MODEL_CONFLICT) {
+          ok = false; why = 'model disagrees';
+        }
+
+        if (ok) {
           for (const m of aiBalls) {
             if (m !== darkest && m.type === 'eight') { m.type = 'obj'; m.className = 'solid'; }
           }
-          if (darkest.type !== 'eight') { darkest.type = 'eight'; darkest.className = 'eight-ball'; }
+          const changed = darkest.type !== 'eight';
+          if (changed) { darkest.type = 'eight'; darkest.className = 'eight-ball'; }
+          maybeHintEightCorrection();
+        } else {
+          window._eightGuardWhy = why;   // surfaced below; helps you tune with real photos
         }
       }
-      // cleanup: brightness was scratch data, don't leave it on marks
-      for (const m of marks) delete m._brightness;
+
+      /* ── CUE BALL rescue ──────────────────────────────────────────────
+         The model often misses a yellowed/worn cue ball entirely and files it
+         as a stripe — leaving the app with NO cue mark, which breaks Suggest
+         Best Shot. White is not unique (stripes show white faces), so we do
+         NOT just take the brightest. The separator is uniformity: a cue ball
+         is even edge-to-edge, a stripe has a coloured band. Only runs when the
+         model found no cue at all. Fails open — if it can't be sure, it says
+         so and the user taps. */
+      window._cueGuardWhy = null; window._cueRescued = false;
+      if (!marks.some(m => m.type === 'cue')) {
+        const cand = marks.filter(m => m.aiDetected && (m.type === 'obj' || m.type === 'stripe'));
+        if (cand.length) {
+          const byBright = cand.slice().sort((a, b) => b._luma - a._luma);
+          const top = byBright[0], next = byBright[1] || null;
+          let ok = true, why = '';
+          if (top._luma < CUE_MIN_LUMA)      { ok = false; why = 'no ball bright enough'; }
+          else if (top._sat > CUE_MAX_SAT)   { ok = false; why = 'brightest ball is coloured'; }
+          else if (top._sd  > CUE_MAX_SD)    { ok = false; why = 'brightest ball looks striped'; }
+          else if (next && (top._luma - next._luma) < CUE_MARGIN) {
+            ok = false; why = 'two balls equally white';
+          }
+          if (ok) {
+            top.type = 'cue'; top.className = 'cue-ball';
+            window._cueRescued = true;
+          } else {
+            window._cueGuardWhy = why;
+          }
+        } else {
+          window._cueGuardWhy = 'nothing to check';
+        }
+      }
+      // cleanup: scratch data, don't leave it on marks
+      for (const m of marks) { delete m._luma; delete m._sat; delete m._sd; delete m._eightScore; }
     }
     // ───────────────────────────────────────────────────────────────────
 
     document.getElementById('detections-box').classList.toggle('show', added > 0);
     if (added > 0) document.getElementById('redetect-btn').style.display = 'block';
     renderCanvas();
-    setStatus(`🤖 AI placed ${added} marker(s) — tap any ball to fix its type, then Suggest Best Shot`, 'live');
+    // 8-ball note: either confirm the auto-assign (once, with a correction
+    // nudge) or say plainly WHY it declined — a wrong auto-call only hurts if
+    // the user doesn't know it happened or can't fix it.
+    let _eightMsg = '';
+    if (window._eightHintPending) {
+      _eightMsg = ' · 🎱 darkest ball auto-marked as the 8 — tap it if that\'s wrong';
+      window._eightHintPending = false;
+    } else if (window._eightGuardWhy) {
+      _eightMsg = ' · 🎱 8 not auto-set (' + window._eightGuardWhy + ') — tap a ball to mark it';
+    }
+    window._eightGuardWhy = null;
+    // Cue ball is essential — if it's still missing, say so loudly, because
+    // Suggest Best Shot cannot work without it.
+    let _cueMsg = '';
+    if (window._cueRescued) {
+      _cueMsg = ' · ⚪ white ball auto-marked as the cue — tap it if that\'s wrong';
+      window._cueRescued = false;
+    } else if (!marks.some(m => m.type === 'cue')) {
+      _cueMsg = ' · ⚠️ NO CUE BALL found (' + (window._cueGuardWhy || 'not detected') + ') — tap the white ball to mark it as Cue';
+    }
+    window._cueGuardWhy = null;
+    setStatus(`🤖 AI placed ${added} marker(s) — tap any ball to fix its type` + _eightMsg + _cueMsg, 'live');
 
     // Auto-suggest if we have enough info
     const hasCue = marks.some(m => m.type === 'cue');
@@ -2677,6 +2849,9 @@ function renderCanvas() {
   // ── DIAMOND SYSTEM overlay (Advanced toggle · aligned tables only) ──
   drawDiamondSystem(ctx, W, H);
 
+  // ── KICK LINE overlay (blocked-shot escape · both modes) ──
+  drawKickLine(ctx, W, H);
+
   // ── NEXT-STEP chip: teach at the point of focus, since nobody reads first ──
   (function(){
     var ballMarks = marks.some(function(m){ return m.type!=='pocket' && m.type!=='corner'; });
@@ -3148,6 +3323,91 @@ function drawDiamondSystem(ctx, W, H) {
   ctx.restore();
 }
 function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.fill(); }
+
+/* ── KICK LINE drawing ────────────────────────────────────────────────
+   Reads window._kickShot (set by the advice logic when the best shot is
+   blocked). Maps canonical points back to canvas pixels through _tHf (same
+   pattern as the diamond system). Draws cue→bounce→target gold path, a bounce
+   dot on the rail, and — only when diamonds are ON — the dot's diamond number.
+   Fail-open: no kick set, nothing drawn. */
+function drawKickLine(ctx, W, H) {
+  var k = window._kickShot;
+  if (!k) return;
+  function CP(cx, cy){
+    if (window._tHf){ var p = applyHomography(window._tHf, cx, cy); return [p.x*W, p.y*H]; }
+    return [cx*W, cy*H];
+  }
+  var cue = CP(k.canonCue.fx, k.canonCue.fy);
+  var bnc = CP(k.canonBounce.fx, k.canonBounce.fy);
+  var tgt = CP(k.canonTarget.fx, k.canonTarget.fy);
+
+  ctx.save();
+  var lw = Math.max(2.5, W*0.006);
+  ctx.lineWidth = lw; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#f4c775';
+  ctx.beginPath();
+  ctx.moveTo(cue[0], cue[1]);
+  ctx.lineTo(bnc[0], bnc[1]);
+  ctx.lineTo(tgt[0], tgt[1]);
+  ctx.stroke();
+
+  var dotR = Math.max(5, W*0.012);
+  ctx.beginPath();
+  ctx.arc(bnc[0], bnc[1], dotR, 0, Math.PI*2);
+  ctx.fillStyle = '#854f0b'; ctx.fill();
+  ctx.lineWidth = Math.max(1.5, W*0.003);
+  ctx.strokeStyle = '#f4c775'; ctx.stroke();
+
+  var dm = document.getElementById('aim-diamonds');
+  if (dm && dm.checked && window._tHf && k.diamondLabel) {
+    ctx.font = '700 ' + Math.max(11, Math.round(W*0.02)) + 'px Barlow Condensed, sans-serif';
+    var lbl = k.diamondLabel;
+    var tw = ctx.measureText(lbl).width + 12;
+    var bx = bnc[0], by = bnc[1] - dotR - 16;
+    ctx.fillStyle = 'rgba(8,20,13,0.82)';
+    _rr(ctx, bx - tw/2, by - 11, tw, 22, 11);
+    ctx.fillStyle = '#f4c775';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(lbl, bx, by);
+  }
+  ctx.restore();
+}
+
+/* Map a kick bounce point to a diamond number for the rail dot label.
+   Long rail = 8 diamonds, short rail = 4. Honest approximation for the
+   label only — the drawn line is the real aim. */
+function kickDiamondLabel(kick) {
+  try {
+    var b = kick.canonBounce, maxX = kick.maxX, maxY = kick.maxY, diamonds, frac;
+    if (kick.axis === 'y') { frac = b.fx / maxX; diamonds = 8; }
+    else                   { frac = b.fy / maxY; diamonds = 4; }
+    return 'Diamond ' + Math.round(frac * diamonds);
+  } catch(_) { return null; }
+}
+
+/* First-fire teaching card for the kick line — same point-of-focus pattern as
+   the diamond explainer. Shows once, then remembers via localStorage. */
+function maybeShowKickExplainer() {
+  try {
+    if (localStorage.getItem('curran_kick_explained') === '1') return;
+    var e = document.getElementById('kick-explainer');
+    if (e) { e.style.display = 'block'; localStorage.setItem('curran_kick_explained', '1'); }
+  } catch(_) {}
+}
+/* First time the 8-ball is auto-assigned by the darkness guard, flag a nudge
+   that it's correctable by tapping. The guards fail open, but a wrong call is
+   only truly harmful if the user doesn't realise they can fix it. */
+function maybeHintEightCorrection() {
+  try {
+    if (localStorage.getItem('curran_eight_autohint') === '1') return;
+    window._eightHintPending = true;
+    localStorage.setItem('curran_eight_autohint', '1');
+  } catch(_) {}
+}
+function dismissKickExplainer() {
+  var e = document.getElementById('kick-explainer'); if (e) e.style.display = 'none';
+  try { localStorage.setItem('curran_kick_explained', '1'); } catch(_) {}
+}
 function dismissDiamondExplainer() {
   var e = document.getElementById('diamond-explainer'); if (e) e.style.display = 'none';
   try { localStorage.setItem('curran_diamond_explained', '1'); } catch(_) {}
@@ -3650,6 +3910,87 @@ function pathBlocked(ball, pocket, allBalls) {
   }
   return false;
 }
+
+/* ═══════════════════════════════════════════
+   KICK LINE (one-rail bank) — surfaced only when the best shot is blocked.
+   All geometry runs in CANONICAL table space via geoP() so a rail is a true
+   straight edge and reflection is exact. The caller maps the returned bounce
+   point back to the photo through _tHf for drawing. Math proven in unit tests:
+   mirror target across rail, param cue→mirror crosses rail at bounce, require
+   0.02<t<0.98, keep bounce off the corners by margin M, equal-angle verified.
+   Works in BOTH Simple and Advanced (it solves the shot). Diamond labeling of
+   the rail dot happens in the drawing layer only when diamonds are ON.
+═══════════════════════════════════════════ */
+function computeKickShot(cueRaw, targetRaw, allBalls) {
+  // Operate in canonical space. If unaligned, geoP is identity — kick still
+  // works in photo-space, just without perspective correction (acceptable).
+  var cue = geoP(cueRaw), tgt = geoP(targetRaw);
+  if (!cue || !tgt) return null;
+  if (Math.hypot(tgt.fx-cue.fx, tgt.fy-cue.fy) < 1e-4) return null;   // degenerate guard
+
+  // Canonical extent: aligned tables use _tCanonMax; unaligned photo is 0..1.
+  var maxX = window._tHinv ? ((window._tCanonMax && window._tCanonMax.x) || 1) : 1;
+  var maxY = window._tHinv ? ((window._tCanonMax && window._tCanonMax.y) || 0.5) : 1;
+  var M = 0.06;                                   // corner margin (canonical)
+  var R = BALL_R();
+
+  var rails = [
+    { name:'bottom', axis:'y', v:0    },
+    { name:'top',    axis:'y', v:maxY },
+    { name:'left',   axis:'x', v:0    },
+    { name:'right',  axis:'x', v:maxX }
+  ];
+
+  var best = null;
+  for (var i=0;i<rails.length;i++){
+    var r = rails[i];
+    // Mirror the target across this rail
+    var mx = tgt.fx, my = tgt.fy;
+    if (r.axis==='y') my = 2*r.v - tgt.fy; else mx = 2*r.v - tgt.fx;
+    var dx = mx-cue.fx, dy = my-cue.fy, t;
+    if (r.axis==='y'){ if (Math.abs(dy)<1e-9) continue; t=(r.v-cue.fy)/dy; }
+    else            { if (Math.abs(dx)<1e-9) continue; t=(r.v-cue.fx)/dx; }
+    if (!(t>0.02 && t<0.98)) continue;
+    var bx = cue.fx + t*dx, by = cue.fy + t*dy;
+    if (!isFinite(bx)||!isFinite(by)) continue;
+    if (r.axis==='y'){ if (bx<M || bx>maxX-M) continue; }
+    else            { if (by<M || by>maxY-M) continue; }
+
+    // Both legs (cue→bounce, bounce→target) must be clear of other balls.
+    var bounce = {fx:bx, fy:by};
+    if (kickLegBlocked(cue, bounce, tgt, allBalls, R)) continue;
+    if (kickLegBlocked(bounce, tgt, cue, allBalls, R)) continue;
+
+    // Prefer the shortest total path (simplest kick).
+    var pathLen = Math.hypot(bx-cue.fx,by-cue.fy) + Math.hypot(tgt.fx-bx,tgt.fy-by);
+    if (!best || pathLen < best.pathLen) {
+      best = { rail:r.name, axis:r.axis, canonBounce:{fx:bx,fy:by},
+               canonCue:{fx:cue.fx,fy:cue.fy}, canonTarget:{fx:tgt.fx,fy:tgt.fy},
+               pathLen:pathLen, maxX:maxX, maxY:maxY };
+    }
+  }
+  return best;
+}
+
+// A kick leg is blocked if any OTHER ball sits on the segment (excluding the
+// two balls that define this shot). Runs in canonical space (caller passes
+// canonical points); we canon-map each candidate ball.
+function kickLegBlocked(a, b, exclude, allBalls, R) {
+  for (var i=0;i<allBalls.length;i++){
+    var o = geoP(allBalls[i]);
+    if (Math.hypot(o.fx-a.fx,o.fy-a.fy) < R*0.5) continue;   // it's the shooter/target
+    if (Math.hypot(o.fx-b.fx,o.fy-b.fy) < R*0.5) continue;
+    if (exclude && Math.hypot(o.fx-exclude.fx,o.fy-exclude.fy) < R*0.5) continue;
+    var d = pointToSegmentDist({fx:o.fx,fy:o.fy}, {fx:a.fx,fy:a.fy}, {fx:b.fx,fy:b.fy});
+    if (d < R*2) {
+      var along=(o.fx-a.fx)*(b.fx-a.fx)+(o.fy-a.fy)*(b.fy-a.fy);
+      var seg2=(b.fx-a.fx)*(b.fx-a.fx)+(b.fy-a.fy)*(b.fy-a.fy);
+      var tt = seg2>0?along/seg2:-1;
+      if (tt>0.05 && tt<0.95) return true;
+    }
+  }
+  return false;
+}
 function scoreShot(cue, ball, pocket, allBalls) {
   const cut = computeCutAngle(cue, ball, pocket);
   if (cut === null) return null;
@@ -3962,6 +4303,29 @@ function suggestShot() {
     }
   }
 
+  // ── KICK LINE trigger: best shot is blocked → offer a one-rail escape ──
+  // Works in BOTH modes (it solves the shot, not just teaches). Fires only when
+  // the crowned direct shot is blocked. Aims the kick at the crowned ball.
+  window._kickShot = null;
+  var kickNote = '';
+  if (bestShotOn && _bd && _bd.blocked && cue && _bd.ball) {
+    var kick = computeKickShot(cue, _bd.ball, allTargets);
+    if (kick) {
+      // Attach a diamond label for the rail dot when diamonds are on & aligned.
+      if (window._tHf && document.getElementById('aim-diamonds') && document.getElementById('aim-diamonds').checked) {
+        kick.diamondLabel = kickDiamondLabel(kick);
+      }
+      window._kickShot = kick;
+      var railName = kick.rail;
+      kickNote = '\n\n\ud83c\udfb1 KICK SHOT (direct path blocked): aim the cue ball at the gold dot on the '
+        + railName + ' rail \u2014 it banks off there and travels to your ball along the gold line. '
+        + 'A kick is an escape, not a high-percentage play: rail contact adds spin and the rebound angle '
+        + 'shifts with speed, so treat the gold line as a starting aim, not a guarantee. Shoot with a rolling '
+        + 'cue ball (no draw/follow) for the closest match to this line.';
+      maybeShowKickExplainer();
+    }
+  }
+
   if (pocketInfo) addBadge(geo,pocketInfo.label,'pocket-type');
   if (cutAngle!==null) {
     if (viewMode === 'overhead') {
@@ -4037,7 +4401,7 @@ function suggestShot() {
   else if (difficulty <= 6) plainHeadline = '⚖️ This is a moderate shot — focus and commit.\n\n';
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
-  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + comboNote + nineNote + eightNote + sampleNote;
+  body.textContent = plainHeadline + advice + englishAdvice + safetyNote + kickNote + comboNote + nineNote + eightNote + sampleNote;
   sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
@@ -4374,7 +4738,7 @@ canvas.addEventListener('pointermove', function(e) {
     hideSuggestion();
     // Clear the previous suggestion's visuals so the drag view is clean.
     marks.forEach(m => { delete m._rank; });
-    window._comboShot = null; window._bestShotResult = null;
+    window._comboShot = null; window._bestShotResult = null; window._kickShot = null;
     if (dragCtx.isNew) dragCtx.mark = placeMarkAt(markMode, dragCtx.startFx, dragCtx.startFy);
   }
   if (dragCtx.mark) {
@@ -4679,7 +5043,7 @@ function discardFrame() {
   lastScanTime = 0; stillCounter = 0; // resume auto-scan
 }
 
-function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); }
+function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); window._kickShot = null; if (typeof renderCanvas==='function' && sourceImg) renderCanvas(); }
 
 let resizeTimer;
 window.addEventListener('resize',()=>{
@@ -4989,7 +5353,8 @@ function saveSettings() {
       viewMode:  viewMode,
       spin:      currentEnglish,
       aimTarget: document.getElementById('aim-targetline').checked,
-      aimContact:document.getElementById('aim-contactpoint').checked
+      aimContact:document.getElementById('aim-contactpoint').checked,
+      lsFlip:    document.body.classList.contains('ls-flip')
     }));
   } catch(e) {}
 }
@@ -5027,8 +5392,40 @@ function loadSettings() {
     if (s.spin) { currentEnglish = s.spin; }
     if (s.aimTarget  !== undefined) document.getElementById('aim-targetline').checked   = s.aimTarget;
     if (s.aimContact !== undefined) document.getElementById('aim-contactpoint').checked = s.aimContact;
+    if (s.lsFlip) document.body.classList.add('ls-flip');
   } catch(e) {}
 }
+
+/* ── LANDSCAPE SIDE SWAP ──────────────────────────────────────────────
+   Flips which side the table sits on in phone-landscape. Pure CSS class
+   toggle — canvas geometry is untouched. Choice persists via rr_settings.
+   First time the user reaches landscape, the button pulses a few times so
+   they notice it, then stays quiet (point-of-focus teaching). */
+function toggleLandscapeSide() {
+  document.body.classList.toggle('ls-flip');
+  var side = document.body.classList.contains('ls-flip') ? 'left' : 'right';
+  try { saveSettings(); } catch(_) {}
+  try {
+    if (typeof setStatus === 'function')
+      setStatus('&#8646; Table moved to the ' + side + ' &mdash; tap again to switch back', 'live');
+  } catch(_) {}
+}
+
+function maybeHintLandscapeSwap() {
+  // Pulse the swap button once, the first time the user is ever in landscape.
+  try {
+    if (localStorage.getItem('curran_lsswap_hinted') === '1') return;
+    var isLandscape = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
+    if (!isLandscape) return;
+    var btn = document.getElementById('ls-swap-btn');
+    if (!btn) return;
+    btn.classList.add('pulse');
+    localStorage.setItem('curran_lsswap_hinted', '1');
+    setTimeout(function(){ btn.classList.remove('pulse'); }, 3200);
+  } catch(_) {}
+}
+window.addEventListener('orientationchange', function(){ setTimeout(maybeHintLandscapeSwap, 400); });
+window.addEventListener('load', function(){ setTimeout(maybeHintLandscapeSwap, 800); });
 
 // Auto-save settings on any change — deferred so all functions are defined
 
@@ -5653,7 +6050,17 @@ try {
     The rails are numbered. For a <b style="color:var(--cream)">kick or bank shot</b>, use the rule:<br>
     <div style="text-align:center;margin:8px 0;padding:7px;background:#0b1811;border-radius:9px;border:1px solid var(--border);color:#ffe08a;font-weight:700;font-size:14px">cue-ball # − target # = aim diamond</div>
     Find the diamond number nearest your <b style="color:var(--cream)">cue ball</b>, subtract the number where you want the ball to <b style="color:var(--cream)">arrive</b>, and aim through the diamond that equals the difference.
-    <div style="margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.45">📎 It's a <b style="color:#cdddd0">starting estimate</b> (assumes a rolling cue ball with running English). Every table plays a little differently — feel it out and adjust. Full details in 📖 Guide.</div>
+  </div>
+</div>
+
+<div id="kick-explainer" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9962;background:linear-gradient(180deg,#14271b,#0a1710);border:1px solid var(--gold-dim);border-radius:14px;padding:13px 15px;box-shadow:0 12px 38px rgba(0,0,0,.65);font-family:'Barlow Condensed',sans-serif;max-width:340px;width:92vw">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+    <span style="font-family:'Playfair Display',serif;font-weight:700;color:var(--gold-lt);font-size:15px">🎱 Reading the kick line</span>
+    <button onclick="dismissKickExplainer()" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px;line-height:1">✕</button>
+  </div>
+  <div style="font-size:13px;color:#cdddd0;line-height:1.55">
+    Your direct shot is blocked, so here's a <b style="color:var(--cream)">one-rail escape</b>. Aim the cue ball at the <b style="color:#ffe08a">gold dot</b> on the rail — it banks off there and follows the gold line to your ball.
+    <div style="margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.45">📎 A kick is an <b style="color:#cdddd0">escape, not a sure thing</b>. Rail contact adds spin and the rebound shifts with speed — treat the gold line as a starting aim and shoot with a rolling cue ball. Full details in 📖 Guide.</div>
   </div>
 </div>
 <div id="update-toast" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9960;background:linear-gradient(180deg,#13271b,#0a1710);border:1px solid #9c7a34;border-radius:14px;padding:10px 14px;align-items:center;gap:12px;box-shadow:0 10px 34px rgba(0,0,0,.6);font-family:'Barlow Condensed',sans-serif;max-width:92vw">
