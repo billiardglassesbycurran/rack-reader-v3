@@ -1175,7 +1175,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.22.0403</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.23.0422</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1277,15 +1277,23 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         <span id="lg-aim" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(200,151,46,.9);border-radius:2px;display:inline-block"></span>Aim: cue → ball</span>
         <span id="lg-combo" style="display:none;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(64,206,255,.95);border-radius:2px;display:inline-block"></span>Combo shot</span>
         <span id="lg-target" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(255,220,0,.85);border-radius:2px;display:inline-block"></span>Target line</span>
-        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.8);border-radius:2px;display:inline-block"></span>Easy angle</span>
-        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.8);border-radius:2px;display:inline-block"></span>Medium angle</span>
-        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(204,34,34,.8);border-radius:2px;display:inline-block"></span>Hard angle</span>
-        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Best shot</span>
+        <span id="lg-easy" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(52,201,106,.9);border-radius:2px;display:inline-block"></span>Best shot</span>
+        <span id="lg-med" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(224,136,32,.75);border-radius:2px;display:inline-block"></span>2nd best</span>
+        <span id="lg-hard" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:3px;background:rgba(150,160,155,.7);border-radius:2px;display:inline-block"></span>3rd best</span>
+        <span id="lg-best" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(45,255,138,.95);border-radius:50%;display:inline-block"></span>★ Crowned ball</span>
         <span id="lg-contact" class="adv-only" style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border:2px solid rgba(255,80,80,.9);border-radius:50%;display:inline-block"></span>Contact point</span>
       </div>
     </div>
 
-    <!-- AI DETECTIONS -->
+    <!-- SHOT SELECTOR: step through the top 3 ranked shots. The diamond math
+         follows whichever shot is focused, so you can compare rail numbers
+         between options instead of only ever seeing the crowned one. -->
+    <div id="shot-selector" class="adv-only" style="display:none;align-items:center;justify-content:center;gap:10px;margin-top:6px;background:#0b1811;border:1px solid var(--gold-dim);border-radius:11px;padding:6px 10px">
+      <button onclick="cycleFocusShot(-1)" style="background:#12271a;color:#ffe08a;border:1px solid #2a4433;border-radius:8px;padding:4px 12px;font-size:15px;line-height:1.1;cursor:pointer">&#9664;</button>
+      <span id="shot-selector-label" style="font-family:'Barlow Condensed',sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.5px;color:#ffe9b8;min-width:86px;text-align:center">Shot 1 of 3</span>
+      <button onclick="cycleFocusShot(1)" style="background:#12271a;color:#ffe08a;border:1px solid #2a4433;border-radius:8px;padding:4px 12px;font-size:15px;line-height:1.1;cursor:pointer">&#9654;</button>
+    </div>
+
     <div id="quickmode-row" style="display:none;align-items:center;gap:8px;margin:8px 0 2px;background:#0b1811;border:1px solid var(--gold-dim);border-radius:12px;padding:8px 10px">
       <span style="font-size:12px;font-weight:700;color:var(--gold-lt);letter-spacing:.5px;white-space:nowrap">🎱 PLAYING:</span>
       <button onclick="quickSetGame('8ball')"    style="flex:1;background:#12271a;border:1px solid var(--border);color:var(--cream);border-radius:16px;padding:8px 4px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:'Barlow Condensed',sans-serif">8-Ball</button>
@@ -1295,7 +1303,6 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div class="detections-box" id="detections-box">
       <div class="det-title">🤖 AI Detected</div>
       <div class="det-list" id="det-list"></div>
-      <button id="redetect-btn" class="btn btn-ai" onclick="reDetect()" style="margin-top:8px;width:100%;display:none">🔄 Re-detect</button>
     </div>
 
     <!-- SHOT ADVICE — sits right under the table it describes -->
@@ -1649,6 +1656,10 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
           oninput="syncConf(this.value)">
         <span style="font-size:11px;color:var(--gold);font-weight:700;min-width:34px;text-align:right" id="conf-val-sticky">35%</span>
       </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;padding:0 5px;margin-top:-2px;font-size:10px;color:var(--muted);white-space:nowrap">
+        <span>Missed some balls? Slide left</span>
+        <span>Marked things that aren't balls? Slide right</span>
+      </div>
       <div style="display:flex;gap:8px;width:100%">
         <button class="btn btn-ai" id="ai-btn" onclick="runDetection()" disabled style="flex:1">🤖 AI Detect</button>
         <button class="btn btn-gold" onclick="suggestShot()" style="flex:1.4">🔍 Suggest Best Shot</button>
@@ -1699,6 +1710,7 @@ let dragCtx       = null;
 let gameMode      = '8ball';
 let viewMode      = 'player'; // 'player' | 'overhead'
 let simpleMode    = true; // Simple view: show only the crowned ball's lines
+var _awaitingPocket = false;   // next canvas tap sets the target pocket
 let autoScan      = true;
 let tfModel       = null;
 let modelReady    = false;
@@ -1893,9 +1905,13 @@ async function runDetection() {
        reading the cue guard depends on (measured: cue SD 75 at r=9 vs 4 at r=5). */
     const SAMPLE_FRAC   = 0.25;   // fraction of the ball's smallest apparent diameter
     const ABS_BLACK     = 58;     // darkest ball must be at least this dark (luma 0-255)
-    const MAX_SAT       = 0.40;   // ...and low-chroma. A dark 4 (purple) / 7 (maroon) is a dark COLOR, not black
-    const BLACK_FLOOR   = 42;     // below this it IS black — chroma maths is meaningless at near-zero luma
-                                  // (a real 8-ball reads sat 0.4+ purely from green felt cast)
+    /* ABSOLUTE colour spread (max channel - min channel), NOT the saturation
+       ratio. Two reasons. (1) Luma weights red at only 30%, so a vivid red ball
+       measures DARKER than a real black 8 — measured: red 3-ball luma 30 vs
+       8-ball luma ~40. (2) The saturation ratio explodes at low luma, so it
+       can't be trusted on dark balls. Absolute spread is stable and separates
+       cleanly — measured: real 8-ball 19, red 3-ball 94, maroon/purple ~60-70. */
+    const MAX_CHROMA    = 32;     // above this it is a dark COLOUR, never the black 8
     const DARK_MARGIN   = 12;     // ...and this much darker than the runner-up, or it's ambiguous
     const MODEL_CONFIRM = 0.30;   // model eight-confidence that can rescue an ambiguous margin
     const MODEL_CONFLICT= 0.55;   // model confidently calls a DIFFERENT ball the eight → back off
@@ -1926,7 +1942,7 @@ async function runDetection() {
       const r  = Math.max(2, rIn || 5);
       const x0 = Math.max(0, cx - r), y0 = Math.max(0, cy - r);
       const sw = Math.min(640 - x0, r * 2), sh = Math.min(640 - y0, r * 2);
-      const FAIL = { luma: 255, sat: 1, sd: 999, white: 0 };  // fail-open: never crowned as 8 OR cue
+      const FAIL = { luma: 255, sat: 1, sd: 999, chroma: 999, white: 0 };  // fail-open: never crowned as 8 OR cue
       if (sw <= 0 || sh <= 0) return FAIL;
       let px;
       try { px = inferCtx.getImageData(x0, y0, sw, sh).data; }
@@ -1951,9 +1967,10 @@ async function runDetection() {
       const R = sR / n, G = sG / n, B = sB / n;
       const luma = 0.299 * R + 0.587 * G + 0.114 * B;   // Rec.601
       const mx = Math.max(R, G, B), mn = Math.min(R, G, B);
-      const sat = mx > 0 ? (mx - mn) / mx : 0;           // HSV saturation
+      const sat = mx > 0 ? (mx - mn) / mx : 0;           // HSV saturation (used by the cue test)
+      const chroma = mx - mn;                            // ABSOLUTE colour spread (used by the 8 test)
       const sd  = Math.sqrt(Math.max(0, sL2 / n - (sL / n) * (sL / n)));  // uniformity
-      return { luma, sat, sd, white: whiteN / n };
+      return { luma, sat, sd, chroma, white: whiteN / n };
     }
     // ───────────────────────────────────────────────────────────────────
 
@@ -1970,7 +1987,8 @@ async function runDetection() {
       // Keep the model's RAW eight-confidence for the cross-check below.
       const eightScore = (cls.markType === 'eight') ? (det.score || 0) : 0;
       marks.push({ type: cls.markType, fx, fy, aiDetected: true, className: cls.name,
-                   _luma: col.luma, _sat: col.sat, _sd: col.sd, _white: col.white, _eightScore: eightScore });
+                   _luma: col.luma, _sat: col.sat, _chroma: col.chroma, _sd: col.sd, _white: col.white, _eightScore: eightScore,
+                   _bw: w / W, _bh: h / H });   // box size (canvas fractions) — used by the align sanity check
 
       const chip = document.createElement('div');
       chip.className = 'det-chip';
@@ -2011,8 +2029,8 @@ async function runDetection() {
         let ok = true, why = '';
         // Guard 1 — absolute darkness + low chroma
         if (darkest._luma > ABS_BLACK) { ok = false; why = 'not dark enough'; }
-        else if (darkest._luma > BLACK_FLOOR && darkest._sat > MAX_SAT) {
-          ok = false; why = 'dark but coloured (likely the 4 or 7)';
+        else if (darkest._chroma > MAX_CHROMA) {
+          ok = false; why = 'dark but coloured (a red/maroon/purple ball, not the 8)';
         }
         // Guard 2 — margin over the runner-up, unless the model agrees
         if (ok && runnerUp && (runnerUp._luma - darkest._luma) < DARK_MARGIN) {
@@ -2033,6 +2051,14 @@ async function runDetection() {
           maybeHintEightCorrection();
         } else {
           window._eightGuardWhy = why;   // surfaced below; helps you tune with real photos
+        }
+        /* Active rejection. Failing open must not PRESERVE an impossible label:
+           if the model called something the eight but it measures bright or
+           colourful, it cannot be the 8 — demote it rather than leave it. */
+        for (const m of aiBalls) {
+          if (m.type === 'eight' && (m._luma > ABS_BLACK || m._chroma > MAX_CHROMA)) {
+            m.type = 'obj'; m.className = 'solid';
+          }
         }
       }
 
@@ -2068,12 +2094,11 @@ async function runDetection() {
         }
       }
       // cleanup: scratch data, don't leave it on marks
-      for (const m of marks) { delete m._luma; delete m._sat; delete m._sd; delete m._white; delete m._eightScore; }
+      for (const m of marks) { delete m._luma; delete m._sat; delete m._chroma; delete m._sd; delete m._white; delete m._eightScore; }
     }
     // ───────────────────────────────────────────────────────────────────
 
     document.getElementById('detections-box').classList.toggle('show', added > 0);
-    if (added > 0) document.getElementById('redetect-btn').style.display = 'block';
     renderCanvas();
     // 8-ball note: either confirm the auto-assign (once, with a correction
     // nudge) or say plainly WHY it declined — a wrong auto-call only hurts if
@@ -2125,13 +2150,6 @@ async function runDetection() {
   aiBtn.textContent = '🤖 AI Detect';
 }
 
-function reDetect() {
-  marks = marks.filter(m => !m.aiDetected);
-  document.getElementById('detections-box').classList.remove('show');
-  document.getElementById('redetect-btn').style.display = 'none';
-  renderCanvas();
-  runDetection();
-}
 async function runYOLOInference(canvasEl) {
   // canvasEl is already 640x640 — output bbox as fractions (0-1) for caller to scale
   let inputTensor;
@@ -2459,6 +2477,9 @@ async function toggleCamera() {
 async function startCamera() {
   ensurePersonModel();   // background load; camera never waits on it
   var _to = document.getElementById('table-outline'); if (_to) _to.style.display = 'block';
+  // Start the scanner animation immediately — searching state shows within a
+  // frame instead of waiting up to 600ms for the first detection pass.
+  _scanCorners = null; _scanLockAt = 0; if (!_scanRAF) _scanLoop();
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     setStatus('Camera not supported — use photo upload', 'err'); return;
   }
@@ -2510,58 +2531,210 @@ function updateSensitivity() { motionThreshold = 1.0 + (10 - parseInt(document.g
 function updateDelay()       { stillFramesNeeded = parseInt(document.getElementById('delay-slider').value); }
 
 var _lastOutline = 0;
+/* ── LIVE TABLE SCANNER ───────────────────────────────────────────────
+   Detection is expensive so it runs every ~600ms, but the OVERLAY animates
+   every frame off the last known corners. That split is what makes it feel
+   alive without costing anything: _scanCorners is the truth, the loop just
+   draws it. Two states, deliberately different in character —
+     SEARCHING  cool white, breathing brackets, a travelling sweep line
+     LOCKED     warm gold + green, marching-ants quad, pulsing pocket rings
+   plus a short snap-in flourish for the moment the lock is acquired. */
+var _scanCorners = null;      // SMOOTHED corners actually drawn
+var _scanTarget  = null;      // latest raw detection we're easing toward
+var _scanLockAt  = 0, _scanRAF = null;
+var _scanLastSeen = 0;        // when detection last succeeded
+var _scanMisses   = 0;        // consecutive failed passes
+var COAST_MS      = 1600;     // how long to hold a lock through failed passes
+
+/* Detection callback. This is TRACKING, not re-detecting: a failed pass no
+   longer throws the lock away. Detection is a noisy sensor — we feed it into
+   a target, ease the drawn corners toward it every frame, and coast through
+   brief dropouts. That's the difference between "snaps and flickers" and
+   "stays locked while you move". */
 function drawLiveOutline(C) {
-  const oc = document.getElementById('table-outline');
+  var now = performance.now();
+  if (C) {
+    if (!_scanCorners) _scanLockAt = now;      // fresh acquisition
+    /* Corner correspondence. The detector returns four points but not
+       necessarily in the same order each pass — smoothing between mismatched
+       corners would make the quad swim. Reorder the new detection so each
+       point pairs with the nearest currently-drawn corner. */
+    if (_scanCorners) {
+      var pool = C.slice(), ordered = [];
+      for (var ci = 0; ci < 4; ci++) {
+        var cur = _scanCorners[ci], bi = 0, bd = Infinity;
+        for (var pi = 0; pi < pool.length; pi++) {
+          var d = Math.hypot(pool[pi].fx - cur.fx, pool[pi].fy - cur.fy);
+          if (d < bd) { bd = d; bi = pi; }
+        }
+        ordered.push(pool.splice(bi, 1)[0]);
+      }
+      _scanTarget = ordered;
+    } else {
+      _scanTarget = C;
+    }
+    _scanLastSeen = now;
+    _scanMisses = 0;
+    if (!_scanCorners) _scanCorners = C.map(function(p){ return {fx:p.fx, fy:p.fy}; });
+  } else {
+    _scanMisses++;
+    // Coast: keep the last good lock briefly instead of dropping instantly.
+    if (_scanCorners && (now - _scanLastSeen) > COAST_MS) {
+      _scanCorners = null; _scanTarget = null; _scanLockAt = 0;
+    }
+  }
+  if (!_scanRAF) _scanLoop();
+}
+
+/* Ease the drawn corners toward the detected ones. Exponential smoothing:
+   fast enough to follow you leaning in or out, slow enough to kill jitter. */
+function _scanEase() {
+  if (!_scanCorners || !_scanTarget) return;
+  var k = 0.22;
+  for (var i = 0; i < 4; i++) {
+    var c = _scanCorners[i], t = _scanTarget[i];
+    if (!c || !t) continue;
+    c.fx += (t.fx - c.fx) * k;
+    c.fy += (t.fy - c.fy) * k;
+  }
+}
+
+function _scanLoop() {
+  _scanRAF = requestAnimationFrame(_scanLoop);
+  if (typeof cameraOn === 'undefined' || !cameraOn) {
+    var oc0 = document.getElementById('table-outline');
+    if (oc0) { var g0 = oc0.getContext('2d'); g0.clearRect(0,0,oc0.width,oc0.height); }
+    cancelAnimationFrame(_scanRAF); _scanRAF = null;
+    _scanCorners = null; _scanTarget = null; _scanMisses = 0; _scanLastSeen = 0;
+    return;
+  }
+  _scanEase();
+  _paintScanner(performance.now());
+}
+
+function _paintScanner(t) {
+  var oc = document.getElementById('table-outline');
   if (!oc) return;
-  const cw = oc.clientWidth, ch = oc.clientHeight;
+  var cw = oc.clientWidth, ch = oc.clientHeight;
   if (!cw || !ch) return;
   if (oc.width !== cw) oc.width = cw;
   if (oc.height !== ch) oc.height = ch;
-  const g = oc.getContext('2d');
+  var g = oc.getContext('2d');
   g.clearRect(0, 0, cw, ch);
-  if (!C) {
-    // No lock yet — say so, so the scanner never looks broken or absent.
-    if (typeof cameraOn !== 'undefined' && cameraOn) {
-      const t = '\ud83d\udd0d Scanning for table\u2026 center the felt in frame';
-      g.save();
-      g.font = '600 12px Barlow Condensed, sans-serif';
-      const tw2 = g.measureText(t).width + 20;
-      g.fillStyle = 'rgba(8,20,13,0.62)';
-      g.beginPath(); g.roundRect((cw - tw2)/2, 10, tw2, 22, 11); g.fill();
-      g.fillStyle = 'rgba(200,220,205,0.85)'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(t, cw/2, 21);
-      g.restore();
-    }
-    return;
-  }
-  // #live-video uses object-fit: cover — map video coords through the crop.
-  const vw = video.videoWidth, vh = video.videoHeight;
-  const s = Math.max(cw / vw, ch / vh);
-  const offX = (cw - vw * s) / 2, offY = (ch - vh * s) / 2;
-  const M = p => [p.fx * vw * s + offX, p.fy * vh * s + offY];
-  const pts = C.map(M);
+
+  if (!_scanCorners) { _paintSearching(g, cw, ch, t); return; }
+  _paintLocked(g, cw, ch, t, _scanCorners);
+}
+
+/* SEARCHING — reads as "actively looking", never as broken. */
+function _paintSearching(g, cw, ch, t) {
+  var breathe = 0.45 + 0.3 * Math.sin(t / 460);
+  var inset = Math.min(cw, ch) * 0.10;
+  var armX  = cw * 0.09, armY = ch * 0.09;
   g.save();
-  g.strokeStyle = 'rgba(255,255,255,0.95)';
-  g.lineWidth = 3; g.setLineDash([12, 9]);
-  g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 6;
-  g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < 4; i++) g.lineTo(pts[i][0], pts[i][1]);
-  g.closePath(); g.stroke();
-  // pocket hints: 4 corners + long-rail midpoints
-  g.setLineDash([]); g.lineWidth = 2.5;
-  const mids = [[(pts[0][0]+pts[1][0])/2, (pts[0][1]+pts[1][1])/2],
-                [(pts[2][0]+pts[3][0])/2, (pts[2][1]+pts[3][1])/2]];
-  pts.concat(mids).forEach(function(p) {
-    g.beginPath(); g.arc(p[0], p[1], 13, 0, 7); g.stroke();
+  g.strokeStyle = 'rgba(190,225,205,' + breathe.toFixed(3) + ')';
+  g.lineWidth = 2.5; g.lineCap = 'round';
+  g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 5;
+  var L = inset, R = cw - inset, T = inset, B = ch - inset;
+  [[L,T,1,1],[R,T,-1,1],[R,B,-1,-1],[L,B,1,-1]].forEach(function(c){
+    g.beginPath();
+    g.moveTo(c[0] + c[2]*armX, c[1]);
+    g.lineTo(c[0], c[1]);
+    g.lineTo(c[0], c[1] + c[3]*armY);
+    g.stroke();
   });
-  // confidence chip
-  const label = '\u2713 Table found \u2014 SCAN when ready';
+  // travelling sweep, with a soft trail
+  var sy = T + ((t / 2100) % 1) * (B - T);
+  var grad = g.createLinearGradient(0, sy - 34, 0, sy + 6);
+  grad.addColorStop(0,   'rgba(120,220,255,0)');
+  grad.addColorStop(0.7, 'rgba(120,220,255,0.16)');
+  grad.addColorStop(1,   'rgba(150,235,255,0.55)');
+  g.shadowBlur = 0;
+  g.fillStyle = grad;
+  g.fillRect(L, sy - 34, R - L, 40);
+  g.restore();
+  _scanChip(g, cw, '\ud83d\udd0d Scanning for table\u2026 center the felt in frame',
+            'rgba(200,220,205,0.9)', 'rgba(8,20,13,0.62)');
+}
+
+/* LOCKED — confident, warm, and obviously different from searching. */
+function _paintLocked(g, cw, ch, t, C) {
+  var vw = video.videoWidth, vh = video.videoHeight;
+  var s = Math.max(cw / vw, ch / vh);
+  var offX = (cw - vw * s) / 2, offY = (ch - vh * s) / 2;
+  var pts = C.map(function(p){ return [p.fx*vw*s + offX, p.fy*vh*s + offY]; });
+
+  // Snap-in flourish: brackets fly in over the first 420ms of a lock.
+  var age  = _scanLockAt ? (t - _scanLockAt) : 9999;
+  var snap = Math.min(1, age / 420);
+  var ease = 1 - Math.pow(1 - snap, 3);
+
+  var cx = (pts[0][0]+pts[1][0]+pts[2][0]+pts[3][0]) / 4;
+  var cy = (pts[0][1]+pts[1][1]+pts[2][1]+pts[3][1]) / 4;
+  var P = pts.map(function(p){
+    return [cx + (p[0]-cx) * (0.82 + 0.18*ease), cy + (p[1]-cy) * (0.82 + 0.18*ease)];
+  });
+
+  g.save();
+  // faint interior tint so the playing surface reads as "captured"
+  g.beginPath(); g.moveTo(P[0][0],P[0][1]);
+  for (var i=1;i<4;i++) g.lineTo(P[i][0],P[i][1]);
+  g.closePath();
+  g.fillStyle = 'rgba(64,220,150,' + (0.07*ease).toFixed(3) + ')';
+  g.fill();
+
+  // marching-ants quad
+  g.strokeStyle = 'rgba(90,240,165,' + (0.95*ease).toFixed(3) + ')';
+  g.lineWidth = 3; g.setLineDash([14, 8]);
+  g.lineDashOffset = -(t / 42) % 22;
+  g.shadowColor = 'rgba(50,220,140,0.55)'; g.shadowBlur = 10;
+  g.stroke();
+  g.setLineDash([]);
+
+  // gold L-brackets at the true corners
+  g.strokeStyle = 'rgba(255,214,130,' + ease.toFixed(3) + ')';
+  g.lineWidth = 3.5; g.lineCap = 'round';
+  g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 6;
+  var arm = Math.min(cw, ch) * 0.055;
+  for (var k = 0; k < 4; k++) {
+    var a = P[k], b = P[(k+1)%4], d = P[(k+3)%4];
+    var u = _unit(a, b), v = _unit(a, d);
+    g.beginPath();
+    g.moveTo(a[0] + u[0]*arm, a[1] + u[1]*arm);
+    g.lineTo(a[0], a[1]);
+    g.lineTo(a[0] + v[0]*arm, a[1] + v[1]*arm);
+    g.stroke();
+  }
+
+  // pocket rings — corners plus long-rail midpoints, gently pulsing
+  var pulse = 0.55 + 0.35 * Math.sin(t / 320);
+  var mids = [[(P[0][0]+P[1][0])/2,(P[0][1]+P[1][1])/2],
+              [(P[2][0]+P[3][0])/2,(P[2][1]+P[3][1])/2]];
+  g.shadowBlur = 0; g.lineWidth = 2;
+  P.concat(mids).forEach(function(p){
+    g.beginPath(); g.arc(p[0], p[1], 11 + 3*pulse, 0, Math.PI*2);
+    g.strokeStyle = 'rgba(255,224,138,' + (0.75*pulse*ease).toFixed(3) + ')';
+    g.stroke();
+  });
+  g.restore();
+  var coasting = _scanMisses > 1;
+  _scanChip(g, cw,
+    coasting ? '\u25ce Holding lock\u2026 keep the felt in view' : '\u2713 Table locked \u2014 SCAN when ready',
+    coasting ? '#ffe08a' : '#9df7c3', 'rgba(8,20,13,0.85)');
+}
+
+function _unit(a, b) {
+  var dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx,dy) || 1;
+  return [dx/L, dy/L];
+}
+function _scanChip(g, cw, text, fg, bg) {
+  g.save();
   g.font = '700 13px Barlow Condensed, sans-serif';
-  const tw = g.measureText(label).width + 22;
-  g.shadowBlur = 0; g.fillStyle = 'rgba(8,20,13,0.82)';
+  var tw = g.measureText(text).width + 22;
+  g.fillStyle = bg;
   g.beginPath(); g.roundRect((cw - tw)/2, 10, tw, 24, 12); g.fill();
-  g.fillStyle = '#9df7c3'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText(label, cw/2, 22);
+  g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, cw/2, 22);
   g.restore();
 }
 function startMotionLoop() {
@@ -2573,7 +2746,7 @@ function startMotionLoop() {
     lastCheck = ts;
     analyzeMotion();
     // live table scan (~every 600ms; cheap: 200px thumbnail flood fill)
-    if (ts - _lastOutline > 600) {
+    if (ts - _lastOutline > 220) {
       _lastOutline = ts;
       try { drawLiveOutline(_detectTableCorners(video, video.videoWidth, video.videoHeight)); }
       catch (_) { drawLiveOutline(null); }
@@ -2698,7 +2871,6 @@ async function captureFrame(mode) {
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
     document.getElementById('detections-box').classList.remove('show');
-    document.getElementById('redetect-btn').style.display = 'none';
     // Pause auto-scan so it doesn't keep re-firing while user marks balls
     stillCounter = 0;
     lastScanTime = Date.now() + 8000; // 8s cooldown after capture
@@ -2744,7 +2916,6 @@ function loadImageFile(file) {
     placeholder.style.display = 'none'; canvas.style.display = 'block';
     hideSuggestion();
     document.getElementById('detections-box').classList.remove('show');
-    document.getElementById('redetect-btn').style.display = 'none';
     if (document.getElementById('english-toggle').checked) {
       document.getElementById('english-panel').style.display = '';
     }
@@ -2802,14 +2973,26 @@ function renderCanvas() {
       if (simpleMode) {
         const hasCrown = objs.some(o => o._rank === 0);
         if (hasCrown && ob._rank !== 0) return;
+      } else {
+        /* ADVANCED: cap at the TOP 3 ranked balls. Drawing every object ball
+           put ~24 dashed lines on a phone canvas — no legend can rescue that,
+           and nobody chooses between eight shots. The podium is where the real
+           decision lives. Ranking already exists, so we just take the top 3.
+           Fail-open: if no crown has been computed yet, draw what we have. */
+        const hasCrown = objs.some(o => o._rank === 0);
+        if (hasCrown && (typeof ob._rank !== 'number' || ob._rank > 2)) return;
       }
       const obPkt = pocketFor(ob);
       // When a combo is the recommended play, fade THIS crowned ball's dead
       // direct lines (the impossible best-direct) so the combo path drawn later
       // reads as dominant. Other balls' lines are untouched.
       const dimDirect = !simpleMode && window._comboShot && ob._rank === 0;
-      const aOrange = dimDirect ? 0.15 : 0.8;
-      const aOShadow = dimDirect ? 0.1 : 0.5;
+      /* Rank fade: #1 full strength, #2 and #3 progressively dimmer, so the
+         hierarchy reads instantly without consulting a legend. */
+      const rankFade = (typeof ob._rank === 'number' && ob._rank > 0)
+                       ? (ob._rank === 1 ? 0.7 : 0.5) : 1;
+      const aOrange = dimDirect ? 0.15 : 0.8 * rankFade;
+      const aOShadow = dimDirect ? 0.1 : 0.5 * rankFade;
       const cx = cue.fx*W, cy = cue.fy*H;
       const ox = ob.fx*W,  oy = ob.fy*H;
       // Aim line: cue → object ball (always shown)
@@ -2831,8 +3014,8 @@ function renderCanvas() {
       if (obPkt) {
         const px = obPkt.fx*W, py = obPkt.fy*H;
         const cutAngle = computeCutAngle(cue, ob, obPkt);
-        const baseCol = cutAngle < 30 ? '52,201,106' : cutAngle < 55 ? '224,136,32' : '204,34,34';
-        const aPocket = dimDirect ? 0.15 : 0.7;
+        const baseCol = ob._rank === 0 ? '52,201,106' : ob._rank === 1 ? '224,136,32' : '150,160,155';
+        const aPocket = dimDirect ? 0.15 : 0.7 * rankFade;
         // Object ball → pocket line (always shown)
         ctx.save();
         ctx.setLineDash([5,7]);
@@ -2841,7 +3024,7 @@ function renderCanvas() {
         ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(px,py); ctx.stroke();
         ctx.restore();
         // Cut angle arc — overhead only; skip when this ball's lines are dimmed
-        if (cutAngle !== null && viewMode === 'overhead' && !dimDirect) {
+        if (cutAngle !== null && viewMode === 'overhead' && !dimDirect && ob._rank === 0) {
           const inAngle  = Math.atan2(cy-oy, cx-ox);
           const outAngle = Math.atan2(py-oy, px-ox);
           ctx.save();
@@ -2856,6 +3039,9 @@ function renderCanvas() {
   // ── DIAMOND SYSTEM overlay (Advanced toggle · aligned tables only) ──
   drawDiamondSystem(ctx, W, H);
 
+  // ── DIAMOND MATH: the Corner-5 arithmetic, done for the player ──
+  drawDiamondMath(ctx, W, H);
+
   // ── KICK LINE overlay (blocked-shot escape · both modes) ──
   drawKickLine(ctx, W, H);
 
@@ -2863,8 +3049,17 @@ function renderCanvas() {
   (function(){
     var ballMarks = marks.some(function(m){ return m.type!=='pocket' && m.type!=='corner'; });
     var msg = null;
-    if (!_modeChosen) msg = '\u2b07 Next: pick your game below, then \ud83e\udd16 AI Detect';
+    /* Highest priority: we've asked for the pocket and are waiting on the tap.
+       It has to be ON the photo — that's where the finger already is. */
+    if (_awaitingPocket) msg = '\ud83d\udc46 Tap the pocket you\u2019re aiming at';
+    else if (!_modeChosen) msg = '\u2b07 Next: pick your game below, then \ud83e\udd16 AI Detect';
     else if (!ballMarks) msg = 'Next: tap \ud83e\udd16 AI Detect in the bottom bar';
+    /* 9-BALL: the lowest ball isn't extra context, it's the whole game — every
+       legal shot depends on it, and the AI can't read numbers. Ask for it as
+       soon as there are balls on the table, BEFORE a suggestion can form, so
+       the player never sees a crowned shot that the rules might forbid. */
+    else if (gameMode === '9ball' && !marks.some(function(m){ return m._mustHit; }))
+      msg = '\ud83c\udfaf 9-Ball: set your LOWEST ball so I know what\u2019s legal (Step 4)';
     if (!msg) return;
     ctx.save();
     ctx.font = '600 ' + Math.max(11, Math.round(W*0.019)) + 'px Barlow Condensed, sans-serif';
@@ -3120,6 +3315,28 @@ function renderCanvas() {
     ctx.save();
     // Pocket gets a larger tap target in Player View
     const mR = (m.type === 'pocket' && viewMode === 'player') ? R * 1.4 : R;
+    /* FLASH: a just-added mark pulses for a moment so you can see where it
+       landed. Without this it was easy to tap "+ Pocket" repeatedly, never
+       spot the new marker, and end up with a stack of them. */
+    if (m._flash) {
+      const age = Date.now() - m._flash;
+      if (age < 1400) {
+        const t = (age % 470) / 470;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, mR + 6 + t * 16, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(64,206,255,' + (0.85 * (1 - t)).toFixed(3) + ')';
+        ctx.lineWidth = 3; ctx.setLineDash([]);
+        ctx.stroke();
+        ctx.restore();
+        if (!window._flashTimer) {
+          window._flashTimer = setInterval(function(){
+            if (marks.some(function(mm){ return mm._flash; }) && sourceImg) renderCanvas();
+            else { clearInterval(window._flashTimer); window._flashTimer = null; }
+          }, 60);
+        }
+      }
+    }
     ctx.beginPath(); ctx.arc(x, y, mR, 0, Math.PI*2);
     ctx.shadowBlur=12; ctx.shadowColor='rgba(0,0,0,0.65)';
     if (m.type === 'cue') {
@@ -3177,22 +3394,29 @@ function renderCanvas() {
       ctx.fillStyle='rgba(168,85,247,0.9)';
       ctx.fillText('AI', x, y + R + 7);
     }
-    // BEST SHOT crown — green glowing ring + label on the #1 ranked ball
+    // BEST SHOT crown — green glowing ring + label on the #1 ranked ball.
+    // 9-BALL EXCEPTION: if no lowest ball has been marked, the app cannot know
+    // whether this shot is even LEGAL (it can't read numbers). Showing a green
+    // "BEST" crown would state more confidence than we have — so it becomes a
+    // cyan "CHECK" ring that reads as "probably this, confirm it's legal".
     if (m._rank === 0) {
+      var _unverified9 = (gameMode === '9ball' && !marks.some(function(mm){ return mm._mustHit; }));
+      var _cr = _unverified9 ? '64,206,255' : '45,255,138';
       ctx.save();
       ctx.beginPath();
       ctx.arc(x, y, R * 1.9, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(45,255,138,0.95)';
+      ctx.strokeStyle = 'rgba(' + _cr + ',0.95)';
       ctx.lineWidth = 3;
-      ctx.shadowColor = 'rgba(45,255,138,0.7)';
+      ctx.shadowColor = 'rgba(' + _cr + ',0.7)';
       ctx.shadowBlur = 14;
-      ctx.setLineDash([]);
+      ctx.setLineDash(_unverified9 ? [7,5] : []);
       ctx.stroke();
+      ctx.setLineDash([]);
       ctx.font = `bold ${Math.round(R*0.62)}px Barlow Condensed,sans-serif`;
-      ctx.fillStyle = 'rgba(45,255,138,0.95)';
+      ctx.fillStyle = 'rgba(' + _cr + ',0.95)';
       ctx.textAlign = 'center';
       ctx.shadowBlur = 6;
-      ctx.fillText('★ BEST', x, y - R - 6);
+      ctx.fillText(_unverified9 ? '? CHECK' : '\u2605 BEST', x, y - R - 6);
       ctx.restore();
     }
     ctx.restore();
@@ -3257,7 +3481,40 @@ function aimToggle(id) {
 function drawDiamondSystem(ctx, W, H) {
   var t = document.getElementById('aim-diamonds');
   if (!t || !t.checked) return;
+  /* ADVANCED ONLY. The toggle row is .adv-only so it's hidden in Simple, but
+     the checkbox KEEPS its state when you switch back — so gate the drawing
+     too, or diamonds leak into Simple mode. */
+  if (simpleMode) return;
+  /* OVERHEAD ONLY. The math is perspective-correct in either view (it runs
+     through the homography), but in player view the far rail foreshortens so
+     hard that the numbers stack on top of each other and can't be read. */
+  if (viewMode !== 'overhead') {
+    ctx.save();
+    var vmsg = '\ud83d\udca0 Diamonds need Overhead View \u2014 switch it in Perspective Mode';
+    ctx.font = '600 ' + Math.max(11, Math.round(W*0.018)) + 'px Barlow Condensed, sans-serif';
+    var vw = ctx.measureText(vmsg).width + 24;
+    ctx.fillStyle = 'rgba(8,20,13,0.80)';
+    _rr(ctx, (W - vw)/2, 12, vw, 26, 13);
+    ctx.fillStyle = '#ffe08a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(vmsg, W/2, 25);
+    ctx.restore();
+    return;
+  }
   if (!window._tHf) {
+    /* Toggle is ON but the table isn't aligned. Before nagging, check whether
+       aligning is even POSSIBLE: on a close-up the detected balls are huge
+       relative to the frame (same physics as the align sanity check — a real
+       ball is ~2-3% of a table's long side). Asking someone to align a photo
+       that cannot be aligned is advice the app itself would reject. */
+    var _aiBalls = marks.filter(function(m){
+      return m.aiDetected && typeof m._bw === 'number' &&
+             (m.type==='obj'||m.type==='stripe'||m.type==='eight'||m.type==='cue');
+    });
+    if (_aiBalls.length) {
+      var _rs = _aiBalls.map(function(m){ return Math.min(m._bw, m._bh); })
+                        .sort(function(a,b){ return a-b; });
+      if (_rs[Math.floor(_rs.length/2)] > 0.10) return;   // close-up: stay quiet
+    }
     // Toggle is ON but the table isn't aligned — say so ON THE PHOTO, where
     // the user is actually looking for the numbers.
     ctx.save();
@@ -3330,6 +3587,134 @@ function drawDiamondSystem(ctx, W, H) {
   ctx.restore();
 }
 function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.fill(); }
+
+/* ── SHOT SELECTOR ────────────────────────────────────────────────────
+   Which of the top-3 ranked shots the diamond math is describing. 0 = the
+   crowned best shot. Resets to 0 whenever a fresh suggestion is computed. */
+var _focusRank = 0;
+function _rankedShots() {
+  return marks.filter(function(m){ return typeof m._rank === 'number' && m._rank <= 2; })
+              .sort(function(a,b){ return a._rank - b._rank; });
+}
+function cycleFocusShot(d) {
+  var n = _rankedShots().length;
+  if (n < 2) return;
+  _focusRank = (_focusRank + d + n) % n;
+  updateShotSelector();
+  if (typeof renderCanvas === 'function' && sourceImg) renderCanvas();
+}
+function updateShotSelector() {
+  var row = document.getElementById('shot-selector');
+  if (!row) return;
+  var n = _rankedShots().length;
+  // Only worth showing when there's actually a choice, and only in Advanced —
+  // Simple mode deliberately shows one shot and nothing to fiddle with.
+  if (n < 2 || simpleMode) { row.style.display = 'none'; return; }
+  if (_focusRank >= n) _focusRank = 0;
+  row.style.display = 'flex';
+  var lbl = document.getElementById('shot-selector-label');
+  if (lbl) lbl.textContent = 'Shot ' + (_focusRank + 1) + ' of ' + n;
+}
+
+/* ── DIAMOND MATH: do the Corner-5 arithmetic for the player ──────────
+   Reads the cue ball's rail number and the best-shot ball's rail number,
+   subtracts, and rings the diamond you'd aim through — the calculation the
+   overlay previously left to the player.
+   HONEST LIMIT: this is the classic rule of thumb, not geometry. Corner-5
+   assumes a rolling cue ball with running English, and purists read the cue
+   number along diagonals from the corner rather than straight across the
+   rail. Treat it as a starting estimate; when the gold kick line is showing,
+   that path is the geometrically exact one. */
+function drawDiamondMath(ctx, W, H) {
+  var t = document.getElementById('aim-diamonds');
+  if (!t || !t.checked || !window._tHf) return;
+  // Same gates as the overlay — silent here, since drawDiamondSystem has
+  // already explained on-canvas why the diamonds aren't showing.
+  if (simpleMode || viewMode !== 'overhead') return;
+  var cueM = null;
+  for (var i = 0; i < marks.length; i++) if (marks[i].type === 'cue') cueM = marks[i];
+  // Follow the shot selector — lets you compare rail numbers across the top 3.
+  var ranked = _rankedShots();
+  var tgtM = ranked[Math.min(_focusRank, Math.max(0, ranked.length - 1))] || null;
+  if (!cueM || !tgtM) return;
+
+  var longAxis = window._tCanonLong || 'x';
+  var maxX = (window._tCanonMax && window._tCanonMax.x) || (longAxis === 'x' ? 1 : 0.5);
+  var maxY = (window._tCanonMax && window._tCanonMax.y) || (longAxis === 'x' ? 0.5 : 1);
+  var c = geoP(cueM), b = geoP(tgtM);
+  if (!c || !b) return;
+
+  // Position along the long axis, expressed on the drawn 0–8 diamond scale.
+  function railNum(p) {
+    var f = (longAxis === 'x') ? (p.fx / maxX) : (p.fy / maxY);
+    if (!isFinite(f)) return null;
+    return Math.max(0, Math.min(8, f * 8));
+  }
+  var cueN = railNum(c), tgtN = railNum(b);
+  if (cueN === null || tgtN === null) return;
+  var aim = cueN - tgtN;
+
+  function CP(cx, cy) { var p = applyHomography(window._tHf, cx, cy); return [p.x * W, p.y * H]; }
+  // A point on a long rail at diamond number n. farSide picks which long rail.
+  function railPt(n, farSide) {
+    var f = Math.max(0, Math.min(8, n)) / 8;
+    if (longAxis === 'x') return CP(f * maxX, farSide ? maxY : 0);
+    return CP(farSide ? maxX : 0, f * maxY);
+  }
+  // The cue sits nearer one long rail; the aim diamond goes on the opposite one.
+  var cueOnFar = (longAxis === 'x') ? (c.fy > maxY / 2) : (c.fx > maxX / 2);
+
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  var fs = Math.max(9, Math.round(W * 0.016));
+  ctx.font = '700 ' + fs + 'px Barlow Condensed, sans-serif';
+
+  function tag(pt, text, col) {
+    var tw = ctx.measureText(text).width + 14;
+    ctx.fillStyle = 'rgba(8,20,13,0.88)';
+    _rr(ctx, pt[0] - tw / 2, pt[1] - 11, tw, 22, 11);
+    ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(pt[0] - tw / 2 + 5.5, pt[1] - 10);
+    ctx.arcTo(pt[0] + tw / 2, pt[1] - 10, pt[0] + tw / 2, pt[1] + 10, 10);
+    ctx.arcTo(pt[0] + tw / 2, pt[1] + 10, pt[0] - tw / 2, pt[1] + 10, 10);
+    ctx.arcTo(pt[0] - tw / 2, pt[1] + 10, pt[0] - tw / 2, pt[1] - 10, 10);
+    ctx.arcTo(pt[0] - tw / 2, pt[1] - 10, pt[0] + tw / 2, pt[1] - 10, 10);
+    ctx.stroke();
+    ctx.fillStyle = col; ctx.fillText(text, pt[0], pt[1]);
+  }
+
+  // Cue and target numbers, marked on the cue's near rail (where you read them).
+  tag(railPt(cueN, cueOnFar), 'CUE ' + cueN.toFixed(1), '#7fd4ff');
+  tag(railPt(tgtN, cueOnFar), 'BALL ' + tgtN.toFixed(1), '#ff9d7a');
+
+  // The answer: ring the aim diamond on the opposite long rail.
+  var solvable = (aim >= 0 && aim <= 8);
+  if (solvable) {
+    var ap = railPt(aim, !cueOnFar);
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(ap[0], ap[1], Math.max(9, W * 0.019), 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffe08a'; ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(255,224,138,0.8)'; ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    tag([ap[0], ap[1] - Math.max(22, W * 0.042)], 'AIM ' + aim.toFixed(1), '#ffe08a');
+  }
+
+  // Readout: show the arithmetic explicitly so it teaches, not just answers.
+  var line = solvable
+    ? '\ud83d\udca0 ' + cueN.toFixed(1) + ' \u2212 ' + tgtN.toFixed(1) + ' = ' + aim.toFixed(1)
+    : '\ud83d\udca0 ' + aim.toFixed(1) + ' \u2014 off the rail';
+  ctx.font = '700 ' + Math.max(10, Math.round(W * 0.017)) + 'px Barlow Condensed, sans-serif';
+  var lw2 = ctx.measureText(line).width + 16;
+  var by = H - 14;
+  ctx.fillStyle = 'rgba(8,20,13,0.86)';
+  _rr(ctx, (W - lw2) / 2, by - 10, lw2, 20, 10);
+  ctx.fillStyle = solvable ? '#ffe9b8' : '#e0a98a';
+  ctx.fillText(line, W / 2, by);
+  ctx.restore();
+}
 
 /* ── KICK LINE drawing ────────────────────────────────────────────────
    Reads window._kickShot (set by the advice logic when the best shot is
@@ -3797,23 +4182,162 @@ function _detectTableCorners(el, natW, natH) {
     if (y<SH-1  && !seen[(y+1)*SW+x] && match(x,y+1)) { seen[(y+1)*SW+x]=1; q.push([x,y+1]); }
   }
   if (pts.length < SW*SH*0.10) return null;
-  let tl=pts[0], tr=pts[0], br=pts[0], bl=pts[0];
-  for (const p of pts) { const [x,y]=p;
-    if (x+y < tl[0]+tl[1]) tl=p; if (x-y > tr[0]-tr[1]) tr=p;
-    if (x+y > br[0]+br[1]) br=p; if (y-x > bl[1]-bl[0]) bl=p; }
-  const cx=(tl[0]+tr[0]+br[0]+bl[0])/4, cy=(tl[1]+tr[1]+br[1]+bl[1])/4;
-  const ex = p => ({ fx: Math.min(.995, Math.max(.005, (p[0]+(p[0]-cx)*0.035)/SW)),
-                     fy: Math.min(.995, Math.max(.005, (p[1]+(p[1]-cy)*0.035)/SH)) });
-  const C = [ex(tl), ex(tr), ex(br), ex(bl)];
-  const area = Math.abs((C[1].fx-C[0].fx)*(C[3].fy-C[0].fy) - (C[3].fx-C[0].fx)*(C[1].fy-C[0].fy));
+
+  /* ── RAIL LINE FITTING ──────────────────────────────────────────────
+     The old approach took the four EXTREME felt pixels. That's why a
+     close-up fooled it: when felt runs off every side, the extremes are
+     just the image corners. Rails are straight lines, so instead we walk
+     the felt boundary, fit a line to each of the four rails, and INTERSECT
+     them. The intersections are the true corners in perspective — and if a
+     rail isn't in frame there's no line to fit, so we honestly return null
+     instead of inventing a table. Classical CV: no model, no training. */
+  var mask = seen;                                   // 1 where felt
+  var M = function(x,y){ return mask[y*SW+x]; };
+  var minX=SW, maxX=0, minY=SH, maxY=0;
+  for (var pi=0; pi<pts.length; pi++) {
+    var px=pts[pi][0], py=pts[pi][1];
+    if(px<minX)minX=px; if(px>maxX)maxX=px;
+    if(py<minY)minY=py; if(py>maxY)maxY=py;
+  }
+  var spanX = maxX-minX, spanY = maxY-minY;
+  if (spanX < 20 || spanY < 15) return null;
+
+  // Sample the middle 70% of each edge — the ends curve into the corners.
+  var i0x = Math.round(minX + spanX*0.15), i1x = Math.round(maxX - spanX*0.15);
+  var i0y = Math.round(minY + spanY*0.15), i1y = Math.round(maxY - spanY*0.15);
+  var topP=[], botP=[], lefP=[], rigP=[];
+  var topEdge=0, botEdge=0, lefEdge=0, rigEdge=0, colN=0, rowN=0;
+
+  for (var x=i0x; x<=i1x; x++) {
+    var ty=-1, by=-1;
+    for (var y=0; y<SH; y++)      if (M(x,y)) { ty=y; break; }
+    for (var y2=SH-1; y2>=0; y2--) if (M(x,y2)) { by=y2; break; }
+    if (ty<0 || by<0) continue;
+    colN++;
+    if (ty<=0) topEdge++; else topP.push([x,ty]);     // touching frame top = rail not in view
+    if (by>=SH-1) botEdge++; else botP.push([x,by]);
+  }
+  for (var y3=i0y; y3<=i1y; y3++) {
+    var lx=-1, rx=-1;
+    for (var x2=0; x2<SW; x2++)      if (M(x2,y3)) { lx=x2; break; }
+    for (var x3=SW-1; x3>=0; x3--)   if (M(x3,y3)) { rx=x3; break; }
+    if (lx<0 || rx<0) continue;
+    rowN++;
+    if (lx<=0) lefEdge++; else lefP.push([lx,y3]);
+    if (rx>=SW-1) rigEdge++; else rigP.push([rx,y3]);
+  }
+  // If most of an edge runs off the frame, that rail simply isn't visible.
+  if (!colN || !rowN) return null;
+  if (topEdge/colN > 0.5 || botEdge/colN > 0.5 ||
+      lefEdge/rowN > 0.5 || rigEdge/rowN > 0.5) return null;
+  if (topP.length<8 || botP.length<8 || lefP.length<6 || rigP.length<6) return null;
+
+  var Ltop=_fitLine(topP,false), Lbot=_fitLine(botP,false);
+  var Llef=_fitLine(lefP,true),  Lrig=_fitLine(rigP,true);
+  if (!Ltop||!Lbot||!Llef||!Lrig) return null;
+
+  var TL=_lineX(Ltop,Llef), TR=_lineX(Ltop,Lrig),
+      BR=_lineX(Lbot,Lrig), BL=_lineX(Lbot,Llef);
+  if (!TL||!TR||!BR||!BL) return null;
+
+  var raw = [TL,TR,BR,BL];
+  for (var ri=0; ri<4; ri++) {
+    if (!isFinite(raw[ri][0]) || !isFinite(raw[ri][1])) return null;
+    // A corner far outside the frame means the fit diverged.
+    if (raw[ri][0] < -SW*0.35 || raw[ri][0] > SW*1.35 ||
+        raw[ri][1] < -SH*0.35 || raw[ri][1] > SH*1.35) return null;
+  }
+  var C = raw.map(function(p){
+    return { fx: Math.min(.995, Math.max(.005, p[0]/SW)),
+             fy: Math.min(.995, Math.max(.005, p[1]/SH)) };
+  });
+  var area = Math.abs((C[1].fx-C[0].fx)*(C[3].fy-C[0].fy) - (C[3].fx-C[0].fx)*(C[1].fy-C[0].fy));
   if (area < 0.10) return null;
   return C;
 }
+
+/* Least squares with one outlier-rejection pass — a cue stick or an arm
+   crossing a rail shouldn't drag the line with it.
+   swap=false fits y=a*x+b (near-horizontal rails);
+   swap=true  fits x=a*y+b (near-vertical rails, avoids infinite slope). */
+function _fitLine(pts, swap) {
+  function ls(P) {
+    var n=P.length, sx=0, sy=0, sxx=0, sxy=0;
+    for (var i=0;i<n;i++){
+      var u = swap?P[i][1]:P[i][0], v = swap?P[i][0]:P[i][1];
+      sx+=u; sy+=v; sxx+=u*u; sxy+=u*v;
+    }
+    var d = n*sxx - sx*sx;
+    if (Math.abs(d) < 1e-9) return null;
+    return { a:(n*sxy - sx*sy)/d, b:(sy*sxx - sx*sxy)/d };
+  }
+  if (!pts || pts.length < 4) return null;
+  var L = ls(pts); if (!L) return null;
+  var res = pts.map(function(p){
+    var u = swap?p[1]:p[0], v = swap?p[0]:p[1];
+    return Math.abs(v - (L.a*u + L.b));
+  }).slice().sort(function(a,b){ return a-b; });
+  var tol = Math.max(1.2, res[res.length>>1] * 3);
+  var keep = pts.filter(function(p){
+    var u = swap?p[1]:p[0], v = swap?p[0]:p[1];
+    return Math.abs(v - (L.a*u + L.b)) <= tol;
+  });
+  if (keep.length < Math.max(6, pts.length*0.5)) return L;
+  return ls(keep) || L;
+}
+/* Intersect a near-horizontal line (y=a*x+b) with a near-vertical one (x=c*y+d). */
+function _lineX(H, V) {
+  var den = 1 - V.a * H.a;
+  if (Math.abs(den) < 1e-9) return null;
+  var x = (V.a * H.b + V.b) / den;
+  return [x, H.a * x + H.b];
+}
+/* ── ALIGN SANITY CHECK ───────────────────────────────────────────────
+   The felt detector finds the boundary of green. On a close-up the WHOLE
+   frame is felt, so it "finds" the image border and reports a table that
+   isn't there — then places six pockets on empty cloth and claims success.
+   Physics catches it: a ball is 2.25" and a playing surface is 78–100"
+   long, so a ball is only ~2–3% of the table's long side. If the detected
+   balls are far bigger than that relative to the quad, the quad is not a
+   table. Returns a reason string when implausible, or null when it's fine. */
+function _alignSanityCheck(C) {
+  try {
+    if (!C || C.length !== 4) return null;
+    var xs = C.map(function(c){ return c.fx; }), ys = C.map(function(c){ return c.fy; });
+    var quadW = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+    var quadH = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+    var longSide = Math.max(quadW, quadH);
+    if (!(longSide > 0.01)) return 'the detected table is too small to use';
+
+    // Only balls the model actually placed carry a measured box size.
+    var balls = marks.filter(function(m){
+      return m.aiDetected && typeof m._bw === 'number' &&
+             (m.type === 'obj' || m.type === 'stripe' || m.type === 'eight' || m.type === 'cue');
+    });
+    if (!balls.length) return null;          // nothing to judge with — allow it
+
+    var ratios = balls.map(function(m){ return Math.min(m._bw, m._bh) / longSide; });
+    ratios.sort(function(a,b){ return a-b; });
+    var med = ratios[Math.floor(ratios.length/2)];
+    // True value is ~0.022–0.029. Allow 3x headroom for loose boxes and angle.
+    if (med > 0.10) {
+      return 'the balls are far too big for that table \u2014 this looks like a close-up, not a whole table';
+    }
+    return null;
+  } catch (e) { return null; }               // fail-open: never block on a bug
+}
+
 function autoAlignTable() {
   if (!sourceImg) { setStatus('Load or capture a photo first','warn'); return; }
   try {
     const C = _detectTableCorners(sourceImg, sourceImg.width, sourceImg.height);
     if (!C) { setStatus('Couldn\u2019t find the table \u2014 tap \ud83d\udcd0 Align Table and tap the 4 corners yourself','warn'); return; }
+    var bad = _alignSanityCheck(C);
+    if (bad) {
+      // Don't claim a table we haven't found. Route to the one tap that works.
+      setStatus('\u26a0\ufe0f No full table found \u2014 ' + bad + '. Tap \ud83d\udd0d Suggest Best Shot and I\u2019ll ask you to tap the pocket instead.','warn');
+      return;
+    }
     marks = marks.filter(m => m.type !== 'corner' && m.type !== 'pocket');
     aligning = false; updateAlignChrome();
     C.forEach((c, idx) => marks.push({ type:'corner', idx, fx:c.fx, fy:c.fy }));
@@ -3852,18 +4376,86 @@ function enlargeCanvas() {
   // Fit the long side to the screen so "everything" is visible at max size
   var vw = window.innerWidth - 20, vh = window.innerHeight - 20;
   var scale = Math.min(vw / canvas.width, vh / canvas.height);
+  // Remember the fit scale — the zoom slider multiplies THIS, so 100% always
+  // means "whole table visible" no matter the photo's size or aspect.
+  window._enlargeFit = scale;
+  var z = document.getElementById('enlarge-zoom');
+  if (z) z.value = 100;
+  var zv = document.getElementById('enlarge-zoom-val');
+  if (zv) zv.textContent = '100%';
   im.style.width  = Math.round(canvas.width  * scale) + 'px';
   im.style.height = Math.round(canvas.height * scale) + 'px';
   ov.style.display = 'flex';
+}
+function applyEnlargeZoom(pct) {
+  var im = document.getElementById('enlarge-img');
+  var ov = document.getElementById('enlarge-overlay');
+  if (!im || !window._enlargeFit) return;
+  var f = window._enlargeFit * (pct / 100);
+  var newW = Math.round(canvas.width * f), newH = Math.round(canvas.height * f);
+  // Keep whatever is in the middle of the screen in the middle after zooming,
+  // instead of snapping back to the top-left corner.
+  var oldW = im.offsetWidth || newW, oldH = im.offsetHeight || newH;
+  var cx = (ov.scrollLeft + ov.clientWidth  / 2) / Math.max(1, oldW);
+  var cy = (ov.scrollTop  + ov.clientHeight / 2) / Math.max(1, oldH);
+  im.style.width = newW + 'px';
+  im.style.height = newH + 'px';
+  var zv = document.getElementById('enlarge-zoom-val');
+  if (zv) zv.textContent = Math.round(pct) + '%';
+  ov.scrollLeft = cx * newW - ov.clientWidth  / 2;
+  ov.scrollTop  = cy * newH - ov.clientHeight / 2;
 }
 function closeEnlarge() { document.getElementById('enlarge-overlay').style.display = 'none'; }
 
 function quickAddPocket() {
   if (!sourceImg) { setStatus('Take or upload a photo first','warn'); return; }
-  placeMarkAt('pocket', 0.5, 0.07);
-  setStatus('Pocket added — drag it onto the pocket you\'re aiming for','gold');
+  /* Every pocket used to land on the SAME fixed spot (0.5, 0.07). Tap twice and
+     the second sat exactly on top of the first — invisible — so it was easy to
+     tap several times and end up with a stack. Now each pocket goes somewhere
+     distinct and free, and it flashes so you can see where it landed. */
+  var existing = marks.filter(function(m){ return m.type === 'pocket'; });
+  var taken = function(fx, fy){
+    return existing.some(function(m){ return Math.hypot(m.fx-fx, m.fy-fy) < 0.06; });
+  };
+  var spot = null;
+
+  // 1. Aligned table? Then we know where the real pockets ARE — offer the next
+  //    missing one at its true position instead of a generic drop point.
+  if (window._tHf) {
+    for (var i = 0; i < STANDARD_POCKETS.length; i++) {
+      var c = STANDARD_POCKETS[i];
+      var p = applyHomography(window._tHf, c.fx, c.fy);
+      if (p && isFinite(p.x) && isFinite(p.y) &&
+          p.x > 0.02 && p.x < 0.98 && p.y > 0.02 && p.y < 0.98 && !taken(p.x, p.y)) {
+        spot = { fx: p.x, fy: p.y }; break;
+      }
+    }
+  }
+  // 2. Otherwise walk a spread of visible drop points, skipping occupied ones.
+  if (!spot) {
+    var fallbacks = [
+      {fx:0.50, fy:0.12}, {fx:0.12, fy:0.12}, {fx:0.88, fy:0.12},
+      {fx:0.50, fy:0.88}, {fx:0.12, fy:0.88}, {fx:0.88, fy:0.88},
+      {fx:0.50, fy:0.50}
+    ];
+    for (var j = 0; j < fallbacks.length; j++) {
+      if (!taken(fallbacks[j].fx, fallbacks[j].fy)) { spot = fallbacks[j]; break; }
+    }
+  }
+  if (!spot) { setStatus('All six pockets are already placed — drag one instead','warn'); return; }
+
+  var nm = placeMarkAt('pocket', spot.fx, spot.fy);
+  // Flash it for a moment so the eye catches where it went.
+  if (nm) {
+    nm._flash = Date.now();
+    setTimeout(function(){ delete nm._flash; if (sourceImg) renderCanvas(); }, 1400);
+  }
+  renderCanvas();
+  var n = marks.filter(function(m){ return m.type === 'pocket'; }).length;
+  setStatus('Pocket ' + n + ' of 6 added (flashing) — drag it onto the pocket you\'re aiming for','gold');
 }
 function clearAlign() {
+  _awaitingPocket = false;
   marks = marks.filter(m => m.type !== 'corner');
   aligning = false;
   window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null;
@@ -4210,6 +4802,22 @@ function suggestShot() {
     sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
 
+  /* POCKET REALITY CHECK.
+     With no aligned table AND no marked pocket, the engine used to fall back to
+     six ASSUMED pocket positions at the image corners and mid-edges. On a full
+     overhead photo that lands roughly right. On a close-up — cue, one ball, one
+     visible pocket — those "pockets" are just corners of the picture, so the app
+     would confidently plan a shot at a rail, a wall, or the far side of the room
+     and never mention it was guessing. One honest tap fixes it. */
+  if (!pkt && !window._tHf) {
+    _awaitingPocket = true;
+    if (typeof renderCanvas === 'function') renderCanvas();
+    titl.textContent = 'Which Pocket?';
+    body.textContent = 'This photo isn\u2019t an aligned full table, so I can\u2019t work out where the pockets are \u2014 and I\u2019d rather ask than guess.\n\nTap the pocket you\u2019re aiming at, right on the photo. That\u2019s all I need: cue ball, object ball, and one pocket.\n\n(For a whole-table photo instead, use \ud83d\udcd0 Align Table or \u2728 Auto in Step 2 and every pocket gets placed for you.)';
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
+  }
+  _awaitingPocket = false;
+
 // Build the crown's candidate pool, applying 8-Ball group filter.
   // Note: 'objs' contains BOTH solids (type 'obj') and stripes (type 'stripe').
   const solidsOnly  = objs.filter(m => m.type === 'obj');
@@ -4409,6 +5017,7 @@ function suggestShot() {
   else if (difficulty <= 8) plainHeadline = '⚠️ This is a tough shot — low percentage, weigh your options.\n\n';
   else                      plainHeadline = '🛑 This is a very low-percentage shot — a safety may be smarter.\n\n';
   body.textContent = plainHeadline + advice + englishAdvice + safetyNote + kickNote + comboNote + nineNote + eightNote + sampleNote;
+  _focusRank = 0; updateShotSelector();
   sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
 
   // Coaching mode — suppressed in Simple mode even if the toggle was saved on
@@ -4566,6 +5175,21 @@ function handleTap(fx, fy) {
   const tapX = fx*canvas.width, tapY = fy*canvas.height;
   const englishEl = document.getElementById('english-toggle');
   const englishOn = !!(englishEl && englishEl.checked);
+  /* Armed by suggestShot when there's no aligned table and no pocket: this tap
+     IS the pocket, then the suggestion re-runs on its own so the close-up case
+     — cue, ball, pocket — works in a single tap. */
+  if (_awaitingPocket) {
+    _awaitingPocket = false;
+    var np = placeMarkAt('pocket', fx, fy);
+    if (np) {
+      np._flash = Date.now();
+      setTimeout(function(){ delete np._flash; if (sourceImg) renderCanvas(); }, 1400);
+    }
+    renderCanvas();
+    setStatus('Target pocket set — reading the shot…','gold');
+    setTimeout(function(){ suggestShot(); }, 180);
+    return;
+  }
   // 9-BALL: picking the must-hit lowest ball — the next ball tap sets it.
   if (_pickingLowest) {
     _pickingLowest = false;
@@ -4704,7 +5328,18 @@ canvas.addEventListener('pointerdown', function(e) {
       updateAlignChrome();
       rebuildFromCorners();
       var _pc = window._alignPlaced ? window._alignPlaced() : 6;
-      setStatus('✓ Table aligned — '+_pc+' pocket'+(_pc===1?'':'s')+' placed'+(_pc<6?' (rest are outside the photo — add any by hand in Advanced)':'')+'. Drag any corner to fine-tune.','live');
+      /* Manual align is you telling the app where the corners are, so we don't
+         override it — but if the balls are far too big for that quad it's a
+         close-up, and the diamonds/pocket positions that follow will be wrong.
+         Say so rather than let it look authoritative. */
+      var _cornersNow = marks.filter(function(m){ return m.type === 'corner'; })
+                             .map(function(m){ return {fx:m.fx, fy:m.fy}; });
+      var _bad = _alignSanityCheck(_cornersNow);
+      if (_bad) {
+        setStatus('\u26a0\ufe0f Aligned, but ' + _bad + '. Pocket positions and diamonds will be off \u2014 for a close-up, tap \u2298 to clear and just tap the pocket you\u2019re aiming at.','warn');
+      } else {
+        setStatus('✓ Table aligned — '+_pc+' pocket'+(_pc===1?'':'s')+' placed'+(_pc<6?' (rest are outside the photo — add any by hand in Advanced)':'')+'. Drag any corner to fine-tune.','live');
+      }
     } else {
       const names = ['TOP-LEFT','TOP-RIGHT','BOTTOM-RIGHT','BOTTOM-LEFT'];
       renderCanvas();
@@ -4856,7 +5491,6 @@ function startSampleShot() {
     canvas.style.display = 'block';
     hideSuggestion();
     document.getElementById('detections-box').classList.remove('show');
-    document.getElementById('redetect-btn').style.display = 'none';
     setStatus('🎓 Sample shot loaded — tap 🔍 Suggest Best Shot below', 'gold');
     try { document.getElementById('canvas-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
   };
@@ -5050,7 +5684,8 @@ function discardFrame() {
   lastScanTime = 0; stillCounter = 0; // resume auto-scan
 }
 
-function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); window._kickShot = null; if (typeof renderCanvas==='function' && sourceImg) renderCanvas(); }
+function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); window._kickShot = null;
+  _focusRank = 0; var _ss = document.getElementById('shot-selector'); if (_ss) _ss.style.display = 'none'; if (typeof renderCanvas==='function' && sourceImg) renderCanvas(); }
 
 let resizeTimer;
 window.addEventListener('resize',()=>{
@@ -6089,9 +6724,21 @@ try {
     </div>
   </div>
 </div>
-<div id="enlarge-overlay" onclick="closeEnlarge()" style="display:none;position:fixed;inset:0;z-index:9980;background:rgba(3,8,5,.96);align-items:center;justify-content:center;padding:10px;overflow:auto">
+<div id="enlarge-overlay" onclick="closeEnlarge()" style="display:none;position:fixed;inset:0;z-index:9980;background:rgba(3,8,5,.96);align-items:center;justify-content:center;padding:10px;overflow:auto;-webkit-overflow-scrolling:touch">
   <div style="position:fixed;top:12px;right:14px;background:rgba(200,151,46,.18);border:1.5px solid #9c7a34;color:#e8c07a;border-radius:16px;padding:6px 14px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700">✕ Close</div>
-  <div style="position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#8ba394;font-family:'Barlow Condensed',sans-serif;font-size:12.5px">View only — nothing can be marked or moved here. Tap anywhere to close.</div>
+  <!-- Zoom bar. stopPropagation on the whole bar, or touching it closes the
+       overlay (the backdrop's onclick is closeEnlarge). -->
+  <div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(3,8,5,0),rgba(3,8,5,.93) 32%);padding:16px 16px calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div style="display:flex;align-items:center;gap:10px;width:100%;max-width:420px">
+      <span style="color:#8ba394;font-family:'Barlow Condensed',sans-serif;font-size:15px">\u2212</span>
+      <input type="range" id="enlarge-zoom" min="100" max="400" value="100" step="5"
+             oninput="applyEnlargeZoom(this.value)"
+             style="flex:1;accent-color:#c8963e">
+      <span style="color:#8ba394;font-family:'Barlow Condensed',sans-serif;font-size:15px">+</span>
+      <span id="enlarge-zoom-val" style="color:#e8c07a;font-family:'Barlow Condensed',sans-serif;font-size:12.5px;font-weight:700;min-width:38px;text-align:right">100%</span>
+    </div>
+    <div style="color:#8ba394;font-family:'Barlow Condensed',sans-serif;font-size:12px;text-align:center">Zoom in, then drag to pan &middot; tap the photo to close</div>
+  </div>
   <img id="enlarge-img" alt="Table view" style="max-width:none;width:auto;height:auto;max-height:none;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.7)">
 </div>
 <div class="tour-dim" id="tour-dim" onclick="endTour()"></div>
