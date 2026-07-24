@@ -1175,7 +1175,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.24.0234</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.24.0353</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -3524,10 +3524,10 @@ function renderCanvas() {
     const lbl = {cue:'C',obj:'S',eight:'8',stripe:'T',pocket:'P'}[m.type];
     const lc  = {cue:'#1a1508',obj:'#fff',eight:'#fff',stripe:'#1a0808',pocket:'#c8972e'}[m.type];
     ctx.fillStyle=lc; ctx.fillText(lbl, x, y+.5);
-   if (m.aiDetected) {
-      // Queued (no plate — it's a whisper tag, a box would shout).
-      _lblQ.push({x:x, y:y + R + 7, t:'AI', c:'rgba(168,85,247,0.9)', f:8, bare:true});
-    }
+    /* The per-ball "AI" tag lived here. Removed: with nine balls it stamped
+       the same message nine times, covered felt and crowded the aim labels.
+       The status line already reports the count, and m.aiDetected is still
+       tracked for the logic that needs it. */
     // SHOT SELECTOR focus. Rank 0 already has the crown, so only ranks 2 and 3
     // need their own marker — without this the arrows have no visible effect
     // unless the diamond math happens to be showing.
@@ -5932,7 +5932,15 @@ function discardFrame() {
 }
 
 function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); window._kickShot = null;
-  _focusRank = 0; var _ss = document.getElementById('shot-selector'); if (_ss) _ss.style.display = 'none'; if (typeof renderCanvas==='function' && sourceImg) renderCanvas(); }
+  /* Don't wipe the shot selection when suggestShot() is REGENERATING the
+     panel for an arrow press — suggestShot calls hideSuggestion on entry,
+     which zeroed _focusRank before the new shot could be drawn, so the
+     arrows silently did nothing. */
+  if (!_keepFocus) {
+    _focusRank = 0;
+    var _ss = document.getElementById('shot-selector'); if (_ss) _ss.style.display = 'none';
+  }
+  if (typeof renderCanvas==='function' && sourceImg) renderCanvas(); }
 
 let resizeTimer;
 window.addEventListener('resize',()=>{
@@ -6668,7 +6676,7 @@ try {
         <div class="help-section-title">🤖 AI Detection</div>
         <div class="help-item">
           <div class="help-icon">🤖</div>
-          <div><div class="help-item-title">AI Detect Button</div><div class="help-item-desc">After you have a picture, tap this to automatically find and mark the balls. AI-placed markers show a small purple "AI" tag.</div></div>
+          <div><div class="help-item-title">AI Detect Button</div><div class="help-item-desc">After you have a picture, tap this to automatically find and mark the balls. Check them over and <strong>tap any that look wrong</strong> — the status line tells you how many were found.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🔄</div>
