@@ -1109,7 +1109,47 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 /* ── LANDSCAPE: dashboard split. Right stage NEVER scrolls (status + toolbar +
    table + actions always visible); the left rail is the single page scroll,
    and it receives the AI results + shot advice. Portrait untouched. ── */
+/* ── LANDSCAPE FLOATING BUTTONS ──────────────────────────────────────────
+   Defined at top level and hidden by default, then revealed by the single
+   media query below. They used to live INSIDE that media query, which meant
+   no rule reached them in portrait at all — so they fell back to a button's
+   default display and leaked onto the portrait page. */
+#ls-swap-btn, #ls-split-btn {
+  position: fixed; transform: translateY(-50%);
+  right: calc(56vw - 20px);             /* on the seam, table-on-right default */
+  z-index: 20; width: 40px; height: 40px; border-radius: 50%;
+  box-shadow: 0 3px 12px rgba(0,0,0,.5);
+  display: none;                        /* revealed only in phone landscape */
+  align-items: center; justify-content: center;
+  cursor: pointer; padding: 0; line-height: 1;
+}
+#ls-swap-btn  { top: 50%; background: #c8963e; color: #0b1811; border: 2px solid #0b1811; font-size: 20px; }
+#ls-split-btn { top: calc(50% + 52px); background: #12271a; color: #9fe4ff; border: 2px solid #2a4433; font-size: 17px; }
+body.ls-flip #ls-swap-btn,
+body.ls-flip #ls-split-btn { right: auto; left: calc(56vw - 20px); }
+#ls-swap-btn:active, #ls-split-btn:active { transform: translateY(-50%) scale(.9); }
+/* With the split turned off there are no sides to swap. */
+body.ls-nosplit #ls-swap-btn { display: none !important; }
+
 @media (orientation: landscape) and (max-height: 600px) {
+  #ls-swap-btn  { display: flex; }
+  #ls-split-btn { display: flex; }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+
+  /* SPLIT OPT-OUT. body.ls-nosplit undoes the side-by-side layout, so a
+     landscape user who prefers the normal stacked page can have it. Placed
+     first so the rules below still win when the class is absent. */
+  body.ls-nosplit { padding-right: 0 !important; padding-left: 0 !important; }
+  body.ls-nosplit #stage-core {
+    position: static !important; width: auto !important; height: auto !important;
+    border: none !important; overflow: visible !important;
+  }
+  body.ls-nosplit .sticky-action-bar {
+    left: 0 !important; right: 0 !important; width: auto !important;
+  }
+  body.ls-nosplit #ls-swap-btn { display: none !important; }
   body { padding-right: 56vw; }
   #app { max-width: none; padding-bottom: 40px; }
   #table-stage { display: contents; }   /* detections + advice fall into the rail flow */
@@ -1137,22 +1177,6 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   }
   body.ls-flip .sticky-action-bar { right: auto; left: 0; }
 
-  /* Floating swap button — only visible in phone landscape, sits on the
-     divider between the two panels. Hidden entirely in portrait. */
-  #ls-swap-btn {
-    position: fixed; top: 50%; transform: translateY(-50%);
-    right: calc(56vw - 20px);           /* on the seam, table-on-right default */
-    z-index: 20; width: 40px; height: 40px; border-radius: 50%;
-    background: #c8963e; color: #0b1811; border: 2px solid #0b1811;
-    box-shadow: 0 3px 12px rgba(0,0,0,.5);
-    display: none; align-items: center; justify-content: center;
-    font-size: 20px; cursor: pointer; padding: 0; line-height: 1;
-  }
-  body.ls-flip #ls-swap-btn { right: auto; left: calc(56vw - 20px); }
-  #ls-swap-btn:active { transform: translateY(-50%) scale(.9); }
-  @media (orientation: landscape) and (max-height: 600px) {
-    #ls-swap-btn { display: flex; }
-  }
   @keyframes lsSwapPulse {
     0%,100% { box-shadow: 0 3px 12px rgba(0,0,0,.5); }
     50%     { box-shadow: 0 0 0 8px rgba(200,150,62,.35), 0 3px 12px rgba(0,0,0,.5); }
@@ -1162,6 +1186,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 </style>
 </head>
 <body>
+<button id="ls-split-btn" aria-label="Turn the split-screen landscape layout on or off" title="Split layout on/off" onclick="toggleLandscapeSplit()">&#9707;</button>
 <button id="ls-swap-btn" aria-label="Swap table to the other side of the screen" title="Swap sides" onclick="toggleLandscapeSide()">&#8646;</button>
 <div id="app">
 
@@ -1175,7 +1200,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.24.0353</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.27.1134</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1213,6 +1238,14 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
     <div class="motion-track"><div class="motion-fill" id="motion-fill"></div></div>
     <div class="motion-val" id="motion-val">0%</div>
     <div class="still-badge" id="still-badge">STILL</div>
+  </div>
+
+  <!-- CAMERA POSITION READOUT: independent of the felt detector, so it keeps
+       telling the truth even when detection is struggling. -->
+  <div id="pos-bar" style="display:none;align-items:center;gap:12px;padding:5px 12px 7px;font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border)">
+    <span>ANGLE <strong id="tilt-val" style="color:var(--cream)">--</strong><span id="tilt-note" style="margin-left:5px"></span></span>
+    <span style="opacity:.4">|</span>
+    <span>TABLE FILLS <strong id="fill-val" style="color:var(--cream)">--</strong><span id="fill-note" style="margin-left:5px"></span></span>
   </div>
 
   <!-- STEP 1 HEADER -->
@@ -1311,6 +1344,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
         <div class="geo-badges" id="geo-badges"></div>
         <div class="sug-title"  id="sug-title"></div>
         <div class="contact-key" id="contact-key" style="display:none;float:right;margin:0 0 8px 12px;text-align:center"></div>
+        <div id="contact-key-note" style="display:none;font-size:11.5px;color:var(--text-muted);font-style:italic;margin:0 0 8px;line-height:1.45"></div>
         <div class="sug-body"   id="sug-body"></div>
         <div class="coaching-box" id="coaching-box"></div>
       </div>
@@ -1727,11 +1761,18 @@ var _awaitingPocket = false;   // next canvas tap sets the target pocket
 let autoScan      = true;
 let tfModel       = null;
 let modelReady    = false;
+/* Region of the photo fed to the model, as fractions of the image. 0,0,1,1 is
+   the whole frame; anything smaller is the auto-crop around the table. */
+var _cropFx = 0, _cropFy = 0, _cropFw = 1, _cropFh = 1;
 
 // Motion
 let motionRAF     = null;
 let prevFrame     = null;
 let motionBuffer  = [];
+var _shotPhase = 'armed';        // 'armed' | 'showing' | 'disturbed' — see analyzeMotion
+var _disturbStreak = 0;          // consecutive high-motion frames
+var MIN_SHOWING_MS = 1500;       // a captured shot stays readable this long
+
 let stillCounter  = 0;
 let lastScanTime  = 0;
 let motionThreshold   = 3.5;
@@ -1849,7 +1890,38 @@ async function runDetection() {
     // Draw the ORIGINAL photo, not the on-screen canvas — the canvas has aiming
     // lines and Diamond System numbers painted on it, which the model would
     // otherwise detect as balls. Detection must only ever see the clean image.
-    inferCtx.drawImage(sourceImg, 0, 0, 640, 640);
+    /* AUTO-CROP TO THE TABLE.
+       Inference runs on a fixed 640x640 square. If the table only fills a third
+       of the photo, two thirds of that budget is spent on carpet, chairs and
+       walls, and each ball lands on ~15 pixels — right at the edge of what the
+       model can classify. That is the real reason a tripod shot detects worse
+       than a close-up.
+       When the table is aligned we know exactly where it is, so we feed the
+       model just the table plus a margin and map the results back afterwards.
+       On a shot where the table fills a third of the frame this roughly
+       triples the pixels per ball. Nothing visible changes — the canvas still
+       shows the whole photo.
+       Falls back to the full frame whenever the table isn't confidently known,
+       because a wrong crop would cut balls out of the picture entirely. */
+    _cropFx = 0; _cropFy = 0; _cropFw = 1; _cropFh = 1;
+    (function(){
+      var cs = marks.filter(function(m){ return m.type === 'corner'; });
+      if (cs.length !== 4) return;
+      var xs = cs.map(function(m){ return m.fx; }), ys = cs.map(function(m){ return m.fy; });
+      var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+      var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+      var mx = (x1 - x0) * 0.10, my = (y1 - y0) * 0.10;   // margin for rails + edge balls
+      x0 = Math.max(0, x0 - mx); x1 = Math.min(1, x1 + mx);
+      y0 = Math.max(0, y0 - my); y1 = Math.min(1, y1 + my);
+      var w = x1 - x0, h = y1 - y0;
+      if (w <= 0.05 || h <= 0.05) return;                 // implausible, don't risk it
+      if (w * h > 0.80) return;                           // already nearly the whole frame
+      _cropFx = x0; _cropFy = y0; _cropFw = w; _cropFh = h;
+    })();
+    inferCtx.drawImage(sourceImg,
+      _cropFx * sourceImg.width, _cropFy * sourceImg.height,
+      _cropFw * sourceImg.width, _cropFh * sourceImg.height,
+      0, 0, 640, 640);
 
     if (tfModel.detect) {
       // COCO-SSD style
@@ -1862,7 +1934,11 @@ async function runDetection() {
       detections = ballPreds.map(p => ({
         class: 1,
         score: p.score,
-        bbox: [p.bbox[0]*scaleX, p.bbox[1]*scaleY, p.bbox[2]*scaleX, p.bbox[3]*scaleY]
+        // map out of crop space back onto the full canvas
+        bbox: [ (_cropFx + (p.bbox[0]/640)*_cropFw) * canvas.width,
+                (_cropFy + (p.bbox[1]/640)*_cropFh) * canvas.height,
+                (p.bbox[2]/640)*_cropFw * canvas.width,
+                (p.bbox[3]/640)*_cropFh * canvas.height ]
       }));
     } else {
       // Custom YOLOv8 — returns bboxFrac (0-1 fractions), scale to main canvas
@@ -1871,7 +1947,11 @@ async function runDetection() {
       detections = rawDets.map(d => ({
         class: d.class,
         score: d.score,
-        bbox: [d.bboxFrac[0]*W, d.bboxFrac[1]*H, d.bboxFrac[2]*W, d.bboxFrac[3]*H]
+        // map out of crop space back onto the full canvas
+        bbox: [ (_cropFx + d.bboxFrac[0]*_cropFw) * W,
+                (_cropFy + d.bboxFrac[1]*_cropFh) * H,
+                d.bboxFrac[2]*_cropFw * W,
+                d.bboxFrac[3]*_cropFh * H ]
       }));
     }
 
@@ -1943,7 +2023,7 @@ async function runDetection() {
     const CUE_MARGIN    = 20;     // ...and clearly brighter than the next candidate
 
     function sampleRadius(boxW, boxH) {
-      const w640 = (boxW / W) * 640, h640 = (boxH / H) * 640;
+      const w640 = (boxW / W / _cropFw) * 640, h640 = (boxH / H / _cropFh) * 640;
       const d = Math.min(w640, h640);            // smallest apparent diameter
       if (!isFinite(d) || d <= 0) return 5;
       return Math.max(3, Math.min(10, Math.round(SAMPLE_FRAC * d)));
@@ -1964,7 +2044,8 @@ async function runDetection() {
 
     function ballWhiteFrac(fx, fy, rIn) {
       if (!_feltRef) return -1;
-      var cx = Math.round(fx*640), cy = Math.round(fy*640);
+      var cx = Math.round(((fx - _cropFx) / _cropFw) * 640);
+      var cy = Math.round(((fy - _cropFy) / _cropFh) * 640);
       var r  = Math.max(4, Math.min(26, rIn|0));
       var x0 = Math.max(0, cx-r), y0 = Math.max(0, cy-r);
       var sw = Math.min(640-x0, r*2), sh = Math.min(640-y0, r*2);
@@ -1989,7 +2070,9 @@ async function runDetection() {
     function sampleBallColor(fx, fy, rIn) {
       // fx,fy are 0-1 on the main canvas; inferCanvas holds the clean 640x640 photo.
       // Circular mask (not a square) so corner felt doesn't skew luma/saturation.
-      const cx = Math.round(fx * 640), cy = Math.round(fy * 640);
+      // fx,fy are canvas fractions; the infer canvas holds only the crop.
+      const cx = Math.round(((fx - _cropFx) / _cropFw) * 640);
+      const cy = Math.round(((fy - _cropFy) / _cropFh) * 640);
       const r  = Math.max(2, rIn || 5);
       const x0 = Math.max(0, cx - r), y0 = Math.max(0, cy - r);
       const sw = Math.min(640 - x0, r * 2), sh = Math.min(640 - y0, r * 2);
@@ -2172,7 +2255,7 @@ async function runDetection() {
         if (typeof m._bw !== 'number') return;
         var apparent = Math.min(m._bw, m._bh);
         if (apparent < CLOSEUP_MIN) return;                    // too small to judge
-        var wf = ballWhiteFrac(m.fx, m.fy, Math.round(apparent * 640 * 0.45));
+        var wf = ballWhiteFrac(m.fx, m.fy, Math.round((apparent / _cropFw) * 640 * 0.45));
         if (wf < 0) return;
         if (wf < SOLID_BELOW && m.type !== 'obj') {
           m.type = 'obj';    m.className = 'solid';  window._groupFixed = true;
@@ -2563,7 +2646,12 @@ async function startCamera() {
   var _to = document.getElementById('table-outline'); if (_to) _to.style.display = 'block';
   // Start the scanner animation immediately — searching state shows within a
   // frame instead of waiting up to 600ms for the first detection pass.
-  _scanCorners = null; _scanLockAt = 0; if (!_scanRAF) _scanLoop();
+  _scanCorners = null; _scanLockAt = 0; _initTilt();
+  /* The scanner loop is NOT started here. It used to be, "so the searching
+     state shows immediately" — but cameraOn is still false at this point, so
+     the loop's own guard fired on its very first frame, cancelled itself and
+     wiped its state. It never came back: no HUD, no ANGLE/FILLS row. It is
+     started below, once the camera is actually live. */
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     setStatus('Camera not supported — use photo upload', 'err'); return;
   }
@@ -2573,15 +2661,21 @@ async function startCamera() {
     });
     video.srcObject = mediaStream;
     video.style.display = 'block';
+    /* Explicitly play. The element carries autoplay/playsinline/muted, which
+       usually suffices — but on some Android builds a stream attached without
+       a play() call renders a black frame forever. Awaited so the loops below
+       don't start against a video with no dimensions. */
+    try { await video.play(); } catch (_) {}
     document.getElementById('cam-off-msg').style.display = 'none';
     document.getElementById('motion-bar-wrap').style.display = 'flex';
     var asb = document.getElementById('autoscan-block'); if (asb) asb.style.display = 'block';
     cameraOn = true;
     camBtn.textContent = '⏹ Stop'; camBtn.className = 'btn btn-red';
     scanBtn.disabled = false;
-    prevFrame = null; stillCounter = 0; motionBuffer = [];
+    prevFrame = null; stillCounter = 0; motionBuffer = []; _shotPhase = 'armed';
     setStatus('Camera live — point at table, auto-scan fires when still', 'live');
     startMotionLoop();
+    if (!_scanRAF) _scanLoop();     // now that cameraOn is true, it will stay running
   } catch (err) {
     const why = err.name === 'NotAllowedError' ? 'permission denied'
               : err.name === 'NotFoundError'   ? 'no camera found' : err.message;
@@ -2692,8 +2786,11 @@ function _scanLoop() {
     _scanCorners = null; _scanTarget = null; _scanMisses = 0; _scanLastSeen = 0;
     return;
   }
+  // Nothing to draw against yet — wait, don't tear the loop down.
+  if (!video || !video.videoWidth) { return; }
   _scanEase();
   _paintScanner(performance.now());
+  updatePosBar();
 }
 
 function _paintScanner(t) {
@@ -2713,7 +2810,23 @@ function _paintScanner(t) {
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, cw, ch);
 
+  /* Validate what is ACTUALLY DRAWN. The detector validates each fresh
+     detection, but the painted quad is _scanCorners — the SMOOTHED tracking
+     quad, produced by easing between detections and by reordering corners to
+     match the previous frame. If that correspondence crosses two corners, the
+     smoothed quad becomes a bowtie (an X across the screen with lines down
+     both edges) even though every individual detection was fine. Nothing was
+     checking that, so the bad shape sailed through and was drawn as a
+     confident lock — and coasting then held it. */
   if (!_scanCorners) { _paintSearching(g, cw, ch, t); return; }
+  var _dq = _scanCorners.map(function(c){ return [c.fx, c.fy]; });
+  var _dbad = _validQuad(_dq);
+  if (_dbad) {
+    // Not a table shape any more — drop the lock rather than draw nonsense.
+    _scanCorners = null; _scanTarget = null; _scanLockAt = 0;
+    window._scanWhy = _dbad;
+    _paintSearching(g, cw, ch, t); return;
+  }
   _paintLocked(g, cw, ch, t, _scanCorners);
 }
 
@@ -2744,7 +2857,8 @@ function _paintSearching(g, cw, ch, t) {
   g.fillStyle = grad;
   g.fillRect(L, sy - 34, R - L, 40);
   g.restore();
-  _scanChip(g, cw, '\ud83d\udd0d Scanning for table\u2026 center the felt in frame',
+  var _why = window._scanWhy;
+  _scanChip(g, cw, _why ? ('\ud83d\udd0d Scanning\u2026 ' + _why) : '\ud83d\udd0d Scanning for table\u2026 center the felt in frame',
             'rgba(200,220,205,0.9)', 'rgba(8,20,13,0.62)');
 }
 
@@ -2823,7 +2937,10 @@ function _scanChip(g, cw, text, fg, bg) {
      ends, and a thin glowing rule underneath. Pure show — the information is
      identical, it just reads like an instrument now that it's sharp. */
   g.save();
-  var label = text.toUpperCase();
+  /* Split by CODE POINT, not UTF-16 unit. Emoji are surrogate pairs, so
+     label[j] handed each half to fillText separately and both drew as tofu
+     boxes — the magnifying glass came out as two squares. */
+  var label = Array.from(text.toUpperCase());
   g.font = '700 12px Barlow Condensed, sans-serif';
   var track = 1.6;
   var tw = 0;
@@ -2855,6 +2972,82 @@ function _scanChip(g, cw, text, fg, bg) {
   }
   g.restore();
 }
+/* CAMERA POSITION READOUT.
+   Two numbers the player can act on, both independent of the felt detector —
+   which matters, because when detection struggles the user currently has no
+   idea whether THEY are the problem.
+
+   ANGLE comes from the phone's orientation sensor: 0° is flat (camera pointing
+   straight down at the table), 90° is upright. Overhead reads best because the
+   geometry is exact; a steep player-view angle foreshortens the far rail so
+   hard that the rails become hard to fit.
+
+   HEIGHT is deliberately NOT shown. A phone genuinely cannot measure how far it
+   is above a table — there is no sensor for it, and the barometer is nowhere
+   near sensitive enough even where it exists. What actually matters isn't
+   height anyway, it's how much of the frame the table fills, and that we can
+   measure exactly. A short player standing close and a tall one standing back
+   can be at very different heights with identical, equally good framing. */
+var _tiltDeg = null;
+function _initTilt() {
+  if (window._tiltInit) return; window._tiltInit = true;
+  function onOri(e) {
+    if (e.beta === null || e.beta === undefined) return;
+    // beta: front-back tilt. Fold to 0-90 so upside-down reads the same.
+    var b = Math.abs(e.beta) % 180;
+    if (b > 90) b = 180 - b;
+    _tiltDeg = b;
+  }
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS needs an explicit grant; ask once, and carry on quietly if refused.
+      DeviceOrientationEvent.requestPermission().then(function(r){
+        if (r === 'granted') window.addEventListener('deviceorientation', onOri);
+      }).catch(function(){});
+    } else {
+      window.addEventListener('deviceorientation', onOri);
+    }
+  } catch (e) {}
+}
+
+function updatePosBar() {
+  var bar = document.getElementById('pos-bar');
+  if (!bar) return;
+  if (typeof cameraOn === 'undefined' || !cameraOn) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+
+  var tv = document.getElementById('tilt-val'), tn = document.getElementById('tilt-note');
+  if (_tiltDeg === null) {
+    // No sensor, or permission refused. Say so rather than show a fake number.
+    if (tv) tv.textContent = 'n/a';
+    if (tn) { tn.textContent = ''; }
+  } else {
+    var d = Math.round(_tiltDeg);
+    if (tv) tv.textContent = d + '\u00b0';
+    if (tn) {
+      if (d <= 25)      { tn.textContent = '\u2713 overhead \u2014 best';   tn.style.color = '#5df0a5'; }
+      else if (d <= 55) { tn.textContent = 'angled \u2014 fine';             tn.style.color = '#ffe08a'; }
+      else              { tn.textContent = 'very low \u2014 tilt down a bit'; tn.style.color = '#ff9d7a'; }
+    }
+  }
+
+  var fv = document.getElementById('fill-val'), fn2 = document.getElementById('fill-note');
+  var f = window._feltFill;
+  if (typeof f !== 'number') {
+    if (fv) fv.textContent = '--';
+    if (fn2) fn2.textContent = '';
+  } else {
+    var pc = Math.round(f * 100);
+    if (fv) fv.textContent = pc + '%';
+    if (fn2) {
+      if (pc < 9)       { fn2.textContent = 'move closer';            fn2.style.color = '#ff9d7a'; }
+      else if (pc > 82) { fn2.textContent = 'move back';              fn2.style.color = '#ff9d7a'; }
+      else              { fn2.textContent = '\u2713 good';            fn2.style.color = '#5df0a5'; }
+    }
+  }
+}
+
 function startMotionLoop() {
   let lastCheck = 0;
   function loop(ts) {
@@ -2892,13 +3085,44 @@ function analyzeMotion() {
   const avg = motionBuffer.reduce((a,b)=>a+b,0) / motionBuffer.length;
   setMotionBar(Math.min(100, Math.round(avg * 6)), avg);
   if (avg < motionThreshold) {
-    stillCounter++;
+    stillCounter++; _disturbStreak = 0;
     document.getElementById('still-badge').classList.add('show');
-    if (stillCounter >= stillFramesNeeded && autoScan && Date.now() - lastScanTime > 2500) {
+    /* SHOT CYCLE, not a timer. Capture once, then refuse to capture again
+       until the balls have actually MOVED and come to rest — i.e. until a
+       shot has been played. Without this the condition stays true after the
+       first capture and the canvas re-reads every quarter second, so the
+       player never gets to look at the shot they asked for. */
+    if (stillCounter >= stillFramesNeeded && autoScan &&
+        (_shotPhase === 'armed' || _shotPhase === 'disturbed') &&
+        Date.now() - lastScanTime > 250) {
       lastScanTime = Date.now(); stillCounter = 0;
-      captureFrame('auto');
+      captureFrame('auto');   // sets _shotPhase itself, for auto AND manual
     }
   } else {
+    /* Real movement while a shot is on screen means the player took it.
+       Re-arm so the NEXT time the table settles we read the new layout.
+       The multiplier keeps a passing hand or a camera nudge from counting. */
+    /* Require SUSTAINED motion to decide a shot was played. One noisy frame
+       — autofocus hunting, a bumped tripod, someone walking past — could end
+       the showing state on its own. Also hold the shot on screen briefly no
+       matter what, so it can actually be read. */
+    if (_shotPhase === 'showing') {
+      var _shown = Date.now() - (window._showingSince || 0);
+      if (avg > motionThreshold * 2.2) _disturbStreak++; else _disturbStreak = 0;
+      // Two sustained frames is enough to mean a shot was played; four never
+      // happened at a real table and left the app stuck showing one shot.
+      if (_disturbStreak >= 2 && _shown > MIN_SHOWING_MS) _shotPhase = 'disturbed';
+      /* A "safety valve" used to live here: after 12s, ANY motion above the
+         plain threshold re-armed the cycle. That was wrong. A handheld phone
+         is always above the plain threshold, so it re-armed on nothing more
+         than the user's own hand and captured again roughly every 12 seconds
+         — on a table where no ball had moved. The valve existed to escape a
+         stuck phase, but the cause of that (claiming the phase before the
+         capture guards) is fixed, so the valve only broke the promise the
+         shot cycle makes: no new photo until the balls actually move. */
+    } else {
+      _disturbStreak = 0;
+    }
     stillCounter = 0;
     document.getElementById('still-badge').classList.remove('show');
     document.getElementById('scan-overlay').classList.remove('active');
@@ -2971,6 +3195,14 @@ async function captureFrame(mode) {
     }
     return;
   }
+  /* Claim the shot cycle HERE — only once the capture has passed every guard
+     and is actually going ahead. Setting it at the top of the function was a
+     bad bug: if the video wasn't ready yet, or a person was in frame, we
+     returned early having already marked the shot as "showing" — and nothing
+     could clear that at a still table, so auto-scan died for the session.
+     Applies to manual captures too, which is the overwrite fix. */
+  _shotPhase = 'showing';
+  window._showingSince = Date.now();
   document.getElementById('scan-overlay').classList.add('active');
   setTimeout(() => document.getElementById('scan-overlay').classList.remove('active'), 900);
   const flash = document.getElementById('capture-flash');
@@ -3755,6 +3987,24 @@ function drawDiamondSystem(ctx, W, H) {
 }
 function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.fill(); }
 
+/* ── RACKED-TABLE CHECK ───────────────────────────────────────────────
+   Before the break there is no shot to read: fifteen balls in a triangle are
+   touching, mutually blocking, and the only legal play is the break itself.
+   Worse, the detector does badly on a rack because the balls overlap. A tight
+   cluster of many balls is unmistakable, so say so plainly instead of
+   crowning a nonsense "best shot" out of a rack. */
+function _looksRacked() {
+  var b = marks.filter(function(m){
+    return m.type === 'obj' || m.type === 'stripe' || m.type === 'eight';
+  });
+  if (b.length < 9) return false;                   // a rack is 14-15 balls
+  var xs = b.map(function(m){ return m.fx; }), ys = b.map(function(m){ return m.fy; });
+  var w = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+  var h = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+  // Spread across the table this is large; racked it is a small triangle.
+  return (w * h) < 0.085;
+}
+
 /* ── SHOT SELECTOR ────────────────────────────────────────────────────
    Which of the top-3 ranked shots the diamond math is describing. 0 = the
    crowned best shot. Resets to 0 whenever a fresh suggestion is computed. */
@@ -4348,136 +4598,376 @@ function _detectTableCorners(el, natW, natH) {
   sx.drawImage(el, 0, 0, SW, SH);
   const data = sx.getImageData(0, 0, SW, SH).data;
   const P = (x, y) => { const i = (y * SW + x) * 4; return [data[i], data[i+1], data[i+2]]; };
-  const hs = [], ss = [], vs = [];
-  for (let y = Math.floor(SH*0.38); y < SH*0.62; y++)
-    for (let x = Math.floor(SW*0.38); x < SW*0.62; x++) {
-      const [r,g,b] = P(x,y); const [hh,s,v] = _rgb2hsv(r,g,b);
-      hs.push(hh); ss.push(s); vs.push(v);
+  /* REFERENCE COLOUR = the dominant saturated surface in the WHOLE frame.
+     It used to be the median of a small box at the centre of the picture,
+     which assumes the felt is dead centre. Shoot from a low angle and that box
+     lands on engraved lettering, a rail or the floor, so the reference colour
+     was wrong and almost nothing matched — hence "not enough felt in frame"
+     on a table that plainly fills the shot. A hue histogram over the whole
+     frame finds the cloth wherever it happens to sit. */
+  /* Pick the cloth by LARGEST COHERENT REGION, not by most pixels.
+     A plain hue histogram counts every saturated pixel in the frame, so a
+     vivid distractor — a red chair back, a pink towel in the corner — can
+     outvote the felt and the fill locks onto a scrap of background. Instead we
+     take the few strongest hue candidates and actually flood-fill each, then
+     keep whichever produces the biggest single connected area. Cloth is the
+     largest continuous surface in a photo of a table; a distractor is not. */
+  const HB = 36;
+  const bins = new Float64Array(HB);
+  for (let y = 0; y < SH; y += 2)
+    for (let x = 0; x < SW; x += 2) {
+      const [r,g,b] = P(x,y); const [hh,sA,vA] = _rgb2hsv(r,g,b);
+      if (sA < 0.18 || vA < 0.12) continue;
+      bins[Math.floor(hh/10) % HB] += sA;
     }
-  hs.sort((a,b)=>a-b); ss.sort((a,b)=>a-b); vs.sort((a,b)=>a-b);
-  const rh = hs[hs.length>>1], rs = ss[ss.length>>1], rv = vs[vs.length>>1];
-  const match = (x, y) => { const [r,g,b] = P(x,y); const [hh,s,v] = _rgb2hsv(r,g,b);
-    let dh = Math.abs(hh - rh); if (dh > 180) dh = 360 - dh;
-    return dh < 30 && Math.abs(s - rs) < 0.4 && Math.abs(v - rv) < 0.45 && s > 0.15; };
-  if (!match(SW>>1, SH>>1)) return null;
-  const seen = new Uint8Array(SW*SH); const q = [[SW>>1, SH>>1]]; const pts = [];
-  seen[(SH>>1)*SW + (SW>>1)] = 1;
-  while (q.length) { const [x,y] = q.pop(); pts.push([x,y]);
-    if (x>0     && !seen[y*SW+x-1]   && match(x-1,y)) { seen[y*SW+x-1]=1;   q.push([x-1,y]); }
-    if (x<SW-1  && !seen[y*SW+x+1]   && match(x+1,y)) { seen[y*SW+x+1]=1;   q.push([x+1,y]); }
-    if (y>0     && !seen[(y-1)*SW+x] && match(x,y-1)) { seen[(y-1)*SW+x]=1; q.push([x,y-1]); }
-    if (y<SH-1  && !seen[(y+1)*SW+x] && match(x,y+1)) { seen[(y+1)*SW+x]=1; q.push([x,y+1]); }
+  /* CLOTH-COLOUR PRIOR. Ranking every hue and taking the largest region picks
+     the BACKGROUND whenever the background is bigger than the table — a wood
+     floor, a carpet, a wall. That is what has been outlining the whole frame:
+     the floor was winning, not the felt.
+     Pool cloth is green or blue. Not brown, not beige, not grey, not orange.
+     That is a fact about the game, not a threshold I am guessing at, so we
+     only consider hues in the green-through-blue band and let the background
+     lose by definition. Bin index = hue/10, so 7..25 is 70°-250°. */
+  const CLOTH_LO = 7, CLOTH_HI = 25;
+  const order = [];
+  for (let i2 = CLOTH_LO; i2 <= CLOTH_HI; i2++) order.push({ i: i2, w: bins[i2] });
+  order.sort(function(a2,b2){ return b2.w - a2.w; });
+
+  let pts = [], seen = null;
+  for (let cand = 0; cand < Math.min(4, order.length); cand++) {
+    if (order[cand].w <= 0) break;
+    const bi = order[cand].i;
+    const hs = [], ss = [], vs = [];
+    for (let y = 0; y < SH; y += 2)
+      for (let x = 0; x < SW; x += 2) {
+        const [r,g,b] = P(x,y); const [hh,sA,vA] = _rgb2hsv(r,g,b);
+        if (sA < 0.18 || vA < 0.12) continue;
+        if (Math.floor(hh/10) % HB !== bi) continue;
+        hs.push(hh); ss.push(sA); vs.push(vA);
+      }
+    if (hs.length < 40) continue;
+    hs.sort((a2,b2)=>a2-b2); ss.sort((a2,b2)=>a2-b2); vs.sort((a2,b2)=>a2-b2);
+    const rh = hs[hs.length>>1], rs = ss[ss.length>>1], rv = vs[vs.length>>1];
+    const match = (x, y) => { const [r,g,b] = P(x,y); const [hh,sA,vA] = _rgb2hsv(r,g,b);
+      let dh = Math.abs(hh - rh); if (dh > 180) dh = 360 - dh;
+      return dh < 32 && Math.abs(sA - rs) < 0.45 && Math.abs(vA - rv) < 0.52 && sA > 0.14; };
+    const mySeen = new Uint8Array(SW*SH);
+    let myBest = [];
+    /* 7x7 seed grid, not 4x4. Seeds are cheap — an already-visited pixel is
+       skipped, so total work is bounded by the image, not the seed count — but
+       coverage matters a lot at distance. With 16 seeds a table filling 10% of
+       the frame is missed entirely 18.5% of the time; with 49 seeds that drops
+       to 0.6%. This is exactly the tripod-far-away case. */
+    for (let sy = 1; sy <= 7; sy++)
+      for (let sx = 1; sx <= 7; sx++) {
+        const x0 = Math.round(SW*sx/8), y0 = Math.round(SH*sy/8);
+        if (mySeen[y0*SW+x0] || !match(x0,y0)) continue;
+        const q = [[x0,y0]]; const reg = [];
+        mySeen[y0*SW+x0] = 1;
+        while (q.length) { const [x,y] = q.pop(); reg.push([x,y]);
+          if (x>0    && !mySeen[y*SW+x-1]   && match(x-1,y)) { mySeen[y*SW+x-1]=1;   q.push([x-1,y]); }
+          if (x<SW-1 && !mySeen[y*SW+x+1]   && match(x+1,y)) { mySeen[y*SW+x+1]=1;   q.push([x+1,y]); }
+          if (y>0    && !mySeen[(y-1)*SW+x] && match(x,y-1)) { mySeen[(y-1)*SW+x]=1; q.push([x,y-1]); }
+          if (y<SH-1 && !mySeen[(y+1)*SW+x] && match(x,y+1)) { mySeen[(y+1)*SW+x]=1; q.push([x,y+1]); }
+        }
+        if (reg.length > myBest.length) myBest = reg;
+      }
+    /* Take the STRONGEST hue that yields a plausible table — not simply the
+       biggest region. A region covering almost the whole frame is background
+       that has flooded everywhere, not cloth; one covering almost nothing is a
+       scrap. Walking candidates in order of colour strength and stopping at the
+       first plausible one keeps the real felt from being outvoted either way. */
+    /* Largest region wins — EXCEPT anything covering nearly the whole frame,
+       which is background that has flooded everywhere rather than cloth. That
+       single cap is what separates the two failures: without it a background
+       hue swallows the picture; with hue-strength preference instead, a vivid
+       distractor in a corner outvotes the felt. Size, capped, gets both. */
+    if (myBest.length > pts.length && myBest.length <= SW*SH*0.85) {
+      pts = myBest; seen = mySeen;
+    }
   }
-  if (pts.length < SW*SH*0.10) return null;
-
-  /* ── RAIL LINE FITTING ──────────────────────────────────────────────
-     The old approach took the four EXTREME felt pixels. That's why a
-     close-up fooled it: when felt runs off every side, the extremes are
-     just the image corners. Rails are straight lines, so instead we walk
-     the felt boundary, fit a line to each of the four rails, and INTERSECT
-     them. The intersections are the true corners in perspective — and if a
-     rail isn't in frame there's no line to fit, so we honestly return null
-     instead of inventing a table. Classical CV: no model, no training. */
-  var mask = seen;                                   // 1 where felt
-  var M = function(x,y){ return mask[y*SW+x]; };
-  var minX=SW, maxX=0, minY=SH, maxY=0;
-  for (var pi=0; pi<pts.length; pi++) {
-    var px=pts[pi][0], py=pts[pi][1];
-    if(px<minX)minX=px; if(px>maxX)maxX=px;
-    if(py<minY)minY=py; if(py>maxY)maxY=py;
+  /* Cut thin leaks, then keep only the biggest surviving piece. Neither step
+     is a colour threshold, so neither can mis-tune — they are connectivity
+     repairs on whatever the colour match produced. */
+  for (var ep = 0; ep < 2; ep++) {
+    var eroded = _erodeOnce(pts, SW, SH);
+    if (eroded.length < pts.length * 0.5) break;   // would eat the cloth: stop
+    pts = eroded;
   }
-  var spanX = maxX-minX, spanY = maxY-minY;
-  if (spanX < 20 || spanY < 15) return null;
+  pts = _largestComponent(pts, SW, SH);
 
-  // Sample the middle 70% of each edge — the ends curve into the corners.
-  var i0x = Math.round(minX + spanX*0.15), i1x = Math.round(maxX - spanX*0.15);
-  var i0y = Math.round(minY + spanY*0.15), i1y = Math.round(maxY - spanY*0.15);
-  var topP=[], botP=[], lefP=[], rigP=[];
-  var topEdge=0, botEdge=0, lefEdge=0, rigEdge=0, colN=0, rowN=0;
+  window._feltFill = pts.length / (SW*SH);
+  if (!pts.length) { window._scanWhy = 'no green or blue cloth in view'; return null; }
+  if (pts.length < SW*SH*0.030) { window._scanWhy = 'move closer \u2014 table too small in frame'; return null; }
 
-  for (var x=i0x; x<=i1x; x++) {
-    var ty=-1, by=-1;
-    for (var y=0; y<SH; y++)      if (M(x,y)) { ty=y; break; }
-    for (var y2=SH-1; y2>=0; y2--) if (M(x,y2)) { by=y2; break; }
-    if (ty<0 || by<0) continue;
-    colN++;
-    if (ty<=0) topEdge++; else topP.push([x,ty]);     // touching frame top = rail not in view
-    if (by>=SH-1) botEdge++; else botP.push([x,by]);
+  var hullPts = _cvHull(pts);
+  /* MAXIMUM-AREA QUADRILATERAL. Grouping hull edges by direction and keeping
+     the four longest fails on a low, natural shooting angle: the table is so
+     foreshortened that the two side rails become tiny, and two segments of the
+     SAME long rail (split by a side pocket) outrank them. Intersecting those
+     gives a corner miles off frame. The largest quadrilateral you can inscribe
+     in the hull is the table, whatever the angle — it cannot pick the same
+     rail twice. */
+  var quadPts = _maxAreaQuad(hullPts);
+  if (!quadPts) { window._scanWhy = 'table outline not clear enough'; return null; }
+
+  /* Refine: the raw quad's corners sit slightly inside the true corners because
+     the pockets round them off. Assign each hull point to its nearest quad edge,
+     fit a line through each group and intersect neighbours for a sharp corner. */
+  var buckets = [[],[],[],[]], hi, qi;
+  for (hi = 0; hi < hullPts.length; hi++) {
+    var bestD = Infinity, bestE = 0;
+    for (qi = 0; qi < 4; qi++) {
+      var d = _ptSegDist(hullPts[hi], quadPts[qi], quadPts[(qi+1)%4]);
+      if (d < bestD) { bestD = d; bestE = qi; }
+    }
+    buckets[bestE].push(hullPts[hi]);
   }
-  for (var y3=i0y; y3<=i1y; y3++) {
-    var lx=-1, rx=-1;
-    for (var x2=0; x2<SW; x2++)      if (M(x2,y3)) { lx=x2; break; }
-    for (var x3=SW-1; x3>=0; x3--)   if (M(x3,y3)) { rx=x3; break; }
-    if (lx<0 || rx<0) continue;
-    rowN++;
-    if (lx<=0) lefEdge++; else lefP.push([lx,y3]);
-    if (rx>=SW-1) rigEdge++; else rigP.push([rx,y3]);
+  var lines = [];
+  for (qi = 0; qi < 4; qi++) {
+    lines.push(buckets[qi].length >= 2
+      ? _fitLineTLS(buckets[qi])
+      : _fitLineTLS([quadPts[qi], quadPts[(qi+1)%4]]));
   }
-  // If most of an edge runs off the frame, that rail simply isn't visible.
-  if (!colN || !rowN) return null;
-  if (topEdge/colN > 0.5 || botEdge/colN > 0.5 ||
-      lefEdge/rowN > 0.5 || rigEdge/rowN > 0.5) return null;
-  if (topP.length<8 || botP.length<8 || lefP.length<6 || rigP.length<6) return null;
-
-  var Ltop=_fitLine(topP,false), Lbot=_fitLine(botP,false);
-  var Llef=_fitLine(lefP,true),  Lrig=_fitLine(rigP,true);
-  if (!Ltop||!Lbot||!Llef||!Lrig) return null;
-
-  var TL=_lineX(Ltop,Llef), TR=_lineX(Ltop,Lrig),
-      BR=_lineX(Lbot,Lrig), BL=_lineX(Lbot,Llef);
-  if (!TL||!TR||!BR||!BL) return null;
-
-  var raw = [TL,TR,BR,BL];
-  for (var ri=0; ri<4; ri++) {
-    if (!isFinite(raw[ri][0]) || !isFinite(raw[ri][1])) return null;
+  var raw = [];
+  for (gi = 0; gi < 4; gi++) {
+    var ip = _xsect(lines[gi], lines[(gi + 1) % 4]);
+    if (!ip || !isFinite(ip[0]) || !isFinite(ip[1])) ip = quadPts[(gi + 1) % 4];
     // A corner far outside the frame means the fit diverged.
-    if (raw[ri][0] < -SW*0.35 || raw[ri][0] > SW*1.35 ||
-        raw[ri][1] < -SH*0.35 || raw[ri][1] > SH*1.35) return null;
+    /* Corners must be essentially INSIDE the picture. This used to allow 35%
+       beyond the edge, and the corner was then clamped onto the frame border —
+       so the shape that got validated was not the shape that got drawn, and the
+       outline ran down the edges of the screen instead of the rails. A table
+       that isn't fully in view can't be aligned anyway, so say so. */
+    /* Refinement must never do WORSE than the shape it is refining. Fitting a
+       line per edge sharpens corners that the pockets round off, but if a
+       bucket picks up points from two different rails the fit goes diagonal
+       and the intersection flies off frame. When that happens, fall back to
+       the un-refined corner — which we already know is sane — instead of
+       throwing away a perfectly good detection. */
+    if (ip[0] < -SW*0.06 || ip[0] > SW*1.06 || ip[1] < -SH*0.06 || ip[1] > SH*1.06) {
+      ip = quadPts[(gi + 1) % 4];
+    }
+    raw.push(ip);
   }
-  var C = raw.map(function(p){
-    return { fx: Math.min(.995, Math.max(.005, p[0]/SW)),
-             fy: Math.min(.995, Math.max(.005, p[1]/SH)) };
+  // Order by angle about the centroid, start from the most top-left corner.
+  var ccx = (raw[0][0]+raw[1][0]+raw[2][0]+raw[3][0]) / 4;
+  var ccy = (raw[0][1]+raw[1][1]+raw[2][1]+raw[3][1]) / 4;
+  raw.sort(function(a,b){
+    return Math.atan2(a[1]-ccy, a[0]-ccx) - Math.atan2(b[1]-ccy, b[0]-ccx);
   });
+  var st = 0, bs = Infinity;
+  for (gi = 0; gi < 4; gi++) { var v = raw[gi][0] + raw[gi][1]; if (v < bs) { bs = v; st = gi; } }
+  var Q = [raw[st], raw[(st+1)%4], raw[(st+2)%4], raw[(st+3)%4]];
+  /* Make 0->1 a LONG rail. Compare OPPOSITE PAIRS, not single edges: under
+     perspective the near rail is far longer than the far one, so a single-edge
+     test picks the wrong axis. Without this the long/short axes swap on a
+     rotated table and the whole canonical mapping flips. */
+  var E = function(i){ return Math.hypot(Q[(i+1)%4][0]-Q[i][0], Q[(i+1)%4][1]-Q[i][1]); };
+  if (E(0) + E(2) < E(1) + E(3)) Q = [Q[1], Q[2], Q[3], Q[0]];
+
+  var C = Q.map(function(pt){
+    return { fx: Math.min(.995, Math.max(.005, pt[0]/SW)),
+             fy: Math.min(.995, Math.max(.005, pt[1]/SH)) };
+  });
+
+  /* Validate the DRAWN quad (canvas fractions, post-clamp), not the raw one —
+     clamping can turn a valid shape into a bad one and we were checking before
+     it happened. */
+  var vbad = _validQuad(C.map(function(c){ return [c.fx, c.fy]; }));
+  if (vbad) { window._scanWhy = vbad; return null; }
   var area = Math.abs((C[1].fx-C[0].fx)*(C[3].fy-C[0].fy) - (C[3].fx-C[0].fx)*(C[1].fy-C[0].fy));
-  if (area < 0.10) return null;
+  /* Floor lowered from 0.10 after measuring real geometry. A 7ft table shot
+     overhead from an 8ft ceiling fills ~59% of frame; from a player-view
+     tripod 4ft back it fills ~29%. The old 0.10 quad floor stopped locking
+     below ~19% fill, which left almost no headroom for a tripod set further
+     back. 0.055 keeps working down to roughly 11%, which covers a realistic
+     room setup while still rejecting a table that is a speck in the frame. */
+  if (area < 0.055) { window._scanWhy = 'move closer \u2014 table fills too little of the frame'; return null; }
   return C;
 }
 
 /* Least squares with one outlier-rejection pass — a cue stick or an arm
    crossing a rail shouldn't drag the line with it.
-   swap=false fits y=a*x+b (near-horizontal rails);
-   swap=true  fits x=a*y+b (near-vertical rails, avoids infinite slope). */
-function _fitLine(pts, swap) {
-  function ls(P) {
-    var n=P.length, sx=0, sy=0, sxx=0, sxy=0;
-    for (var i=0;i<n;i++){
-      var u = swap?P[i][1]:P[i][0], v = swap?P[i][0]:P[i][1];
-      sx+=u; sy+=v; sxx+=u*u; sxy+=u*v;
-    }
-    var d = n*sxx - sx*sx;
-    if (Math.abs(d) < 1e-9) return null;
-    return { a:(n*sxy - sx*sy)/d, b:(sy*sxx - sx*sxy)/d };
+/* ── Convex hull (Andrew monotone chain). Gives the felt region's outer
+   boundary in order, whatever angle the table sits at. */
+function _cvHull(pts) {
+  if (!pts || pts.length < 3) return pts ? pts.slice() : [];
+  var p = pts.slice().sort(function(a,b){ return a[0]-b[0] || a[1]-b[1]; });
+  function cr(o,a,b){ return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]); }
+  var lo=[], i;
+  for (i=0;i<p.length;i++){
+    while(lo.length>=2 && cr(lo[lo.length-2],lo[lo.length-1],p[i])<=0) lo.pop();
+    lo.push(p[i]);
   }
-  if (!pts || pts.length < 4) return null;
-  var L = ls(pts); if (!L) return null;
-  var res = pts.map(function(p){
-    var u = swap?p[1]:p[0], v = swap?p[0]:p[1];
-    return Math.abs(v - (L.a*u + L.b));
-  }).slice().sort(function(a,b){ return a-b; });
-  var tol = Math.max(1.2, res[res.length>>1] * 3);
-  var keep = pts.filter(function(p){
-    var u = swap?p[1]:p[0], v = swap?p[0]:p[1];
-    return Math.abs(v - (L.a*u + L.b)) <= tol;
-  });
-  if (keep.length < Math.max(6, pts.length*0.5)) return L;
-  return ls(keep) || L;
+  var up=[];
+  for (i=p.length-1;i>=0;i--){
+    while(up.length>=2 && cr(up[up.length-2],up[up.length-1],p[i])<=0) up.pop();
+    up.push(p[i]);
+  }
+  lo.pop(); up.pop();
+  return lo.concat(up);
 }
-/* Intersect a near-horizontal line (y=a*x+b) with a near-vertical one (x=c*y+d). */
-function _lineX(H, V) {
-  var den = 1 - V.a * H.a;
-  if (Math.abs(den) < 1e-9) return null;
-  var x = (V.a * H.b + V.b) / den;
-  return [x, H.a * x + H.b];
+
+/* A quad is only a table if it LOOKS like one. Without this the detector
+   happily returned four points in a bowtie — which draws as an X across the
+   screen — or a sliver, or a shape with corners folded inside out. Convexity,
+   sane corner angles and a plausible aspect ratio reject all three, so a bad
+   read shows as "still scanning" instead of a confident wrong outline. */
+function _validQuad(Q) {
+  function cr(o,a,b){ return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]); }
+  var pos=0, neg=0, i;
+  for (i=0;i<4;i++){
+    var z = cr(Q[i], Q[(i+1)%4], Q[(i+2)%4]);
+    if (z > 0) pos++; else if (z < 0) neg++;
+  }
+  if (pos && neg) return 'shape folds over itself';      // self-intersecting
+  for (i=0;i<4;i++){
+    var a=Q[(i+3)%4], b=Q[i], c=Q[(i+1)%4];
+    var v1x=a[0]-b[0], v1y=a[1]-b[1], v2x=c[0]-b[0], v2y=c[1]-b[1];
+    var l1=Math.hypot(v1x,v1y)||1, l2=Math.hypot(v2x,v2y)||1;
+    var ang=Math.acos(Math.max(-1,Math.min(1,(v1x*v2x+v1y*v2y)/(l1*l2))))*180/Math.PI;
+    if (ang < 35 || ang > 145) return 'corners not table-shaped';
+  }
+  var E = function(k){ return Math.hypot(Q[(k+1)%4][0]-Q[k][0], Q[(k+1)%4][1]-Q[k][1]); };
+  if (Math.max(E(0),E(2)) / Math.max(1e-6, Math.min(E(0),E(2))) > 3.2) return 'sides too uneven';
+  if (Math.max(E(1),E(3)) / Math.max(1e-6, Math.min(E(1),E(3))) > 3.2) return 'sides too uneven';
+  var lp=(E(0)+E(2))/2, sp=(E(1)+E(3))/2;
+  if (Math.max(lp,sp) / Math.max(1e-6, Math.min(lp,sp)) > 8) return 'shape too thin';
+  return null;
+}
+
+/* Shrink the region by one pixel. A hairline of in-hue pixels bridging the
+   felt to the background survives every colour threshold, and because the quad
+   is built from the most extreme points, that thread alone drags a corner out
+   past the table. Erosion cuts threads without touching the body. */
+function _erodeOnce(pts, SW, SH) {
+  var m = new Uint8Array(SW*SH), i;
+  for (i=0;i<pts.length;i++) m[pts[i][1]*SW + pts[i][0]] = 1;
+  var out = [];
+  for (i=0;i<pts.length;i++) {
+    var x = pts[i][0], y = pts[i][1];
+    if (x <= 0 || x >= SW-1 || y <= 0 || y >= SH-1) continue;
+    if (m[y*SW+x-1] && m[y*SW+x+1] && m[(y-1)*SW+x] && m[(y+1)*SW+x]) out.push(pts[i]);
+  }
+  return out;
+}
+/* THE PIECE I MISSED LAST TIME. Eroding severs the bridge, but the stranded
+   background blob is still sitting in the point list — so the hull, and with
+   it the quad, still stretches all the way to it. After eroding we have to
+   re-take the largest connected component and throw the rest away. */
+function _largestComponent(pts, SW, SH) {
+  var mask = new Uint8Array(SW*SH), i;
+  for (i=0;i<pts.length;i++) mask[pts[i][1]*SW + pts[i][0]] = 1;
+  var seen = new Uint8Array(SW*SH), best = [];
+  for (i=0;i<pts.length;i++) {
+    var sx = pts[i][0], sy = pts[i][1];
+    if (seen[sy*SW+sx]) continue;
+    var q = [[sx,sy]], comp = [];
+    seen[sy*SW+sx] = 1;
+    while (q.length) {
+      var c = q.pop(), x = c[0], y = c[1];
+      comp.push(c);
+      if (x>0    && mask[y*SW+x-1]   && !seen[y*SW+x-1])   { seen[y*SW+x-1]=1;   q.push([x-1,y]); }
+      if (x<SW-1 && mask[y*SW+x+1]   && !seen[y*SW+x+1])   { seen[y*SW+x+1]=1;   q.push([x+1,y]); }
+      if (y>0    && mask[(y-1)*SW+x] && !seen[(y-1)*SW+x]) { seen[(y-1)*SW+x]=1; q.push([x,y-1]); }
+      if (y<SH-1 && mask[(y+1)*SW+x] && !seen[(y+1)*SW+x]) { seen[(y+1)*SW+x]=1; q.push([x,y+1]); }
+    }
+    if (comp.length > best.length) best = comp;
+  }
+  return best;
+}
+
+/* Largest quadrilateral inscribable in the hull — for a table photo that IS
+   the table, at any angle. The hull is simplified to its most corner-like
+   vertices first so the search stays cheap enough to run several times a
+   second on a phone. */
+function _maxAreaQuad(H) {
+  if (!H || H.length < 4) return null;
+  var S = _simplifyHull(H, 18), n = S.length, i, j, k, l;
+  if (n < 4) return null;
+  function cr(p,q,r){ return (q[0]-p[0])*(r[1]-p[1]) - (q[1]-p[1])*(r[0]-p[0]); }
+  var best = null, bestA = 0;
+  for (i=0;i<n-3;i++) for (j=i+1;j<n-2;j++) for (k=j+1;k<n-1;k++) for (l=k+1;l<n;l++) {
+    var A = Math.abs(cr(S[i],S[j],S[k]))/2 + Math.abs(cr(S[i],S[k],S[l]))/2;
+    if (A > bestA) { bestA = A; best = [S[i],S[j],S[k],S[l]]; }
+  }
+  return best;
+}
+/* Keep the vertices that turn the most — the corner-like ones — so the
+   quad search is over a handful of candidates, not hundreds. */
+function _simplifyHull(H, maxN) {
+  var n = H.length, i;
+  if (n <= maxN) return H;
+  var sc = [];
+  for (i=0;i<n;i++){
+    var a=H[(i-1+n)%n], b=H[i], c=H[(i+1)%n];
+    var v1x=b[0]-a[0], v1y=b[1]-a[1], v2x=c[0]-b[0], v2y=c[1]-b[1];
+    var l1=Math.hypot(v1x,v1y)||1, l2=Math.hypot(v2x,v2y)||1;
+    var cosA=(v1x*v2x+v1y*v2y)/(l1*l2);
+    sc.push({ i:i, s:(1-cosA)*Math.min(l1,l2) });
+  }
+  sc.sort(function(a,b){ return b.s-a.s; });
+  return sc.slice(0,maxN).map(function(o){ return o.i; })
+           .sort(function(a,b){ return a-b; })
+           .map(function(i2){ return H[i2]; });
+}
+function _ptSegDist(p, a, b) {
+  var dx=b[0]-a[0], dy=b[1]-a[1], L2=dx*dx+dy*dy;
+  var t = L2 ? ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p[0]-(a[0]+t*dx), p[1]-(a[1]+t*dy));
+}
+
+/* Group consecutive hull edges that run in the same direction, then keep the
+   k longest groups IN HULL ORDER — for a table those are the four rails. */
+function _domEdges(H, k) {
+  var n = H.length;
+  if (n < 4) return null;
+  var g = [], cur = null, i;
+  for (i=0;i<n;i++){
+    var a=H[i], b=H[(i+1)%n];
+    var ang = Math.atan2(b[1]-a[1], b[0]-a[0]);
+    var len = Math.hypot(b[0]-a[0], b[1]-a[1]);
+    if (!cur) { cur = {i:i, ang:ang, pts:[a,b], len:len}; continue; }
+    var d = Math.abs(((ang - cur.ang + Math.PI) % (2*Math.PI)) - Math.PI);
+    if (d < 0.35) { cur.pts.push(b); cur.len += len; }
+    else { g.push(cur); cur = {i:i, ang:ang, pts:[a,b], len:len}; }
+  }
+  if (cur) g.push(cur);
+  // the first and last groups may be the same rail split across the wrap point
+  if (g.length > 1) {
+    var A=g[0], B=g[g.length-1];
+    var dw = Math.abs(((A.ang - B.ang + Math.PI) % (2*Math.PI)) - Math.PI);
+    if (dw < 0.35) { B.pts = B.pts.concat(A.pts); B.len += A.len; g.shift(); }
+  }
+  if (g.length < k) return null;
+  var top = g.slice().sort(function(a,b){ return b.len - a.len; }).slice(0,k);
+  top.sort(function(a,b){ return a.i - b.i; });   // restore cyclic order
+  return top;
+}
+
+/* Total-least-squares line in normal form nx*x + ny*y = c. Unlike y=ax+b this
+   handles vertical and near-vertical rails, which a rotated table produces. */
+function _fitLineTLS(pts) {
+  var n = pts.length, mx=0, my=0, i;
+  for (i=0;i<n;i++){ mx += pts[i][0]; my += pts[i][1]; }
+  mx/=n; my/=n;
+  var sxx=0, sxy=0, syy=0;
+  for (i=0;i<n;i++){
+    var dx = pts[i][0]-mx, dy = pts[i][1]-my;
+    sxx += dx*dx; sxy += dx*dy; syy += dy*dy;
+  }
+  var th = 0.5 * Math.atan2(2*sxy, sxx - syy);
+  var ux = Math.cos(th), uy = Math.sin(th);
+  var nx = -uy, ny = ux;
+  return { nx:nx, ny:ny, c: nx*mx + ny*my };
+}
+
+function _xsect(L1, L2) {
+  var det = L1.nx*L2.ny - L1.ny*L2.nx;
+  if (Math.abs(det) < 1e-9) return null;      // parallel rails never meet
+  return [ (L1.c*L2.ny - L1.ny*L2.c)/det, (L1.nx*L2.c - L1.c*L2.nx)/det ];
 }
 /* ── ALIGN SANITY CHECK ───────────────────────────────────────────────
    The felt detector finds the boundary of green. On a close-up the WHOLE
@@ -4815,15 +5305,19 @@ function scoreShot(cue, ball, pocket, allBalls) {
      makeable one and get crowned BEST. */
   let d = 1 + (cut/90)*6;
   if (cut >= 70) d += (cut - 70) * 0.25;   // 80deg -> +2.5, 88deg -> +4.5
-  if (cut >= 85) d = 10;                    // physically not a shot
   if (cueDist > 0.6) d += 2; else if (cueDist < 0.2) d -= 1;
-if (ballToPkt > 0.5) d += 1;
+  if (ballToPkt > 0.5) d += 1;
   let blocked = false;
   if (pathBlocked(ball, pocket, allBalls)) { d += 10; blocked = true; }
   // Also check the CUE -> object-ball path (a ball parked in the cue's lane
   // makes the shot a combo/carom, not a clean direct — bury it like a block).
   if (cue && pathBlocked(cue, ball, allBalls)) { d += 10; blocked = true; }
   d = Math.max(1, Math.min(10, Math.round(d)));
+  /* Hard stop LAST. Applied before the distance bonus, a close-range 90° cut
+     got the "nice and close" discount and slipped back to 9 — a shot that
+     cannot be made was being rated better than one that can. Nothing earns a
+     discount on an impossible angle. */
+  if (cut >= 85) d = 10;
   return { cut, cueDist, ballToPkt, difficulty: d, pocket, blocked };
 }
 
@@ -4953,6 +5447,7 @@ function contactKeyInfo(cue, ball, pocket) {
   return { line, side, off, cut:Math.round(cut), label:(off===0?'center — full hit':names[off]+' — '+side) };
 }
 function renderContactKey(info, ballType) {
+  var _n = document.getElementById('contact-key-note'); if (_n) _n.style.display='none';
   const el = document.getElementById('contact-key');
   if (!el) return;
   if (!info) { el.style.display='none'; return; }
@@ -4990,6 +5485,7 @@ function suggestShot() {
   const geo=document.getElementById('geo-badges');
   geo.innerHTML=''; hideSuggestion();
   var _ck = document.getElementById('contact-key'); if (_ck) _ck.style.display='none';
+  var _ckn0 = document.getElementById('contact-key-note'); if (_ckn0) _ckn0.style.display='none';
 
   if (!_modeChosen) {
     titl.textContent = 'Pick Your Game First';
@@ -5019,6 +5515,12 @@ function suggestShot() {
   if (!cue) {
     titl.textContent='Mark the Cue Ball First';
     body.textContent='Tap the canvas to place the cue ball marker (C) — the app needs to know where you\'re shooting from before it can read the shot.';
+    sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
+  }
+
+  if (_looksRacked()) {
+    titl.textContent = 'Break First';
+    body.textContent = 'Those balls are still racked \u2014 a full triangle, all touching.\n\nThere is no shot to read yet: the only play is the break, and the balls block each other completely. Break them, let the table settle, then I will read it.\n\n(If they are not actually racked, tap a ball to fix its type or drag one clear and try again.)';
     sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
 
@@ -5081,9 +5583,19 @@ function suggestShot() {
       cueToTarget = dist(cue, targetBall);
       cutAngle = top.cut;
       pocketInfo = getPocketType(top.pocket);
-      // Contact-point aim key — where to strike the object ball (skip on blocked shots)
+      /* Contact-point aim key. A blocked shot has no direct contact point, so
+         there's nothing honest to draw — but vanishing without a word looks
+         broken when you arrow onto that shot. Say which it is. */
       if (!top.blocked && top.pocket) {
         renderContactKey(contactKeyInfo(cue, top.ball, top.pocket), top.ball.type);
+      } else {
+        var _ckn = document.getElementById('contact-key-note');
+        if (_ckn) {
+          _ckn.textContent = top.blocked
+            ? 'No contact point — the direct path is blocked. See the kick or combo option below.'
+            : 'No contact point — mark a target pocket to see where to strike.';
+          _ckn.style.display = 'block';
+        }
       }
       // tag balls with their rank for canvas crown
       marks.forEach(m=>{ delete m._rank; });
@@ -5208,12 +5720,26 @@ function suggestShot() {
     else { advice=buildStraightAdvice(cue,targetBall,pkt,cutAngle,pocketInfo,cueToTarget,allTargets); }
   }
 
-  // ── 3. DIFFICULTY RATING 1-10
+  /* ── 3. DIFFICULTY RATING 1-10
+     Use the score the RANKER already computed for this shot. There used to be
+     a second, independent calculation here — the old linear cut formula with
+     no blocked-path penalty — so the badge could read "3/10 · Easy" for a shot
+     the engine had scored 10 because its path was blocked, and a 90° cut could
+     still show as moderate. One shot, two different difficulties. */
   let difficulty = 5;
-  if (cutAngle !== null) difficulty = Math.round(1 + (cutAngle / 90) * 6);
-  if (cueToTarget !== null) {
-    if (cueToTarget > 0.6) difficulty = Math.min(10, difficulty + 2);
-    else if (cueToTarget < 0.2) difficulty = Math.max(1, difficulty - 1);
+  var _scored = (window._bestShotResult && window._bestShotResult.ranked.length)
+    ? window._bestShotResult.ranked[Math.min(_focusRank || 0, window._bestShotResult.ranked.length - 1)]
+    : null;
+  if (_scored && typeof _scored.difficulty === 'number') {
+    difficulty = _scored.difficulty;          // authoritative: blocked, cut curve, distance
+  } else if (cutAngle !== null) {
+    difficulty = Math.round(1 + (cutAngle / 90) * 6);
+    if (cutAngle >= 70) difficulty = Math.min(10, Math.round(difficulty + (cutAngle - 70) * 0.25));
+    if (cutAngle >= 85) difficulty = 10;
+    if (cueToTarget !== null) {
+      if (cueToTarget > 0.6) difficulty = Math.min(10, difficulty + 2);
+      else if (cueToTarget < 0.2) difficulty = Math.max(1, difficulty - 1);
+    }
   }
 
   var toggle = document.getElementById('english-toggle');
@@ -5226,7 +5752,11 @@ function suggestShot() {
   // ── 4. SAFETY SUGGESTION for hard shots
   let safetyNote = '';
   if (difficulty >= 7) {
-    safetyNote = ' 🛡️ At difficulty ' + difficulty + '/10, seriously weigh a safety — drive your ball to the rail and leave your opponent without an easy look. Making this shot requires near-perfect execution.';
+    /* The headline already recommends a safety at 9-10, so do not repeat it
+       - just give the HOW. Below that, keep the recommendation. */
+    safetyNote = (difficulty >= 9)
+      ? '\n\n\ud83d\udee1\ufe0f Playing safe: drive your ball to the rail and leave your opponent without an easy look.'
+      : '\n\n\ud83d\udee1\ufe0f At ' + difficulty + '/10 a safety is worth weighing \u2014 drive your ball to the rail and leave your opponent without an easy look.';
   }
 
   // Remove old badge if exists
@@ -5247,7 +5777,10 @@ function suggestShot() {
   /* An extreme cut overrides the difficulty number - at 75+ degrees the
      direct shot is barely real and at 85+ it is not one, so no phrasing of
      "commit" is honest. Route the player to the escapes instead. */
-  if (cutAngle !== null && cutAngle >= 85)
+  var _blockedNow = _scored && _scored.blocked;
+  if (_blockedNow)
+    plainHeadline = '\ud83d\uded1 The direct path to this ball is blocked \u2014 there is no clean shot at it. Check the kick or combo option below, or play safe.\n\n';
+  else if (cutAngle !== null && cutAngle >= 85)
     plainHeadline = '\ud83d\uded1 A ' + cutAngle + '\u00b0 cut isn\u2019t a real shot \u2014 at this angle the cue ball can only graze the ball. Use the kick or combo options below, or play safe.\n\n';
   else if (cutAngle !== null && cutAngle >= 75)
     plainHeadline = '\ud83d\uded1 This cut is about as thin as they come \u2014 very low percentage. Check the kick or combo options below before committing.\n\n';
@@ -6251,7 +6784,8 @@ function saveSettings() {
       spin:      currentEnglish,
       aimTarget: document.getElementById('aim-targetline').checked,
       aimContact:document.getElementById('aim-contactpoint').checked,
-      lsFlip:    document.body.classList.contains('ls-flip')
+      lsFlip:    document.body.classList.contains('ls-flip'),
+      lsNoSplit: document.body.classList.contains('ls-nosplit')
     }));
   } catch(e) {}
 }
@@ -6290,6 +6824,7 @@ function loadSettings() {
     if (s.aimTarget  !== undefined) document.getElementById('aim-targetline').checked   = s.aimTarget;
     if (s.aimContact !== undefined) document.getElementById('aim-contactpoint').checked = s.aimContact;
     if (s.lsFlip) document.body.classList.add('ls-flip');
+    if (s.lsNoSplit) document.body.classList.add('ls-nosplit');
   } catch(e) {}
 }
 
@@ -6298,13 +6833,28 @@ function loadSettings() {
    toggle — canvas geometry is untouched. Choice persists via rr_settings.
    First time the user reaches landscape, the button pulses a few times so
    they notice it, then stays quiet (point-of-focus teaching). */
+/* Split layout on/off. The side-by-side landscape view suits most people, but
+   not everyone wants the page cut in half — this turns it back into the normal
+   stacked layout without leaving landscape. Persists like the other settings. */
+function toggleLandscapeSplit() {
+  document.body.classList.toggle('ls-nosplit');
+  var off = document.body.classList.contains('ls-nosplit');
+  try { saveSettings(); } catch(_) {}
+  try {
+    if (typeof setStatus === 'function')
+      setStatus(off ? '\u25fb Split layout off \u2014 normal scrolling page'
+                    : '\u25f1 Split layout on \u2014 table beside the advice', 'live');
+  } catch(_) {}
+}
+
 function toggleLandscapeSide() {
   document.body.classList.toggle('ls-flip');
   var side = document.body.classList.contains('ls-flip') ? 'left' : 'right';
   try { saveSettings(); } catch(_) {}
   try {
     if (typeof setStatus === 'function')
-      setStatus('&#8646; Table moved to the ' + side + ' &mdash; tap again to switch back', 'live');
+      // setStatus uses textContent — HTML entities would print as raw text.
+      setStatus('\u21c6 Table moved to the ' + side + ' \u2014 tap again to switch back', 'live');
   } catch(_) {}
 }
 
