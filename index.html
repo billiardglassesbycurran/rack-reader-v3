@@ -1200,7 +1200,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.27.1134</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.27.1233</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1280,7 +1280,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
   </div>
 
     <!-- CANVAS TOOLBAR (above the image so it never blocks taps) -->
-    <div class="canvas-toolbar" id="canvas-toolbar" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+    <div class="canvas-toolbar" id="canvas-toolbar" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px">
       <button class="btn" onclick="quickAddPocket()" style="background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:7px 12px;font-size:13px">＋ Pocket</button>
       <button class="btn" id="repocket-btn" onclick="rePickPocket()" style="display:none;background:#2a1e07;color:#ffe08a;border:1px solid #8a6a2c;padding:7px 12px;font-size:13px">&#127919; Change pocket</button>
       <button class="btn" onclick="enlargeCanvas()" style="background:#12271a;color:#eadfc8;border:1px solid #1f3a2a;padding:7px 12px;font-size:13px">⛶ Enlarge</button>
@@ -6132,17 +6132,21 @@ canvas.addEventListener('pointerdown', function(e) {
   // Topmost existing mark under the finger → candidate to drag-move.
   // Corners get priority: a corner pocket sits on top of its corner, so without
   // this you could never grab the corner to re-align.
-  let hit = null;
-  for (const m of marks) {
-    if (m.type !== 'corner') continue;
-    if (Math.hypot(fx*canvas.width - m.fx*canvas.width, fy*canvas.height - m.fy*canvas.height) < R*2) hit = m;
-  }
-  if (!hit) {
-    for (let i = marks.length - 1; i >= 0; i--) {
-      const m = marks[i];
-      const hitR = (m.type === 'cue') ? R*2.2 : (m.type === 'pocket') ? R*2 : R*1.6;
-      if (Math.hypot(fx*canvas.width - m.fx*canvas.width, fy*canvas.height - m.fy*canvas.height) < hitR) { hit = m; break; }
-    }
+  /* NEAREST MARK WINS. Corners used to win outright over anything else within
+     range — the reasoning being that a corner pocket sits on top of its corner
+     and you could otherwise never grab the corner to re-align. True, but it
+     made the reverse impossible: an auto-placed corner pocket could never be
+     grabbed at all, because the corner underneath always took the drag. Both
+     live at the same spot, so let the closer one win and say which you got. */
+  let hit = null, hitD = Infinity;
+  for (let i = marks.length - 1; i >= 0; i--) {
+    const m = marks[i];
+    const hitR = (m.type === 'corner') ? R*2
+               : (m.type === 'cue')    ? R*2.2
+               : (m.type === 'pocket') ? R*2 : R*1.6;
+    const d = Math.hypot(fx*canvas.width - m.fx*canvas.width,
+                         fy*canvas.height - m.fy*canvas.height);
+    if (d < hitR && d < hitD) { hit = m; hitD = d; }
   }
   dragCtx = { startFx: fx, startFy: fy, startPx: e.clientX, startPy: e.clientY,
               mark: hit, isNew: !hit, moved: false, pointerId: e.pointerId };
@@ -6176,7 +6180,8 @@ function endDrag(e) {
   try { canvas.releasePointerCapture(d.pointerId); } catch(_) {}
   hideMiniMap();
   if (d.moved) {
-    if (d.mark && d.mark.type === 'corner') { rebuildFromCorners(); setStatus('Corner moved — pockets updated','gold'); }
+    if (d.mark && d.mark.type === 'corner') { rebuildFromCorners(); setStatus('Corner moved \u2014 pockets updated','gold'); }
+  else if (d.mark && d.mark.type === 'pocket') { setStatus('Pocket moved \u2014 drag the corner instead to move the whole table box','gold'); }
     else {
       renderCanvas(); hideSuggestion();
       const names={cue:'Cue ball',obj:'Solid ball',eight:'8-ball',stripe:'Stripe ball',pocket:'Pocket'};
