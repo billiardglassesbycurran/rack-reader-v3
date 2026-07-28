@@ -204,7 +204,7 @@ body::before {
 .motion-fill.high   { background: var(--red-ball); }
 .motion-val { font-family:'Barlow Condensed',monospace; font-size:11px; color:var(--text-dim); width:30px; text-align:right; }
 .still-badge {
-  font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700;
+  font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
   letter-spacing:1.5px; text-transform:uppercase; padding:3px 8px;
   border-radius:4px; background:var(--green-dim); color:var(--green-neon);
   border:1px solid var(--green-soft); opacity:0; transition:opacity .3s; white-space:nowrap;
@@ -274,7 +274,8 @@ body::before {
   display:flex; align-items:center; justify-content:center; gap:4px;
   cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .15s;
   font-family: 'Barlow', sans-serif; font-weight: 600; white-space: nowrap;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 .icon-btn:hover { background:rgba(45,255,138,.3); }
 .undo-btn {
   background: rgb(58,44,18);
@@ -316,6 +317,9 @@ body::before {
 }
 
 /* BUTTONS */
+/* TAP TARGETS: every interactive control carries a 44px minimum - the touch
+   size both iOS and Android publish as the floor. min-height rather than
+   height, so nothing that wraps begins to clip. */
 .btn {
   display:inline-flex; align-items:center; justify-content:center;
   gap:5px; padding:9px 13px; border:none; border-radius:var(--r-sm);
@@ -323,7 +327,8 @@ body::before {
   font-size:13px; letter-spacing:.5px; cursor:pointer;
   transition:transform .1s, opacity .1s, box-shadow .15s;
   -webkit-tap-highlight-color:transparent; user-select:none; white-space:nowrap; flex-shrink:0;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 .btn:active { transform:scale(.94); }
 .btn:disabled { opacity:.3; cursor:not-allowed; transform:none; box-shadow:none !important; }
 .btn-green { background:var(--green-soft); color:var(--felt); box-shadow:0 2px 12px rgba(52,201,106,.25); }
@@ -397,7 +402,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   cursor:pointer; font-family:'Barlow Condensed',sans-serif;
   font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
   color:var(--text-muted); transition:all .15s; -webkit-tap-highlight-color:transparent; user-select:none;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 .mark-chip:hover { border-color:rgba(255,255,255,.2); color:var(--text); }
 .chip-ball {
   width:22px; height:22px; border-radius:50%;
@@ -419,7 +425,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   color:var(--text-muted); font-family:'Barlow Condensed',sans-serif;
   font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
   text-align:center; cursor:pointer; transition:all .15s; -webkit-tap-highlight-color:transparent;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 .pill:hover { border-color:rgba(255,255,255,.2); }
 .pill.active { background:var(--gold-dim); border-color:var(--gold); color:var(--gold-bright); box-shadow:0 0 12px rgba(200,151,46,.2); }
 
@@ -465,13 +472,15 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .detections-box.show { display: block; }
 .det-title {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
   text-transform: uppercase; color: var(--text-muted);
   margin-bottom: 6px;
 }
 .det-list {
   display: flex; flex-wrap: wrap; gap: 5px;
 }
+/* Display only - a detection readout, never tapped, so the 44px rule
+   deliberately does not apply here. */
 .det-chip {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 11px; font-weight: 600;
@@ -487,8 +496,12 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .sticky-action-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centred with auto margins, NOT left:50% + translateX(-50%). Translating a
+     box by 50% of an odd width lands it on a half pixel and softens every
+     glyph inside - and this bar carries the most-read text in the app. */
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 600px;
   display: flex;
@@ -509,6 +522,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   flex: 1;
   font-size: 14px;
   padding: 12px 10px;
+  min-height: 44px;   /* was ~42px - the last interactive control under the floor */
 }
 
 /* ── LANDSCAPE MODE ── */
@@ -535,8 +549,11 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   }
 
   /* Live video also full width */
-  .live-section { max-height: 55vw; }
-  #live-video { max-height: 55vw; width: 100%; }
+  /* 55vw in landscape left almost nothing for the HUD and banner on a phone
+     lying on its side. 40vw keeps the table readable and gives the rest of
+     the interface room. */
+  .live-section { max-height: 40vw; }
+  #live-video { max-height: 40vw; width: 100%; }
 
   /* Everything else stacks below at full width */
   .card, .upload-zone, .detections-box, #history-panel,
@@ -666,7 +683,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   flex-shrink: 0;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 .help-btn:hover { background: rgba(200,151,46,.3); border-color: var(--gold); }
 
 .help-overlay {
@@ -733,7 +751,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   -webkit-tap-highlight-color: transparent;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 
 .help-section {
   padding: 16px 18px 0;
@@ -835,7 +854,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   transition: background .18s, color .18s;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-}
+  min-height: 48px;
+  display: inline-flex; align-items: center; justify-content: center;}
 .view-mode-pill.active {
   background: var(--gold);
   color: #1a1200;
@@ -847,7 +867,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   margin-bottom: 3px;
   height: 22px;
 }
-.view-mode-pill .vmp-label { font-size: 10px; letter-spacing: 1px; }
+.view-mode-pill .vmp-label { font-size: 11px; letter-spacing: 1px; }
 
 .view-mode-hint {
   font-size: 11px;
@@ -879,7 +899,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .history-meta {
-  font-size: 10px; color: var(--text-muted);
+  font-size: 11px; color: var(--text-muted);
   font-family: 'Barlow Condensed', sans-serif;
   letter-spacing: .5px; margin-top: 2px;
 }
@@ -934,7 +954,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 14px; font-weight: 700; letter-spacing: .5px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 .history-restore-yes { background: var(--gold); color: #1a1200; }
 .history-restore-no {
   background: var(--surface2);
@@ -1002,7 +1023,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   color: var(--text-dim); font-size: 13px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
 
 .spin-ball-container {
   display: flex;
@@ -1095,7 +1117,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .tour-spot{ position:fixed; z-index:9991; border:2.5px solid #c8963e; border-radius:12px;
   box-shadow:0 0 0 4px rgba(200,150,62,.25), 0 0 40px rgba(200,150,62,.5); pointer-events:none; display:none; transition:all .3s cubic-bezier(.4,0,.2,1);}
 .tour-spot.show{ display:block;}
-.tour-tip{ position:fixed; z-index:9992; width:262px; background:linear-gradient(180deg,#12261a,#0c1c12); border:1px solid #9c7a34; border-radius:14px; padding:14px 15px; box-shadow:0 12px 40px rgba(0,0,0,.6); display:none;}
+.tour-tip{ position:fixed; z-index:9992; width:min(262px, calc(100vw - 28px)); background:linear-gradient(180deg,#12261a,#0c1c12); border:1px solid #9c7a34; border-radius:14px; padding:14px 15px; box-shadow:0 12px 40px rgba(0,0,0,.6); display:none;}
 .tour-tip.show{ display:block;}
 .tour-tip .tn{ font-family:'Playfair Display',serif; font-weight:700; color:#e8c07a; font-size:16px; margin:0 0 5px;}
 .tour-tip .td{ font-size:13.5px; color:#eadfc8; line-height:1.45;}
@@ -1116,7 +1138,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
    default display and leaked onto the portrait page. */
 #ls-swap-btn, #ls-split-btn {
   position: fixed; transform: translateY(-50%);
-  right: calc(56vw - 20px);             /* on the seam, table-on-right default */
+  right: calc(52vw - 20px);             /* on the seam, table-on-right default */
   z-index: 20; width: 40px; height: 40px; border-radius: 50%;
   box-shadow: 0 3px 12px rgba(0,0,0,.5);
   display: none;                        /* revealed only in phone landscape */
@@ -1126,7 +1148,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 #ls-swap-btn  { top: 50%; background: #c8963e; color: #0b1811; border: 2px solid #0b1811; font-size: 20px; }
 #ls-split-btn { top: calc(50% + 52px); background: #12271a; color: #9fe4ff; border: 2px solid #2a4433; font-size: 17px; }
 body.ls-flip #ls-swap-btn,
-body.ls-flip #ls-split-btn { right: auto; left: calc(56vw - 20px); }
+body.ls-flip #ls-split-btn { right: auto; left: calc(52vw - 20px); }
 #ls-swap-btn:active, #ls-split-btn:active { transform: translateY(-50%) scale(.9); }
 /* With the split turned off there are no sides to swap. */
 body.ls-nosplit #ls-swap-btn { display: none !important; }
@@ -1150,11 +1172,11 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
     left: 0 !important; right: 0 !important; width: auto !important;
   }
   body.ls-nosplit #ls-swap-btn { display: none !important; }
-  body { padding-right: 56vw; }
+  body { padding-right: 52vw; }
   #app { max-width: none; padding-bottom: 40px; }
   #table-stage { display: contents; }   /* detections + advice fall into the rail flow */
   #stage-core {
-    position: fixed; top: 0; right: 0; width: 56vw; height: 100vh;
+    position: fixed; top: 0; right: 0; width: 52vw; height: 100vh;
     background: var(--felt); border-left: 1px solid var(--border);
     z-index: 5; padding: 8px 10px 96px; overflow: hidden;
     display: flex; flex-direction: column;
@@ -1162,7 +1184,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
   #stage-core .canvas-card { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 0; }
   #main-canvas { max-height: calc(100vh - 200px); max-width: 100%; }
   .sticky-action-bar {
-    left: auto; right: 0; transform: none; width: 56vw; max-width: none; z-index: 6;
+    left: auto; right: 0; transform: none; width: 52vw; max-width: none; z-index: 6;
   }
 
   /* ── LANDSCAPE SIDE SWAP ──────────────────────────────────────────────
@@ -1170,7 +1192,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
      properties that position the split so the table sits on the LEFT and
      the scrolling advice rail moves to the right. Pure layout — the canvas
      and all aiming geometry render identically, only the panel side moves. */
-  body.ls-flip { padding-right: 0; padding-left: 56vw; }
+  body.ls-flip { padding-right: 0; padding-left: 52vw; }
   body.ls-flip #stage-core {
     right: auto; left: 0;
     border-left: none; border-right: 1px solid var(--border);
@@ -1183,6 +1205,104 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
   }
   #ls-swap-btn.pulse { animation: lsSwapPulse 1s ease-in-out 3; }
 }
+
+/* ═══ TABLE MODE (Stage 4) ═══════════════════════════════════════════
+   Tripod display. Everything that is setup-only disappears, leaving the
+   camera feed, the scanner HUD drawn on it, and one fixed-bottom banner.
+
+   Deliberately NO transform / scale / filter anywhere in here: a scaled
+   element renders text on fractional pixels and that is the usual cause of
+   soft-looking type on high-density Android and iPhone screens alike. Sizes
+   use clamp() so they scale with the viewport but stay inside sane bounds,
+   and never fall below legibility at a 360px-wide phone. */
+body.table-mode #step1-header,
+body.table-mode #step1-anchor,
+body.table-mode #upload-zone,
+body.table-mode #viewmode-anchor,
+body.table-mode #table-stage,
+body.table-mode #step3-anchor,
+body.table-mode #step4-anchor,
+body.table-mode #quick-setup,
+body.table-mode #view-mode-card,
+body.table-mode #gamemode-card,
+body.table-mode #english-panel,
+body.table-mode #app-footer,
+body.table-mode #sticky-action-bar { display: none !important; }
+
+/* The tilt/fill readout stays, shrunk, and stays IN FLOW under the video so
+   it cannot collide with the HUD chip above it or the banner below it. */
+body.table-mode #live-section { cursor: pointer; }
+body.table-mode #pos-bar { font-size: clamp(9px, 2.6vw, 11px); padding: 3px 10px 4px; gap: 8px; }
+
+body.table-mode { padding-bottom: 128px; }   /* reserve room under the banner */
+
+#tm-banner { display: none; }
+body.table-mode #tm-banner {
+  display: block;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  background: rgba(8,20,13,.975);
+  border-top: 2px solid var(--gold);
+  /* env() keeps it clear of the iPhone home indicator and of landscape notches */
+  padding: 10px calc(14px + env(safe-area-inset-right, 0px))
+           calc(10px + env(safe-area-inset-bottom, 0px))
+           calc(14px + env(safe-area-inset-left, 0px));
+  box-shadow: 0 -6px 18px rgba(0,0,0,.45);
+}
+#tm-row { display: flex; align-items: flex-start; gap: 10px; }
+/* min-width:0 is what actually lets long text wrap inside a flex row instead
+   of pushing the confidence badge off the edge. */
+#tm-text { flex: 1 1 auto; min-width: 0; }
+#tm-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: clamp(15px, 4.2vw, 19px); line-height: 1.25; color: var(--cream);
+  letter-spacing: .3px; overflow-wrap: anywhere;
+}
+#tm-advice {
+  font-size: clamp(12px, 3.4vw, 15px); line-height: 1.35; color: var(--text-dim);
+  margin-top: 2px; overflow-wrap: anywhere;
+}
+#tm-side { flex: 0 0 auto; text-align: right; }
+#tm-conf {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: clamp(16px, 4.6vw, 20px); color: var(--gold); line-height: 1;
+}
+#tm-conf-lbl { font-size: clamp(8px, 2.2vw, 10px); color: var(--text-muted); letter-spacing: .5px; }
+#tm-exit {
+  margin-top: 6px; background: #2a1e07; color: #ffe08a; border: 1px solid #8a6a2c;
+  border-radius: 8px; padding: 5px 10px; font-size: clamp(11px, 3vw, 13px);
+  font-family: 'Barlow Condensed', sans-serif; letter-spacing: .4px; cursor: pointer;
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;}
+#adv-tune-caret {
+  /* Was a bare 12.5px triangle that inherited the row's size. Now an explicit
+     chevron that rotates rather than swapping glyphs, so the open/closed state
+     reads as one continuous control. */
+  font-size: 16px; line-height: 1; display: inline-block;
+  transition: transform .18s ease;
+}
+#adv-tune-caret.open { transform: rotate(90deg); }
+#tm-fix {
+  display: none; width: 100%; margin-top: 9px;
+  min-height: 48px;                       /* comfortably over the 44px minimum */
+  background: #2a1e07; color: #ffe08a; border: 2px solid var(--gold);
+  border-radius: 12px; padding: 12px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: clamp(14px, 4vw, 17px); letter-spacing: .5px; cursor: pointer;
+}
+body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
+#tm-start {
+  /* Was an outline button that read as secondary. Table Mode is a primary
+     entry point, so it now carries the same visual weight as .btn-green:
+     solid fill, dark text, and a 52px target rather than ~38px. */
+  width: 100%; margin: 10px 0 4px;
+  min-height: 52px; padding: 14px 16px;
+  background: var(--green-soft); color: var(--felt);
+  border: none; border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(52,201,106,.28);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: clamp(14px, 4vw, 16px); letter-spacing: .5px; cursor: pointer;
+}
+#tm-start:active { transform: none; filter: brightness(.93); }
 </style>
 </head>
 <body>
@@ -1200,7 +1320,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.27.1233</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.28.0136</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1217,6 +1337,246 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
     <span id="model-msg">Loading your custom trained model...</span>
   </div>
 
+  <!-- VIEW: Simple / Advanced -->
+  <div id="viewmode-anchor" style="display:flex;background:#0b1811;border:1px solid #40ceff;border-radius:22px;padding:3px;margin:12px 0 2px">
+    <div id="viewpill-simple" onclick="setSimpleView(true)"  style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;background:#40ceff;color:#06171f">✨ Simple</div>
+    <div id="viewpill-adv"    onclick="setSimpleView(false)" style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;color:#9fe4ff">Advanced</div>
+  </div>
+  <div style="text-align:center;font-size:11px;color:var(--text-muted);margin:5px 2px 2px;line-height:1.4">Switch to <span style="color:#9fe4ff;font-weight:600">Advanced</span> to unlock extra features &amp; settings below</div>
+
+    <!-- VIEW MODE -->
+    <div class="card adv-only" id="view-mode-card">
+      <div class="card-label">📐 Perspective Mode</div>
+      <div class="view-mode-bar">
+        <div class="view-mode-pill active" id="vmp-player" onclick="setViewMode('player')">
+          <span class="vmp-icon">
+            <!-- Cue stick at playing angle -->
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="2" y1="20" x2="18" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="19" cy="3" r="2" fill="currentColor" opacity=".6"/>
+              <circle cx="7" cy="16" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <circle cx="7" cy="16" r="1" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="vmp-label">Player View</span>
+        </div>
+        <div class="view-mode-pill" id="vmp-overhead" onclick="setViewMode('overhead')">
+          <span class="vmp-icon">
+            <!-- Pool table from above -->
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <rect x="4" y="6" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1" fill="none" opacity=".5"/>
+              <!-- Corner pockets -->
+              <circle cx="4" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="18" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="4" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="18" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
+              <!-- Side pockets -->
+              <circle cx="11" cy="4" r="1.2" fill="currentColor" opacity=".8"/>
+              <circle cx="11" cy="18" r="1.2" fill="currentColor" opacity=".8"/>
+              <!-- Ball -->
+              <circle cx="11" cy="11" r="2" fill="currentColor" opacity=".6"/>
+            </svg>
+          </span>
+          <span class="vmp-label">Overhead View</span>
+        </div>
+      </div>
+      <div class="view-mode-hint" id="view-mode-hint">Natural playing angle · geometry is advisory</div>
+    </div>
+
+
+      <!-- QUICK SETUP (moved above the camera) ----------------------
+           Game mode, table size, view mode and the Advanced Tuning drawer.
+           Set once at the start of a session; hidden entirely in Table Mode
+           by the #quick-setup rule. -->
+      <div id="quick-setup" class="card" style="margin-bottom:8px">
+        <div class="card-label">⚡ Quick Setup <span style="color:var(--text-muted);font-weight:400">— set once</span></div>
+    <div id="gamemode-card" class="card">
+      <div class="card-label">Game Mode</div>
+      <div class="pills">
+        <div class="pill" onclick="setGame('8ball',this)">8-Ball</div>
+        <div class="pill"        onclick="setGame('9ball',this)">9-Ball</div>
+        <div class="pill"        onclick="setGame('straight',this)">Straight</div>
+      </div>
+
+      <!-- 9-BALL: must-hit lowest ball (rule: contact lowest-numbered ball first) -->
+      <div id="nineball-target-row" style="display:none;margin:2px 0 8px">
+        <button class="btn" id="lowest-ball-btn" onclick="lowestBallAction()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:9px">🎯 Set Lowest Ball <span style="opacity:.65;font-weight:400">— the ball you must hit first</span></button>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">9-ball rule: the cue ball must contact the <strong style="color:var(--cream)">lowest-numbered ball</strong> first. The AI can't read numbers yet — tap this, then tap that ball, and the suggestion will plan it.</div>
+      </div>
+      <!-- STRAIGHT POOL RUN COUNTER (Straight only) -----------------------
+       Purely manual UI state. Deliberately NOT wired to allTargets or any
+       ball-clearing logic: the app cannot see a ball leave the table, so a
+       count it maintained itself would drift and quietly lie. The player
+       taps, so the number is always right. -->
+  <div id="straight-run-row" style="display:none;margin:2px 0 8px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="flex:1;min-width:0">
+        <div class="autoscan-label">\ud83c\udfb1 Run Counter</div>
+        <div class="autoscan-desc">Tap after each ball you pot</div>
+      </div>
+      <div id="run-count" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;color:var(--gold);min-width:44px;text-align:center;line-height:1">0</div>
+      <button class="btn" onclick="bumpRun(1)" style="min-width:60px;background:#0d2e1c;color:#5df0a5;border:1px solid #34c96a">+1</button>
+      <button class="btn" onclick="resetRun()" style="min-width:52px;background:#2a1414;color:#ff9d7a;border:1px solid #7a3a2a">Reset</button>
+    </div>
+  </div>
+
+  <!-- GROUP FILTER (8-Ball only) -->
+      <div id="group-filter-wrap" style="margin-top:10px">
+        <div class="card-label" style="margin-bottom:7px">Which balls? · 8-Ball rules</div>
+        <div class="pills">
+          <div class="pill active" id="grp-all"     onclick="setGroupFilter('all',this)">All Balls</div>
+          <div class="pill"        id="grp-solids"  onclick="setGroupFilter('solids',this)">Solids</div>
+          <div class="pill"        id="grp-stripes" onclick="setGroupFilter('stripes',this)">Stripes</div>
+        </div>
+        <div id="group-filter-desc" style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:7px">
+          Crowning the easiest shot from any ball on the table.
+        </div>
+      </div>
+
+      <div class="div"></div>
+      <!-- Readiness checklist — replaces the old Suggest button (now sticky-only) -->
+      <div style="background:#0b1811;border:1px solid var(--border);border-radius:10px;padding:11px 13px">
+      </div>
+    </div>
+  <div class="adv-only" style="margin-top:9px"><div id="tablesize-row" class="adv-only" style="margin-bottom:12px">
+        <div class="autoscan-label" style="margin-bottom:6px">📏 Table Size</div>
+        <div class="pills" style="display:flex;gap:6px">
+          <div class="pill" onclick="setTableSize('6',this)" style="flex:1;text-align:center">6-ft</div>
+          <div class="pill active" onclick="setTableSize('7',this)" style="flex:1;text-align:center">7-ft Bar</div>
+          <div class="pill" onclick="setTableSize('8',this)" style="flex:1;text-align:center">8-ft</div>
+          <div class="pill" onclick="setTableSize('9',this)" style="flex:1;text-align:center">9-ft</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">Balls are the same size on every table — so they crowd a bar box more than a 9-footer. This sharpens blocked-path checks on aligned tables.</div>
+      </div>
+</div>
+      <div id="adv-tune-link" onclick="toggleAdvTuning()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:44px;padding:10px 8px;margin:2px -8px 0;border-radius:8px;color:#9fe4ff;font-size:12.5px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.4px">
+        <span>⚙ ADVANCED TUNING</span><span id="adv-tune-caret">&#8250;</span>
+      </div>
+      <div id="adv-tune-drawer" style="display:none">
+            <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">&#11088; Auto-Evaluate Best Shot</div>
+          <div class="autoscan-desc">Scores every ball and crowns your easiest shot. Place pockets for sharper results.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="bestshot-toggle" checked>
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div adv-only"></div>
+      <div class="autoscan-row adv-only" style="align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div class="autoscan-label">🎱 English / Spin Control</div>
+          <div class="autoscan-desc">Tap cue ball to set contact point — affects shot advice</div>
+        </div>
+        <!-- Mini cue ball — always full color; gold ring only when spin is on -->
+        <div id="settings-spin-ball" onclick="spinBallTap()"
+          style="width:44px;height:44px;flex-shrink:0;cursor:pointer;border-radius:50%;
+                 box-shadow:0 0 0 2px rgba(255,255,255,0.15);transition:box-shadow .2s"
+          title="Tap to set spin"></div>
+        <label class="toggle" style="flex-shrink:0">
+          <input type="checkbox" id="english-toggle" onchange="toggleEnglish(true)">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div"></div>
+      <!-- Auto-scan only applies to the live camera — hidden for uploaded photos -->
+      <div id="autoscan-block" style="display:none">
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">Auto-scan when table goes still</div>
+          <div class="autoscan-desc">Captures + AI detects automatically</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="autoscan-toggle" checked onchange="autoScan=this.checked">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">🚶 Person check</div>
+          <div class="autoscan-desc">Wait for a clear view before capturing. Busy room with players all around? Turn this off.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="personcheck-toggle" checked onchange="saveSettings()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="sens-row">
+        <div class="sens-label">Sensitivity</div>
+        <input type="range" id="sens-slider" min="1" max="10" value="5"
+          oninput="document.getElementById('sens-val').textContent=this.value;updateSensitivity()">
+        <div class="sens-val" id="sens-val">5</div>
+      </div>
+      <div class="sens-row">
+        <div class="sens-label">Still delay</div>
+        <input type="range" id="delay-slider" min="5" max="150" value="15"
+          oninput="document.getElementById('delay-val').textContent=(this.value/10).toFixed(1)+'s';updateDelay()">
+        <div class="sens-val" id="delay-val">1.5s</div>
+      </div>
+      <div class="div"></div>
+      <div class="autoscan-row">
+        <div>
+          <div class="autoscan-label">🔔 Sound chime alerts</div>
+          <div class="autoscan-desc">Soft chime on scan · louder tone when suggestion ready</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chime-toggle" checked>
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      </div>
+
+      <div class="div adv-only"></div>
+     <div class="autoscan-row adv-only">
+        <div>
+          <div class="autoscan-label">&#127979; Coaching Mode</div>
+          <div class="autoscan-desc">Explains why a shot has that difficulty rating</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="coaching-toggle">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div adv-only"></div>
+      <!-- AIMING AIDS -->
+      <div class="card-label adv-only" style="margin-top:4px">🎯 Aiming Aids</div>
+      <div class="autoscan-row adv-only">
+        <div>
+          <div class="autoscan-label">🟡 Target Line</div>
+          <div class="autoscan-desc">Aim line from cue tip through contact point to pocket</div>
+        </div>
+        <label class="toggle">
+         <input type="checkbox" id="aim-targetline" checked onchange="renderCanvas()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div adv-only"></div>
+    <div class="autoscan-row adv-only">
+        <div>
+          <div class="autoscan-label">💠 Diamond System <span onclick="event.stopPropagation();var e=document.getElementById('diamond-explainer');if(e)e.style.display='block';" style="cursor:pointer;color:#9fe4ff;font-size:12px;border:1px solid #33507e;border-radius:50%;padding:0 5px;margin-left:4px">?</span></div>
+          <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap 📐 Align Table or ✨ Auto, then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aim-diamonds" onchange="toggleDiamonds()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="div adv-only"></div>
+    <div class="autoscan-row adv-only">
+        <div>
+          <div class="autoscan-label">🎱 Contact Point</div>
+          <div class="autoscan-desc">Shows where the two balls will touch. For understanding the cut only — always AIM at the dotted ghost ring, never at this point</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aim-contactpoint" onchange="renderCanvas()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      </div>
+      </div>
+
   <!-- LIVE VIEW -->
   <div class="live-section" id="live-section">
     <div class="cam-off-msg" id="cam-off-msg">
@@ -1230,6 +1590,23 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
       <div class="corner tl"></div><div class="corner tr"></div>
       <div class="corner bl"></div><div class="corner br"></div>
     </div>
+  </div>
+
+  <!-- TABLE MODE BANNER (Stage 4) - fixed bottom, safe-area aware -->
+  <div id="tm-banner" role="status" aria-live="polite">
+    <div id="tm-row">
+      <div id="tm-text">
+        <div id="tm-title">Getting ready…</div>
+        <div id="tm-advice">Point the camera at the table.</div>
+      </div>
+      <div id="tm-side">
+        <div id="tm-conf">–</div>
+        <div id="tm-conf-lbl">SURE</div>
+        <button id="tm-exit" onclick="exitTableMode()">✕ EXIT</button>
+      </div>
+    </div>
+    <!-- Stage 7: single large recovery target, hidden unless something broke -->
+    <button id="tm-fix" onclick="tableModeFix()">Look again</button>
   </div>
 
   <!-- MOTION BAR -->
@@ -1248,8 +1625,10 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
     <span>TABLE FILLS <strong id="fill-val" style="color:var(--cream)">--</strong><span id="fill-note" style="margin-left:5px"></span></span>
   </div>
 
+  <button id="tm-start" onclick="enterTableMode()">▶ START TABLE MODE — hands-free on a tripod</button>
+
   <!-- STEP 1 HEADER -->
-  <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:4px 2px 8px;display:flex;align-items:center;gap:8px">
+  <div id="step1-header" style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:4px 2px 8px;display:flex;align-items:center;gap:8px">
     <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">1</span> Take a picture of your table
   </div>
 
@@ -1265,12 +1644,6 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
   <input type="file" id="file-input" accept="image/*" style="display:none">
   <div id="upload-zone" style="display:none"></div>
 
-  <!-- VIEW: Simple / Advanced -->
-  <div id="viewmode-anchor" style="display:flex;background:#0b1811;border:1px solid #40ceff;border-radius:22px;padding:3px;margin:12px 0 2px">
-    <div id="viewpill-simple" onclick="setSimpleView(true)"  style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;background:#40ceff;color:#06171f">✨ Simple</div>
-    <div id="viewpill-adv"    onclick="setSimpleView(false)" style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;color:#9fe4ff">Advanced</div>
-  </div>
-  <div style="text-align:center;font-size:11px;color:var(--text-muted);margin:5px 2px 2px;line-height:1.4">Switch to <span style="color:#9fe4ff;font-weight:600">Advanced</span> to unlock extra features &amp; settings below</div>
 
     <div id="table-stage">
     <div id="stage-core">
@@ -1361,57 +1734,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
   </div>
   <div style="font-size:11.5px;color:var(--text-muted);margin:5px 2px 0;line-height:1.4"><strong style="color:var(--gold-lt)">✨ Auto</strong> finds the table for you — or tap 📐 and tap the 4 corners. Every visible pocket gets placed.</div>
   <div class="adv-only" style="font-size:11.5px;color:var(--text-muted);margin:3px 2px 0;line-height:1.4">Drag corners to fine-tune · add single pockets with <strong style="color:#9fe4ff">＋ Pocket</strong> · tap a pocket twice to remove it.</div>
-  <div style="margin-top:9px"><div id="tablesize-row" class="adv-only" style="margin-bottom:12px">
-        <div class="autoscan-label" style="margin-bottom:6px">📏 Table Size</div>
-        <div class="pills" style="display:flex;gap:6px">
-          <div class="pill" onclick="setTableSize('6',this)" style="flex:1;text-align:center">6-ft</div>
-          <div class="pill active" onclick="setTableSize('7',this)" style="flex:1;text-align:center">7-ft Bar</div>
-          <div class="pill" onclick="setTableSize('8',this)" style="flex:1;text-align:center">8-ft</div>
-          <div class="pill" onclick="setTableSize('9',this)" style="flex:1;text-align:center">9-ft</div>
-        </div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">Balls are the same size on every table — so they crowd a bar box more than a 9-footer. This sharpens blocked-path checks on aligned tables.</div>
-      </div>
-</div>
 
-    <!-- VIEW MODE -->
-    <div class="card adv-only" id="view-mode-card">
-      <div class="card-label">📐 Perspective Mode</div>
-      <div class="view-mode-bar">
-        <div class="view-mode-pill active" id="vmp-player" onclick="setViewMode('player')">
-          <span class="vmp-icon">
-            <!-- Cue stick at playing angle -->
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="2" y1="20" x2="18" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="19" cy="3" r="2" fill="currentColor" opacity=".6"/>
-              <circle cx="7" cy="16" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <circle cx="7" cy="16" r="1" fill="currentColor"/>
-            </svg>
-          </span>
-          <span class="vmp-label">Player View</span>
-        </div>
-        <div class="view-mode-pill" id="vmp-overhead" onclick="setViewMode('overhead')">
-          <span class="vmp-icon">
-            <!-- Pool table from above -->
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <rect x="4" y="6" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1" fill="none" opacity=".5"/>
-              <!-- Corner pockets -->
-              <circle cx="4" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="18" cy="6" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="4" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="18" cy="16" r="1.2" fill="currentColor" opacity=".8"/>
-              <!-- Side pockets -->
-              <circle cx="11" cy="4" r="1.2" fill="currentColor" opacity=".8"/>
-              <circle cx="11" cy="18" r="1.2" fill="currentColor" opacity=".8"/>
-              <!-- Ball -->
-              <circle cx="11" cy="11" r="2" fill="currentColor" opacity=".6"/>
-            </svg>
-          </span>
-          <span class="vmp-label">Overhead View</span>
-        </div>
-      </div>
-      <div class="view-mode-hint" id="view-mode-hint">Natural playing angle · geometry is advisory</div>
-    </div>
 
 
   <!-- BODY -->
@@ -1487,35 +1810,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
     <div id="step4-anchor" style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:6px 2px 8px;display:flex;align-items:center;gap:8px">
       <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">4</span> Game &amp; shot
     </div>
-    <div class="card">
-      <div class="card-label">Game Mode</div>
-      <div class="pills">
-        <div class="pill" onclick="setGame('8ball',this)">8-Ball</div>
-        <div class="pill"        onclick="setGame('9ball',this)">9-Ball</div>
-        <div class="pill"        onclick="setGame('straight',this)">Straight</div>
-      </div>
-
-      <!-- 9-BALL: must-hit lowest ball (rule: contact lowest-numbered ball first) -->
-      <div id="nineball-target-row" style="display:none;margin:2px 0 8px">
-        <button class="btn" onclick="pickLowestBall()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:9px">🎯 Set Lowest Ball <span style="opacity:.65;font-weight:400">— the ball you must hit first</span></button>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">9-ball rule: the cue ball must contact the <strong style="color:var(--cream)">lowest-numbered ball</strong> first. The AI can't read numbers yet — tap this, then tap that ball, and the suggestion will plan it.</div>
-      </div>
-      <!-- GROUP FILTER (8-Ball only) -->
-      <div id="group-filter-wrap" style="margin-top:10px">
-        <div class="card-label" style="margin-bottom:7px">Which balls? · 8-Ball rules</div>
-        <div class="pills">
-          <div class="pill active" id="grp-all"     onclick="setGroupFilter('all',this)">All Balls</div>
-          <div class="pill"        id="grp-solids"  onclick="setGroupFilter('solids',this)">Solids</div>
-          <div class="pill"        id="grp-stripes" onclick="setGroupFilter('stripes',this)">Stripes</div>
-        </div>
-        <div id="group-filter-desc" style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:7px">
-          Crowning the easiest shot from any ball on the table.
-        </div>
-      </div>
-
-      <div class="div"></div>
-      <!-- Readiness checklist — replaces the old Suggest button (now sticky-only) -->
-      <div style="background:#0b1811;border:1px solid var(--border);border-radius:10px;padding:11px 13px">
+      <div class="card">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Before you tap Suggest Best Shot</div>
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:13.5px;color:var(--cream);line-height:1.4">
           <span style="flex-shrink:0">⚪</span><div><strong>Mark the cue ball</strong> — the AI usually finds it, or tap a ball until it's the white cue.</div>
@@ -1533,7 +1828,6 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
           🎬 Heads-up: Shot Reader reads an <strong style="color:var(--cream)">open table</strong> — it can&rsquo;t plan the break shot itself. Break first, then snap the table.
         </div>
       </div>
-    </div>
 
 
     <!-- TABLE VIEW (canvas + status, moved after controls) -->
@@ -1542,135 +1836,13 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
 
     <!-- SETTINGS (moved below the workflow) -->
    <!-- AUTO-SCAN SETTINGS -->
-    <div class="card">
-      <div class="card-label">Settings</div>
-      <!-- Simple/Advanced lives in the top pill now; keep the hidden state holder -->
-      <input type="checkbox" id="simplemode-toggle" checked style="display:none">
-      <!-- Best Shot — core setting, always visible, first -->
-            <div class="autoscan-row">
-        <div>
-          <div class="autoscan-label">&#11088; Auto-Evaluate Best Shot</div>
-          <div class="autoscan-desc">Scores every ball and crowns your easiest shot. Place pockets for sharper results.</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="bestshot-toggle" checked>
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="div"></div>
-      <!-- Auto-scan only applies to the live camera — hidden for uploaded photos -->
-      <div id="autoscan-block" style="display:none">
-      <div class="autoscan-row">
-        <div>
-          <div class="autoscan-label">Auto-scan when table goes still</div>
-          <div class="autoscan-desc">Captures + AI detects automatically</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="autoscan-toggle" checked onchange="autoScan=this.checked">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="autoscan-row">
-        <div>
-          <div class="autoscan-label">🚶 Person check</div>
-          <div class="autoscan-desc">Wait for a clear view before capturing. Busy room with players all around? Turn this off.</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="personcheck-toggle" checked onchange="saveSettings()">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="sens-row">
-        <div class="sens-label">Sensitivity</div>
-        <input type="range" id="sens-slider" min="1" max="10" value="5"
-          oninput="document.getElementById('sens-val').textContent=this.value;updateSensitivity()">
-        <div class="sens-val" id="sens-val">5</div>
-      </div>
-      <div class="sens-row">
-        <div class="sens-label">Still delay</div>
-        <input type="range" id="delay-slider" min="5" max="150" value="15"
-          oninput="document.getElementById('delay-val').textContent=(this.value/10).toFixed(1)+'s';updateDelay()">
-        <div class="sens-val" id="delay-val">1.5s</div>
-      </div>
-      <div class="div"></div>
-      <div class="autoscan-row">
-        <div>
-          <div class="autoscan-label">🔔 Sound chime alerts</div>
-          <div class="autoscan-desc">Soft chime on scan · louder tone when suggestion ready</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="chime-toggle" checked>
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      </div>
-
-      <div class="div"></div>
-     <div class="autoscan-row adv-only">
-        <div>
-          <div class="autoscan-label">&#127979; Coaching Mode</div>
-          <div class="autoscan-desc">Explains why a shot has that difficulty rating</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="coaching-toggle">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="div"></div>
-      <div class="autoscan-row adv-only" style="align-items:center;gap:10px">
-        <div style="flex:1;min-width:0">
-          <div class="autoscan-label">🎱 English / Spin Control</div>
-          <div class="autoscan-desc">Tap cue ball to set contact point — affects shot advice</div>
-        </div>
-        <!-- Mini cue ball — always full color; gold ring only when spin is on -->
-        <div id="settings-spin-ball" onclick="spinBallTap()"
-          style="width:44px;height:44px;flex-shrink:0;cursor:pointer;border-radius:50%;
-                 box-shadow:0 0 0 2px rgba(255,255,255,0.15);transition:box-shadow .2s"
-          title="Tap to set spin"></div>
-        <label class="toggle" style="flex-shrink:0">
-          <input type="checkbox" id="english-toggle" onchange="toggleEnglish(true)">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="div"></div>
-      <!-- AIMING AIDS -->
-      <div class="card-label adv-only" style="margin-top:4px">🎯 Aiming Aids</div>
-      <div class="autoscan-row adv-only">
-        <div>
-          <div class="autoscan-label">🟡 Target Line</div>
-          <div class="autoscan-desc">Aim line from cue tip through contact point to pocket</div>
-        </div>
-        <label class="toggle">
-         <input type="checkbox" id="aim-targetline" checked onchange="renderCanvas()">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="div adv-only"></div>
-    <div class="autoscan-row adv-only">
-        <div>
-          <div class="autoscan-label">💠 Diamond System <span onclick="event.stopPropagation();var e=document.getElementById('diamond-explainer');if(e)e.style.display='block';" style="cursor:pointer;color:#9fe4ff;font-size:12px;border:1px solid #33507e;border-radius:50%;padding:0 5px;margin-left:4px">?</span></div>
-          <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap 📐 Align Table or ✨ Auto, then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="aim-diamonds" onchange="toggleDiamonds()">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-      <div class="div adv-only"></div>
-    <div class="autoscan-row adv-only">
-        <div>
-          <div class="autoscan-label">🎱 Contact Point</div>
-          <div class="autoscan-desc">Shows where the two balls will touch. For understanding the cut only — always AIM at the dotted ghost ring, never at this point</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="aim-contactpoint" onchange="renderCanvas()">
-          <div class="toggle-track"></div>
-        </label>
-      </div>
-    </div>
+    <!-- The Settings card is gone: every global setting now lives in the
+         Advanced Tuning drawer inside Quick Setup. Only this hidden state
+         holder remains, because other code reads its checked value. -->
+    <input type="checkbox" id="simplemode-toggle" checked style="display:none">
 
     <!-- FOOTER -->
-    <div style="text-align:center;padding:18px 14px 8px;border-top:1px solid var(--border);margin-top:8px">
+    <div id="app-footer" style="text-align:center;padding:18px 14px 8px;border-top:1px solid var(--border);margin-top:8px">
       <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.3px">Curran's Shot Reader</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.7">
         Built by <strong style="color:var(--cream)">Adam &amp; Bill Curran</strong><br>
@@ -1696,8 +1868,8 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
     </div>
 
     <!-- STICKY ACTION BAR -->
-    <div class="sticky-action-bar" style="flex-direction:column;gap:6px">
-      <div style="display:flex;align-items:center;gap:8px;width:100%;background:rgba(14,30,21,.92);border:1px solid var(--border);border-radius:10px;padding:6px 11px">
+    <div class="sticky-action-bar" id="sticky-action-bar" style="flex-direction:column;gap:6px">
+      <div id="conf-row" style="display:flex;align-items:center;gap:8px;width:100%;background:rgba(14,30,21,.92);border:1px solid var(--border);border-radius:10px;padding:6px 11px">
         <span style="font-size:11.5px;color:var(--cream);font-weight:600;white-space:nowrap;letter-spacing:.3px">🎚️ AI Confidence</span>
         <input type="range" id="conf-slider-sticky" min="10" max="80" value="35" style="flex:1;accent-color:var(--gold)"
           oninput="syncConf(this.value)">
@@ -1836,6 +2008,10 @@ async function tryCocoFallback() {
     aiBtn.classList.add('ready');
   } catch (e) {
     console.warn('COCO fallback also failed');
+    /* Stage 7: both models are gone. Previously this was a console warning
+       and nothing else - the AI button stayed disabled with no explanation,
+       and in Table Mode there is no status line to read anyway. */
+    _modelFailed = true;
   }
 }
 
@@ -1862,8 +2038,8 @@ function setModelStatus(msg, state) {
 ═══════════════════════════════════════════ */
 async function runDetection() {
   if (!_modeChosen) {
-    setStatus('Pick your game first — 8-Ball, 9-Ball, or Straight (Step 4)','warn');
-    var gm = document.querySelector('.pills'); if (gm) try{ gm.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+    setStatus('Pick your game first — 8-Ball, 9-Ball or Straight, up in Quick Setup','warn');
+    var gm = document.getElementById('gamemode-card') || document.querySelector('.pills'); if (gm) try{ gm.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
     return;
   }
   if (_sampleMode) {
@@ -2305,11 +2481,11 @@ async function runDetection() {
     // Give a more helpful message based on error type
     const msg = err.message || '';
     if (msg.includes('memory') || msg.includes('tensor')) {
-      setStatus('⚠️ AI memory error — try Re-detect or mark balls manually', 'err');
+      setStatus('⚠️ The AI ran out of room — tap Re-detect, or mark the balls yourself', 'err');
     } else if (msg.includes('network') || msg.includes('fetch')) {
       setStatus('⚠️ Model not loaded — check connection and reload', 'err');
     } else {
-      setStatus('⚠️ Detection failed — mark balls manually or try again', 'err');
+      setStatus('⚠️ Couldn’t make out the balls — try again, or mark them yourself', 'err');
     }
   }
 
@@ -2646,7 +2822,7 @@ async function startCamera() {
   var _to = document.getElementById('table-outline'); if (_to) _to.style.display = 'block';
   // Start the scanner animation immediately — searching state shows within a
   // frame instead of waiting up to 600ms for the first detection pass.
-  _scanCorners = null; _scanLockAt = 0; _initTilt();
+  _scanCorners = null; _scanLockAt = 0; _initTilt(); noteTableSeen();
   /* The scanner loop is NOT started here. It used to be, "so the searching
      state shows immediately" — but cameraOn is still false at this point, so
      the loop's own guard fired on its very first frame, cancelled itself and
@@ -2661,6 +2837,16 @@ async function startCamera() {
     });
     video.srcObject = mediaStream;
     video.style.display = 'block';
+    /* Stage 7: a stream can end AFTER a good start - another app grabs the
+       camera, permission is revoked, a USB cam is unplugged. Without this the
+       video simply freezes and nothing ever says why. Unambiguous failure:
+       the track itself reports it, so there is no transient to filter out. */
+    _camFailed = false;
+    try {
+      mediaStream.getTracks().forEach(function (t) {
+        t.addEventListener('ended', function () { _camFailed = true; });
+      });
+    } catch (_) {}
     /* Explicitly play. The element carries autoplay/playsinline/muted, which
        usually suffices — but on some Android builds a stream attached without
        a play() call renders a black frame forever. Awaited so the loops below
@@ -2791,6 +2977,7 @@ function _scanLoop() {
   _scanEase();
   _paintScanner(performance.now());
   updatePosBar();
+  checkTableModeHealth();
 }
 
 function _paintScanner(t) {
@@ -2858,7 +3045,10 @@ function _paintSearching(g, cw, ch, t) {
   g.fillRect(L, sy - 34, R - L, 40);
   g.restore();
   var _why = window._scanWhy;
-  _scanChip(g, cw, _why ? ('\ud83d\udd0d Scanning\u2026 ' + _why) : '\ud83d\udd0d Scanning for table\u2026 center the felt in frame',
+  var _searchTxt = tableMode
+    ? (_why ? plainSay(_why) : 'Looking for your table\u2026')
+    : (_why ? ('\ud83d\udd0d Scanning\u2026 ' + _why) : '\ud83d\udd0d Scanning for table\u2026 center the felt in frame');
+  _scanChip(g, cw, _searchTxt,
             'rgba(200,220,205,0.9)', 'rgba(8,20,13,0.62)');
 }
 
@@ -2924,7 +3114,9 @@ function _paintLocked(g, cw, ch, t, C) {
   g.restore();
   var coasting = _scanMisses > 1;
   _scanChip(g, cw,
-    coasting ? '\u25ce Holding lock\u2026 keep the felt in view' : '\u2713 Table locked \u2014 SCAN when ready',
+    tableMode
+      ? (coasting ? 'Hold steady\u2026' : 'Table found \u2014 waiting for the balls to settle')
+      : (coasting ? '\u25ce Holding lock\u2026 keep the felt in view' : '\u2713 Table locked \u2014 SCAN when ready'),
     coasting ? '#ffe08a' : '#9df7c3', 'rgba(8,20,13,0.85)');
 }
 
@@ -3408,7 +3600,7 @@ function renderCanvas() {
     /* Highest priority: we've asked for the pocket and are waiting on the tap.
        It has to be ON the photo — that's where the finger already is. */
     if (_awaitingPocket) msg = '\ud83d\udc46 Tap the pocket you\u2019re aiming at';
-    else if (!_modeChosen) msg = '\u2b07 Next: pick your game below, then \ud83e\udd16 AI Detect';
+    else if (!_modeChosen) msg = '\u2b06 Next: pick your game in Quick Setup, then \ud83e\udd16 AI Detect';
     else if (!ballMarks) msg = 'Next: tap \ud83e\udd16 AI Detect in the bottom bar';
     /* 9-BALL: the lowest ball isn't extra context, it's the whole game — every
        legal shot depends on it, and the AI can't read numbers. Ask for it as
@@ -3578,7 +3770,11 @@ function renderCanvas() {
     // "COMBO SHOT" header near ball A, clamped to stay on-canvas
     ctx.save();
     ctx.setLineDash([]);
-    ctx.font = `bold ${Math.round(R*0.6)}px Barlow Condensed,sans-serif`;
+    /* Ball radius R bottoms out at 9px on a real photo, which made these
+       labels ~5.6px - present but unreadable. A hard 13px floor, set
+       independently of R, keeps them legible on a full-table shot while
+       still scaling up on a close-up. */
+    ctx.font = `bold ${Math.max(13, Math.round(R*0.6))}px Barlow Condensed,sans-serif`;
     ctx.fillStyle = 'rgba(64,206,255,0.98)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
@@ -3605,7 +3801,7 @@ function renderCanvas() {
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#062430';
-      ctx.font = `bold ${Math.round(R*0.6)}px Barlow Condensed,sans-serif`;
+      ctx.font = `bold ${Math.max(13, Math.round(R*0.6))}px Barlow Condensed,sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(txt, cxB, cyB + 0.5);
       ctx.restore();
@@ -3750,8 +3946,13 @@ function renderCanvas() {
       ctx.restore();
       // Queue like the other labels: drawn inline it could be buried by a
       // later ball, and near the top edge it clipped off-canvas.
+      /* Momentarily larger right after tagging, then straight back to normal -
+         the steady-state label is unchanged. */
+      var _lowAge = m._lowFlash ? (Date.now() - m._lowFlash) : 9999;
+      var _lowBoost = _lowAge < 1300 ? (1 + 0.85 * (1 - _lowAge / 1300)) : 1;
       _lblQ.push({x:x, y:(y - mR*2.45 < 14) ? (y + mR*2.45) : (y - mR*2.45),
-                  t:'LOWEST', c:'rgba(64,206,255,0.95)', f:Math.round(mR*0.7)});
+                  t:'LOWEST', c:'rgba(64,206,255,0.95)',
+                  f:Math.max(13, Math.round(mR*0.7*_lowBoost))});
     }
     const lbl = {cue:'C',obj:'S',eight:'8',stripe:'T',pocket:'P'}[m.type];
     const lc  = {cue:'#1a1508',obj:'#fff',eight:'#fff',stripe:'#1a0808',pocket:'#c8972e'}[m.type];
@@ -3775,7 +3976,7 @@ function renderCanvas() {
       ctx.stroke();
       ctx.setLineDash([]);
       _lblQ.push({x:x, y:(y - R - 6 < 14) ? (y + R + 16) : (y - R - 6),
-                  t:'SHOT ' + (_focusRank + 1), c:'rgba(64,206,255,0.95)', f:Math.round(R*0.62)});
+                  t:'SHOT ' + (_focusRank + 1), c:'rgba(64,206,255,0.95)', f:Math.max(13, Math.round(R*0.62))});
       ctx.restore();
     }
 
@@ -3799,7 +4000,7 @@ function renderCanvas() {
       ctx.setLineDash([]);
       var _lblY = (y - R - 6 < 14) ? (y + R + 16) : (y - R - 6);
       _lblQ.push({x:x, y:_lblY, t:_unverified9 ? '? CHECK' : '\u2605 BEST',
-                  c:'rgba(' + _cr + ',0.95)', f:Math.round(R*0.62)});
+                  c:'rgba(' + _cr + ',0.95)', f:Math.max(13, Math.round(R*0.62))});
       ctx.restore();
     }
     ctx.restore();
@@ -4210,7 +4411,43 @@ function kickDiamondLabel(kick) {
     var b = kick.canonBounce, maxX = kick.maxX, maxY = kick.maxY, diamonds, frac;
     if (kick.axis === 'y') { frac = b.fx / maxX; diamonds = 8; }
     else                   { frac = b.fy / maxY; diamonds = 4; }
-    return 'Diamond ' + Math.round(frac * diamonds);
+    /* Was Math.round(), i.e. whole diamonds only - a bank that genuinely wants
+       3.4 was being shown as "Diamond 3". Players read these to a tenth, so a
+       whole-number answer threw away the part that matters. */
+    var raw = frac * diamonds;
+
+    /* SPIN CORRECTION. The plain diamond number assumes a rolling ball with no
+       side spin. Side english changes the angle coming off the cushion:
+       RUNNING english (spinning the way the ball is already travelling along
+       the rail) opens the angle and sends it further down table; REVERSE
+       shortens it. Follow and draw nudge it slightly the same way.
+       These are rules-of-thumb, not physics - the label says "est." for that
+       reason, and the uncorrected number is always shown alongside it. */
+    var eng = 'c';
+    try {
+      var et = document.getElementById('english-toggle');
+      if (et && et.checked && typeof currentEnglish === 'string') eng = currentEnglish;
+    } catch (_) {}
+    if (eng === 'stun') eng = 'c';
+
+    var side = (eng.indexOf('l') >= 0) ? -1 : (eng.indexOf('r') >= 0 ? 1 : 0);
+    var vert = (eng.indexOf('t') >= 0) ? 1  : (eng.indexOf('b') >= 0 ? -1 : 0);
+
+    var adj = raw, note = '';
+    if (side || vert) {
+      // which way is the cue ball moving ALONG the rail it strikes?
+      var cue = kick.canonCue || null;
+      var travel = 0;
+      if (cue) travel = (kick.axis === 'y') ? Math.sign(b.fx - cue.fx) : Math.sign(b.fy - cue.fy);
+      if (!travel) travel = 1;
+      var running = side !== 0 && (Math.sign(side) === travel);
+      var shift = 0;
+      if (side !== 0) shift += (running ? 0.5 : -0.5) * travel;   // the big effect
+      shift += vert * 0.2 * travel;                               // follow/draw, smaller
+      adj = Math.max(0, Math.min(diamonds, raw + shift));
+      note = ' \u00b7 ' + adj.toFixed(1) + ' est. w/ spin';
+    }
+    return 'Diamond ' + raw.toFixed(1) + note;
   } catch(_) { return null; }
 }
 
@@ -5266,7 +5503,7 @@ function computeKickShot(cueRaw, targetRaw, allBalls) {
     // Prefer the shortest total path (simplest kick).
     var pathLen = Math.hypot(bx-cue.fx,by-cue.fy) + Math.hypot(tgt.fx-bx,tgt.fy-by);
     if (!best || pathLen < best.pathLen) {
-      best = { rail:r.name, axis:r.axis, canonBounce:{fx:bx,fy:by},
+      best = { rail:r.name, axis:r.axis, canonBounce:{fx:bx,fy:by}, canonCue:{fx:cue.fx,fy:cue.fy},
                canonCue:{fx:cue.fx,fy:cue.fy}, canonTarget:{fx:tgt.fx,fy:tgt.fy},
                pathLen:pathLen, maxX:maxX, maxY:maxY };
     }
@@ -5489,7 +5726,7 @@ function suggestShot() {
 
   if (!_modeChosen) {
     titl.textContent = 'Pick Your Game First';
-    body.textContent = 'Choose 8-Ball, 9-Ball, or Straight in Step 4 before suggesting — the rules change which ball you should shoot.';
+    body.textContent = 'Choose 8-Ball, 9-Ball or Straight in Quick Setup, at the top of the page, before suggesting — the rules change which ball you should shoot.';
     sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
 
@@ -5811,6 +6048,7 @@ function suggestShot() {
   if (sourceImg) renderCanvas();
   setStatus('Difficulty ' + difficulty + '/10 · ' + diffLabel, 'gold');
 
+  updateTableBanner();          // Stage 4: no-op unless Table Mode is on
   saveSettings();
 }
 
@@ -5900,7 +6138,16 @@ function buildStraightAdvice(cue,target,pkt,cutAngle,pocketInfo,d,allTargets) {
   if (pkt) {
     a+=buildGeometryLine(cutAngle,pocketInfo);
     a+=buildRangeLine(d);
-    if (clusters>0) a+=`There\'s a cluster of ${clusters+1} balls nearby — weigh whether breaking it open now sets up a better run than potting the single. `;
+        /* Cluster + a hard shot is the one moment straight pool actually forces a
+       decision, so say both options out loud instead of "weigh whether".
+       >=7 matches the difficulty band already used for the safety note
+       elsewhere in the file - deliberately the same threshold, not a new one.
+       The low-difficulty and no-cluster paths below are untouched. */
+    if (clusters>0 && d >= 7) {
+      a += `That cluster of ${clusters+1} is the whole rack right now, and this is a hard shot. Two honest choices: take it on and try to spread them while you still have the table, or play safe, leave the cluster where it is, and make your opponent open it up. Neither is wrong — just don't drift into it by accident. `;
+    } else if (clusters>0) {
+      a+=`There's a cluster of ${clusters+1} balls nearby — weigh whether breaking it open now or later fits your run better. `;
+    }
     a+=buildPositionLine(cutAngle);
     a+=' Straight pool is won by leaving yourself in position, not just pocketing balls.';
   } else {
@@ -5977,10 +6224,19 @@ function handleTap(fx, fy) {
       const m = marks[i];
       if (m.type!=='obj' && m.type!=='stripe' && m.type!=='eight') continue;
       if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < R*2) {
-        marks.forEach(function(mm){ delete mm._mustHit; });
+        marks.forEach(function(mm){ delete mm._mustHit; delete mm._lowFlash; });
         m._mustHit = true;
-        renderCanvas(); hideSuggestion();
-        setStatus('Lowest ball set (🎯) — Suggest will plan this ball','live');
+        /* The tag was correct but too quiet - a thin cyan ring and a small
+           label. People tapped the same ball again "to make sure", and that
+           second tap fell through to the type-cycler. Reuse the existing
+           _flash pattern so the moment of tagging is unmissable, and set
+           _lowFlash so the LOWEST label can swell briefly with it. */
+        m._flash = Date.now();
+        m._lowFlash = Date.now();
+        setTimeout(function(){ delete m._flash; delete m._lowFlash; if (sourceImg) renderCanvas(); }, 1300);
+        try { playChime(); } catch(_) {}
+        renderCanvas(); hideSuggestion(); syncLowestBallBtn();
+        setStatus('\u2705 Lowest ball set \u2014 tap \u201cPotted \u2014 Next Ball\u201d when it\u2019s gone. No need to tap it again.','live');
         return;
       }
     }
@@ -6022,6 +6278,18 @@ function handleTap(fx, fy) {
     if (Math.hypot(tapX - m.fx*canvas.width, tapY - m.fy*canvas.height) < hitR) {
       // Tapping the cue opens spin ONLY when English/Spin is on; otherwise it cycles.
       if (m.type === 'cue' && englishOn) { openSpinPopup(); return; }
+        /* SAFETY NET. Two correct behaviours were colliding: _pickingLowest is
+           spent after one tap, so a second tap on the SAME ball landed here and
+           silently changed its type - which reads as "I set the lowest ball and
+           it turned into a stripe". Explain instead of cycling. Applies only to
+           the one tagged ball; every other ball cycles exactly as before. */
+        if (m._mustHit && gameMode === '9ball') {
+          setStatus('That\u2019s already your lowest ball \u2014 tap \u201cPotted \u2014 Next Ball\u201d to move on, or Undo to clear it.', 'gold');
+          m._flash = Date.now();
+          setTimeout(function(){ delete m._flash; if (sourceImg) renderCanvas(); }, 900);
+          renderCanvas();
+          return;
+        }
       const newType = nextBallType(m);
       m.type = newType; delete m._rank;
       renderCanvas(); hideSuggestion();
@@ -6203,6 +6471,59 @@ var _modeChosen = false;      // must pick a game before AI Detect / Suggest
 var _pickingLowest = false;   // 9-ball: next ball tap sets the must-hit ball
 var _sampleMode = false;      // sample-shot layout loaded (drawn table, no photo)
 
+/* 9-BALL ADVANCE.
+   The must-hit ball is m._mustHit (underscore) - set by tapping a ball while
+   _pickingLowest is true, cleared when the game mode leaves 9-ball or a new
+   photo loads. Moving to the next ball used to mean re-opening the picker and
+   tapping again: two actions for one thought at the table ("that's down,
+   next"). Same button slot, two states, driven by whether a must-hit ball
+   currently exists - not two permanent buttons. */
+function currentMustHit() {
+  return marks.find(function(m){
+    return m._mustHit && (m.type==='obj' || m.type==='stripe' || m.type==='eight');
+  }) || null;
+}
+
+function syncLowestBallBtn() {
+  var b = document.getElementById('lowest-ball-btn');
+  if (!b) return;
+  b.innerHTML = currentMustHit()
+    ? '\u2705 Potted \u2014 Next Ball <span style="opacity:.65;font-weight:400">\u2014 tap the new lowest</span>'
+    : '\ud83c\udfaf Set Lowest Ball <span style="opacity:.65;font-weight:400">\u2014 the ball you must hit first</span>';
+}
+
+function lowestBallAction() {
+  var mh = currentMustHit();
+  if (mh) {
+    delete mh._mustHit;          // it's down
+    _pickingLowest = true;       // and straight into picking the next
+    if (sourceImg) renderCanvas();
+    syncLowestBallBtn();
+    setStatus('Potted \u2014 now tap your next lowest ball', 'gold');
+    return;
+  }
+  pickLowestBall();
+}
+
+/* STRAIGHT POOL RUN COUNTER - manual, persisted, and independent of anything
+   the detector believes. Uses the same rr_settings blob as every other saved
+   preference so it survives a reload. */
+var _runCount = 0;
+
+function renderRun() {
+  var el = document.getElementById('run-count');
+  if (el) el.textContent = _runCount;
+}
+function bumpRun(n) {
+  _runCount = Math.max(0, _runCount + n);
+  renderRun(); saveSettings();
+  setStatus('Run: ' + _runCount, 'live');
+}
+function resetRun() {
+  _runCount = 0; renderRun(); saveSettings();
+  setStatus('Run counter reset', 'gold');
+}
+
 function pickLowestBall() {
   var balls = marks.filter(function(m){ return m.type==='obj'||m.type==='stripe'||m.type==='eight'; });
   if (!balls.length) { setStatus('Mark or AI-detect the balls first','warn'); return; }
@@ -6257,7 +6578,14 @@ function startSampleShot() {
     // Auto-pick 8-Ball so the mode gate never blocks the demo
     if (!_modeChosen) {
       let pill = null;
-      document.querySelectorAll('.pills .pill').forEach(function(p) { if (p.textContent.trim() === '8-Ball') pill = p; });
+      /* Match on the pill's own handler, not its label. This was the only place
+         in the app where a piece of DISPLAY COPY was load-bearing - reword the
+         button to "8 Ball" or "Eight-Ball" and sample mode silently stopped
+         picking a game. Nothing readable is logic-bound any more. */
+      document.querySelectorAll('.pills .pill').forEach(function(p) {
+        var oc = p.getAttribute('onclick') || '';
+        if (oc.indexOf("'8ball'") >= 0) pill = p;
+      });
       if (pill) setGame('8ball', pill);
     }
     // pockets (match the drawn image)
@@ -6299,11 +6627,14 @@ function quickSetGame(mode) {
 function updateQuickModeRow() {
   var r = document.getElementById('quickmode-row');
   if (r) r.style.display = (sourceImg && !_modeChosen) ? 'flex' : 'none';
+  var sr = document.getElementById('straight-run-row');
+  if (sr) sr.style.display = (gameMode === 'straight') ? 'block' : 'none';
 }
 function setGame(mode,el) {
   _modeChosen = true;
   _pickingLowest = false;
   if (mode !== '9ball') { marks.forEach(function(m){ delete m._mustHit; }); if (sourceImg) renderCanvas(); }
+  syncLowestBallBtn();
   var nr = document.getElementById('nineball-target-row');
   if (nr) nr.style.display = (mode === '9ball') ? 'block' : 'none';
   gameMode=mode;
@@ -6777,6 +7108,7 @@ function saveSettings() {
       autoscan:  document.getElementById('autoscan-toggle').checked,
       personCheck: (document.getElementById('personcheck-toggle')||{checked:true}).checked,
       tableSize: TABLE_SIZE,
+      runCount:  _runCount,
       diamonds: (document.getElementById('aim-diamonds')||{checked:false}).checked,
       sens:      document.getElementById('sens-slider').value,
       delay:     document.getElementById('delay-slider').value,
@@ -6813,6 +7145,7 @@ function loadSettings() {
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
     if (s.personCheck !== undefined) { var _pc = document.getElementById('personcheck-toggle'); if (_pc) _pc.checked = s.personCheck; }
     if (s.diamonds !== undefined) { var _dm = document.getElementById('aim-diamonds'); if (_dm) _dm.checked = s.diamonds; }
+    if (typeof s.runCount === 'number') { _runCount = s.runCount; renderRun(); }
     if (s.tableSize && TABLE_LEN_IN[s.tableSize]) {
       TABLE_SIZE = s.tableSize;
       document.querySelectorAll('#tablesize-row .pill').forEach(function(p){ p.classList.toggle('active', p.textContent.indexOf(s.tableSize + '-ft') === 0); });
@@ -6841,6 +7174,418 @@ function loadSettings() {
 /* Split layout on/off. The side-by-side landscape view suits most people, but
    not everyone wants the page cut in half — this turns it back into the normal
    stacked layout without leaving landscape. Persists like the other settings. */
+/* ==========================================
+   FAILURE RECOVERY  (Stage 7)
+   Three things can go wrong while the phone sits on a tripod. Two are binary
+   and need no judgement; the third does, and is why this stage is the fiddly
+   one.
+
+     CAMERA DROPPED - the MediaStreamTrack fires 'ended'. Unambiguous: the OS
+       is telling us the stream is gone. No transient looks like this.
+
+     AI UNAVAILABLE - both the custom model and the COCO fallback failed to
+       load. Also unambiguous, but it needed its own flag, because "still
+       loading" and "gave up" were previously indistinguishable.
+
+     CAN'T FIND THE TABLE - genuinely ambiguous, and treated carefully. A
+       player leaning over the felt, a hand across the frame, or nudging the
+       tripod all look exactly like failure for a second or two. So: the timer
+       runs only while Table Mode is on AND the camera is live, ANY successful
+       lock resets it, and it must stay lost for 20 unbroken seconds. A
+       transient cannot reach the threshold. The clock also starts at camera
+       start rather than at zero - otherwise the first frame of every session
+       would report a failure dated 1970. */
+var _camFailed = false;
+var _modelFailed = false;
+var _searchingSince = 0;      // when we last had a lock, or when the camera started
+var _recoverKind = null;      // null | 'camera' | 'model' | 'table'
+var NO_TABLE_MS = 20000;
+
+function noteTableSeen() { _searchingSince = Date.now(); }
+
+function tableModeHealth() {
+  if (!tableMode) return null;
+  if (_camFailed) return 'camera';
+  if (_modelFailed) return 'model';
+  if (typeof cameraOn === 'undefined' || !cameraOn) return null;   // not running yet
+  if (_scanCorners) { noteTableSeen(); return null; }              // we can see it
+  if (!_searchingSince) { noteTableSeen(); return null; }          // just started
+  if (Date.now() - _searchingSince > NO_TABLE_MS) return 'table';
+  return null;
+}
+
+/* One short line and one big tap target. Deliberately not a wall of text -
+   the player is standing at a table holding a cue. */
+function renderRecovery(kind) {
+  var b = document.getElementById('tm-banner');
+  var t = document.getElementById('tm-title');
+  var a = document.getElementById('tm-advice');
+  var c = document.getElementById('tm-conf');
+  var fix = document.getElementById('tm-fix');
+  if (!b || !t || !a || !fix) return;
+  if (!kind) { b.classList.remove('recover'); fix.style.display = 'none'; return; }
+  b.classList.add('recover');
+  if (c) c.textContent = '\u2013';
+  fix.style.display = 'block';
+  if (kind === 'camera') {
+    t.textContent = 'Camera stopped';
+    a.textContent = 'Another app may have taken it.';
+    fix.textContent = 'Turn the camera back on';
+  } else if (kind === 'model') {
+    t.textContent = 'The AI didn\u2019t load';
+    a.textContent = 'You can still mark the balls yourself.';
+    fix.textContent = 'Try loading it again';
+  } else {
+    t.textContent = 'Can\u2019t see the table';
+    a.textContent = 'Point the camera at it, or move the phone back.';
+    fix.textContent = 'Look again';
+  }
+}
+
+function tableModeFix() {
+  var kind = _recoverKind;
+  if (kind === 'camera') {
+    _camFailed = false;
+    try { startCamera(); } catch (e) {}
+  } else if (kind === 'model') {
+    _modelFailed = false;
+    try { location.reload(); } catch (e) {}
+    return;
+  }
+  noteTableSeen();                  // give the search a fresh 20 seconds
+  _recoverKind = null;
+  renderRecovery(null);
+  var t = document.getElementById('tm-title');
+  if (t) t.textContent = 'Looking again\u2026';
+}
+
+/* Polled from the scanner loop, which already runs every frame. Cheap: three
+   boolean checks and one subtraction. */
+function checkTableModeHealth() {
+  if (!tableMode) { _recoverKind = null; return; }
+  var kind = tableModeHealth();
+  if (kind !== _recoverKind) {
+    _recoverKind = kind;
+    renderRecovery(kind);
+    if (!kind) updateTableBanner();
+  }
+}
+
+/* ==========================================
+   TAP TO RESCAN  (Stage 6, rescoped)
+   The capture -> detect -> suggest chain already existed and is untouched:
+   captureFrame calls runDetection, runDetection calls suggestShot. All this
+   adds is a way to force a fresh read NOW, because in Table Mode the SCAN NOW
+   button lives inside #step1-anchor, which is hidden - so without this there
+   is no way to say "read it again" without leaving the mode.
+
+   Listener sits on #live-section, which is the video's own wrapper. The
+   overlay canvas above it is pointer-events:none, so the tap lands here.
+
+   PLATFORM NOTES, since iOS and Android differ here:
+     - One 'pointerup' listener, not touchstart AND click. Both platforms fire
+       a synthetic click after a touch; listening to both would capture twice.
+       Pointer Events are supported on iOS 13+ and all current Android Chrome.
+     - The 1200ms debounce is not cosmetic. iOS in particular can hand back a
+       black frame if a second capture is drawn from the video element too soon
+       after the first, and a fat-finger double tap is easy on a tripod.
+     - captureFrame already guards video.videoWidth === 0, which is the other
+       real timing difference: Android tends to report dimensions sooner than
+       iOS after the stream starts. */
+var _lastTapScan = 0;
+
+function tableModeTapScan() {
+  if (!tableMode) return;                                   // Table Mode only
+  if (typeof cameraOn === 'undefined' || !cameraOn) return;  // nothing to read
+  var now = Date.now();
+  if (now - _lastTapScan < 1200) return;                     // debounce
+  _lastTapScan = now;
+
+  // Say something immediately: the player needs to know the tap landed, and
+  // detection takes a moment.
+  var elT = document.getElementById('tm-title');
+  var elA = document.getElementById('tm-advice');
+  if (elT) elT.textContent = 'Reading the table\u2026';
+  if (elA) elA.textContent = 'Hold still for a second.';
+
+  /* Let the shot cycle know this reading was asked for, so the automatic
+     one-capture-per-shot rule starts again from here rather than treating
+     the manual read as the shot that was already showing. */
+  resetSpokenShot();
+  try { captureFrame('manual'); } catch (e) {}
+}
+
+(function () {
+  var ls = document.getElementById('live-section');
+  if (ls) ls.addEventListener('pointerup', tableModeTapScan);
+})();
+
+/* ==========================================
+   PLAIN LANGUAGE  (Stage 5)
+   Table Mode is read at arm's length by someone holding a cue, not by someone
+   debugging a detector. Everything visible there has to be understandable at a
+   glance, with no idea how the app works.
+
+   IMPORTANT: this is a translation layer applied at DISPLAY time, and only
+   when tableMode is true. The underlying strings are untouched, so normal mode
+   still says exactly what it said before - which is what you asked for, and is
+   also better there, because outside Table Mode the wording is diagnostic on
+   purpose and tells us which guard rejected a frame.
+
+   NOTE ALSO: setStatus() writes to #s-text, which lives inside #table-stage
+   and is therefore HIDDEN in Table Mode. So the surfaces that actually need
+   plain language are the scanner chip and the banner - not setStatus. Failure
+   messages that today go only to setStatus are invisible in Table Mode; that
+   gap belongs to Stage 7 (recovery), not here. */
+function plainSay(msg) {
+  if (!tableMode || !msg) return msg;
+  var m = String(msg);
+  // Anything about the table being too small or too far in the frame.
+  if (/too small in frame|fills too little/i.test(m)) return 'Move a little closer';
+  if (/not fully in frame|move back/i.test(m))        return 'Move back a little';
+  // Cloth not found at all - the camera simply isn't pointed at a table.
+  if (/cloth|green or blue/i.test(m))                 return 'Point the camera at the table';
+  // Every geometry rejection means the same thing to a player: bad angle.
+  if (/outline not clear|rails?|shape|corners|sides too uneven|folds over/i.test(m))
+    return 'Can\u2019t make out the table \u2014 try a different angle';
+  return m;
+}
+
+/* ==========================================
+   TABLE MODE  (Stage 4)
+   Tripod display: setup UI out of the way, camera + HUD + one banner left.
+   Entry is a real tap, which matters for two reasons beyond the obvious -
+   iOS only allows speech to start from a user gesture, and wake lock is
+   likewise better requested from one. Both are called from here. */
+var tableMode = false;
+var _prevAutoScan = null;      // so exit restores whatever the user had
+
+function enterTableMode() {
+  if (tableMode) return;
+  tableMode = true;
+  document.body.classList.add('table-mode');
+
+  /* Table Mode is pointless without auto-scan, and the toggle now lives in a
+     collapsed drawer where nobody will find it. Force it on and remember the
+     old value so exiting puts the user's setting back exactly as it was. */
+  _prevAutoScan = autoScan;
+  autoScan = true;
+  var t = document.getElementById('autoscan-toggle');
+  if (t) t.checked = true;
+
+  unlockSpeech();          // MUST be inside the tap gesture, or iOS stays mute
+  acquireWakeLock();       // keep the screen up while it sits on the tripod
+  resetSpokenShot();       // first suggestion should always be spoken
+
+  if (typeof cameraOn !== 'undefined' && !cameraOn) {
+    try { startCamera(); } catch (e) {}
+  }
+  updateTableBanner();
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0,0); }
+}
+
+function exitTableMode() {
+  if (!tableMode) return;
+  tableMode = false;
+  document.body.classList.remove('table-mode');
+  if (_prevAutoScan !== null) {
+    autoScan = _prevAutoScan;
+    var t = document.getElementById('autoscan-toggle');
+    if (t) t.checked = _prevAutoScan;
+    _prevAutoScan = null;
+  }
+  releaseWakeLock();
+  resetSpokenShot();
+}
+
+/* Fill the banner from the crowned shot. Called at the end of suggestShot;
+   returns immediately when Table Mode is off, so it costs nothing normally. */
+function updateTableBanner() {
+  if (!tableMode) return;
+  var elT = document.getElementById('tm-title');
+  var elA = document.getElementById('tm-advice');
+  var elC = document.getElementById('tm-conf');
+  if (!elT || !elA || !elC) return;
+
+  var res = window._bestShotResult;
+  var top = (res && res.ranked && res.ranked.length) ? res.ranked[0] : null;
+
+  if (!top || !top.ball) {
+    elT.textContent = 'Looking for a shot\u2026';
+    elA.textContent = 'Keep the whole table in view.';
+    elC.textContent = '\u2013';
+    return;
+  }
+
+  var names = { obj:'Solid', stripe:'Stripe', eight:'8-ball' };
+  var ball  = names[top.ball.type] || 'Ball';
+  var where = top.pocket ? (getPocketType(top.pocket).label || 'pocket') : 'pocket';
+  var d     = (typeof top.difficulty === 'number') ? top.difficulty : 5;
+
+  elT.textContent = top.blocked ? (ball + ' \u2014 blocked') : (ball + ' \u2192 ' + where);
+  elA.textContent = top.blocked
+    ? 'No clear path. Check the kick or combo option.'
+    : (d <= 3 ? 'Good shot. Step in with confidence.'
+     : d <= 5 ? 'Moderate. Take your time.'
+     : d <= 8 ? 'Tough one. Weigh your options.'
+              : 'Very low percentage. A safety may be smarter.');
+
+  /* "Sure" is makeability, not model confidence: difficulty 1 reads 95%,
+     difficulty 10 reads 5%. Never 0 or 100 - neither is ever honest. */
+  elC.textContent = Math.max(5, Math.min(95, Math.round(105 - d * 10))) + '%';
+
+  speakShot(buildSpokenSummary());   // silent unless chime-toggle is on
+}
+
+/* ==========================================
+   VOICE OUTPUT  (Stage 3)  - output only, no voice commands.
+   Speaks the crowned shot when the Table Mode banner changes, so a player on
+   a tripod can hear the call without looking. Gated on the existing
+   chime-toggle: if you have turned chimes off you have said you want quiet.
+
+   PLATFORM REALITY, checked rather than assumed:
+     - iOS Safari refuses to speak until speech has been started once from a
+       real user gesture. unlockSpeech() must be called from the tap that
+       enters Table Mode, or the first calls are silently swallowed, no error.
+     - iOS also wedges its queue if an utterance is interrupted, which is why
+       every speak() is preceded by cancel().
+     - Android Chrome loads voices asynchronously; getVoices() can be empty on
+       the first call. We deliberately do NOT pick a voice by name for that
+       reason - the platform default is always ready.
+     - Voice QUALITY differs: iOS ships good built-in voices; Android depends
+       on Google Text-to-Speech being installed. If it is missing, speech can
+       be absent even though the API reports supported. Fails silently. */
+var _lastSpoken = '';        // last phrase spoken, so we only speak on CHANGE
+var _speechUnlocked = false;
+
+function speechSupported() {
+  try {
+    return typeof window !== 'undefined' &&
+           'speechSynthesis' in window &&
+           typeof SpeechSynthesisUtterance !== 'undefined';
+  } catch (e) { return false; }
+}
+
+/* Must run inside a user gesture (the Table Mode tap). Speaks a silent
+   utterance purely to satisfy iOS's gesture requirement. */
+function unlockSpeech() {
+  if (!speechSupported() || _speechUnlocked) return;
+  try {
+    var u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+    _speechUnlocked = true;
+  } catch (e) {}
+}
+
+/* Short spoken line from the crowned shot. Deliberately plainer than the
+   on-screen advice - heard once, at a table, with no chance to re-read. */
+function buildSpokenSummary() {
+  try {
+    var res = window._bestShotResult;
+    if (!res || !res.ranked || !res.ranked.length) return '';
+    var top = res.ranked[0];
+    if (!top || !top.ball) return '';
+    var names = { obj:'solid', stripe:'stripe', eight:'eight ball' };
+    var ball = names[top.ball.type] || 'ball';
+    if (top.blocked) return 'The ' + ball + ' is blocked. Check the kick or combo option.';
+    var where = top.pocket ? String(getPocketType(top.pocket).label || 'pocket').toLowerCase() : 'pocket';
+    var d = (typeof top.difficulty === 'number') ? top.difficulty : 5;
+    var how = d <= 3 ? 'This one is easy.'
+            : d <= 5 ? 'Moderate shot.'
+            : d <= 8 ? 'Tough shot.'
+                     : 'Very low percentage. A safety may be smarter.';
+    return 'Take the ' + ball + ' to the ' + where + '. ' + how;
+  } catch (e) { return ''; }
+}
+
+/* Speak, but ONLY when the phrase has actually changed - otherwise re-reading
+   the same table repeats the same sentence on every capture. */
+function speakShot(text) {
+  if (!text) return false;
+  var chime = document.getElementById('chime-toggle');
+  if (!chime || !chime.checked) return false;     // user turned sound off
+  if (text === _lastSpoken) return false;         // unchanged - stay quiet
+  if (!speechSupported()) { _lastSpoken = text; return false; }
+  _lastSpoken = text;
+  try {
+    window.speechSynthesis.cancel();              // never queue stale advice
+    var u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0; u.lang = 'en-US';
+    window.speechSynthesis.speak(u);
+    return true;
+  } catch (e) { return false; }
+}
+
+/* Called on leaving Table Mode, or when marks are cleared. */
+function resetSpokenShot() {
+  _lastSpoken = '';
+  try { if (speechSupported()) window.speechSynthesis.cancel(); } catch (e) {}
+}
+
+/* ══════════════════════════════════════════
+   SCREEN WAKE LOCK  (Stage 2)
+   Keeps the display awake while the phone sits on a tripod running Table
+   Mode. Written as two self-contained calls so Stage 4 can simply switch it
+   on and off; nothing calls them yet.
+
+   PLATFORM REALITY, stated plainly rather than assumed:
+     - Android Chrome: supported (Chrome 84+). Works.
+     - iOS Safari:     supported only from iOS 16.4 onward. On anything older
+                       the API is absent, so this fails silently and the screen
+                       will dim on its own — the app still works, the player
+                       just has to wake the phone.
+     - Requires a secure context. https:// and localhost qualify; a plain
+       http:// LAN address does NOT, and the request will throw.
+
+   The browser also releases the lock by itself whenever the page is hidden
+   (app switch, screen off, tab change). That is why _wakeWanted exists: it
+   records that Table Mode still wants the lock, so we can take it back when
+   the page returns rather than silently losing it. */
+var _wakeLock = null;      // the live WakeLockSentinel, or null
+var _wakeWanted = false;   // does the app currently WANT the screen awake?
+
+async function acquireWakeLock() {
+  _wakeWanted = true;
+  try {
+    if (!('wakeLock' in navigator)) return false;   // older iOS, or insecure origin
+    if (_wakeLock) return true;                      // already held
+    _wakeLock = await navigator.wakeLock.request('screen');
+    // The sentinel fires 'release' when the OS takes it back; forget it so a
+    // later reacquire doesn't think it still holds a dead lock.
+    _wakeLock.addEventListener('release', function () { _wakeLock = null; });
+    return true;
+  } catch (e) {
+    _wakeLock = null;      // NotAllowedError on insecure origin, or unsupported
+    return false;
+  }
+}
+
+async function releaseWakeLock() {
+  _wakeWanted = false;
+  try { if (_wakeLock) await _wakeLock.release(); } catch (e) {}
+  _wakeLock = null;
+}
+
+/* Reacquire when the page comes back. Without this the screen stays awake for
+   exactly as long as it takes the player to check a text message. */
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && _wakeWanted && !_wakeLock) {
+    acquireWakeLock();
+  }
+});
+
+/* Tier-2 drawer. Visibility only — no setting is changed by opening or
+   closing it, and every control inside keeps its original handler. */
+function toggleAdvTuning() {
+  var d = document.getElementById('adv-tune-drawer');
+  var c = document.getElementById('adv-tune-caret');
+  if (!d) return;
+  var open = d.style.display !== 'none';
+  d.style.display = open ? 'none' : 'block';
+  if (c) c.classList.toggle('open', !open);   // rotate, don't swap the glyph
+}
+
 function toggleLandscapeSplit() {
   document.body.classList.toggle('ls-nosplit');
   var off = document.body.classList.contains('ls-nosplit');
@@ -6931,12 +7676,15 @@ window.addEventListener('appinstalled', function () {
 });
 
 var TOUR_STEPS = [
+  { sel:'#viewmode-anchor', n:'Simple vs Advanced', d:'Simple keeps it to one clear shot. Advanced adds your top 3 options with arrows to step through them, spin control, coaching notes, table size, the Diamond System and more \u2014 each one explains itself when you turn it on.' },
+  { sel:'#view-mode-card', n:'Perspective Mode', d:'Tell it how you\u2019re holding the phone: Player View for a normal standing angle, Overhead if it is above the table. This decides how cut angles and diamond numbers are worked out, so set it before you start marking balls. Advanced only \u2014 skipped in Simple.' },
+  { sel:'#quick-setup', n:'Quick Setup — set once', d:'Game mode and table size live up here, above the camera, so you can set them before you start and then leave them alone. Advanced Tuning holds everything you rarely touch.' },
+  { sel:'#tm-start', n:'Table Mode \u2014 hands-free', d:'That green button runs the whole thing hands-free. Set the phone on a tripod, tap Start Table Mode, and it runs itself: it reads the table each time the balls settle, keeps the screen awake, and shows the call in a bar at the bottom. Tap the video any time to read it again. Tap EXIT to come back.' },
   { sel:'#step1-anchor', n:'1 · Take a picture', d:'Start here. Snap a photo of your table, or upload one you already have. Overhead shots work best.' },
   { sel:'#step2-anchor', n:'2 · Line up the table', d:'Tap the four corners of the table and we place every pocket for you \u2014 no fiddly manual marking.' },
   { sel:'#step3-anchor', n:'3 · Check the balls', d:'The AI finds the balls automatically. If one is labeled wrong, just tap it until it\u2019s right.' },
-  { sel:'#step4-anchor', n:'4 · Game & shot', d:'Pick 8-Ball, 9-Ball or Straight \u2014 the advice changes with the game. 9-Ball also lets you mark your lowest ball, since the AI can\u2019t read numbers off the balls.' },
-  { sel:'.sticky-action-bar', n:'Then: Suggest Best Shot', d:'With a cue ball, an object ball and a pocket set, tap Suggest Best Shot in this bar. The AI Confidence slider lives here too \u2014 slide left if balls were missed, right if it marked things that aren\u2019t balls.' },
-  { sel:'#viewmode-anchor', n:'Simple vs Advanced', d:'Simple keeps it to one clear shot. Advanced adds your top 3 options with arrows to step through them, spin control, coaching notes, table size, the Diamond System and more \u2014 each one explains itself when you turn it on.' }
+  { sel:'#step4-anchor', n:'4 · Game & shot', d:'The checklist before you tap Suggest Best Shot: cue ball marked, at least one object ball, and a pocket.' },
+  { sel:'.sticky-action-bar', n:'Then: Suggest Best Shot', d:'With a cue ball, an object ball and a pocket set, tap Suggest Best Shot in this bar. The AI Confidence slider lives here too \u2014 slide left if balls were missed, right if it marked things that aren\u2019t balls.' }
 ];
 var _tourIdx = 0;
 function showWelcome(){ var o=document.getElementById('welcome-overlay'); if(o) o.classList.add('show'); }
@@ -6944,10 +7692,42 @@ function dismissWelcome(){ var o=document.getElementById('welcome-overlay'); if(
 function endTour(){ ['tour-dim','tour-spot','tour-tip'].forEach(function(id){ var e=document.getElementById(id); if(e) e.classList.remove('show'); }); try{localStorage.setItem('curran_welcome_seen','1');}catch(_){} }
 function startTour(){ dismissWelcome(); _tourIdx=0; showTourStep(); }
 function tourNext(){ _tourIdx++; if(_tourIdx>=TOUR_STEPS.length) endTour(); else showTourStep(); }
+/* Single source of truth for where the tip goes. There were TWO copies of this
+   maths - one in showTourStep and one in _tourReposition, which fires on every
+   scroll event - and only one of them had been corrected. That is why the tip
+   appeared to settle and then leap somewhere else the moment the page moved. */
+function _placeTourTip(r) {
+  var tip = document.getElementById('tour-tip');
+  if (!tip) return;
+  var vh = window.innerHeight, vw = window.innerWidth;
+  var tipH = tip.offsetHeight || 170;      // MEASURED, not assumed
+  var tipW = tip.offsetWidth  || 262;
+  var GAP = 14, EDGE = 10;
+
+  var roomBelow = vh - r.bottom - GAP;
+  var roomAbove = r.top - GAP;
+  var top;
+  if (roomBelow >= tipH + EDGE)      top = r.bottom + GAP;                 // prefer below
+  else if (roomAbove >= tipH + EDGE) top = r.top - tipH - GAP;             // else above
+  else top = (roomBelow >= roomAbove) ? (vh - tipH - EDGE) : EDGE;         // else roomier edge
+
+  top = Math.max(EDGE, Math.min(vh - tipH - EDGE, top));                   // always on screen
+  tip.style.top  = Math.round(top) + 'px';
+  // Horizontally centred on the VIEWPORT and never moved again: elements vary
+  // from full-width cards to small buttons, and centring on each one made the
+  // tip jump left and right between steps.
+  tip.style.left = Math.round(Math.max(EDGE, (vw - tipW) / 2)) + 'px';
+}
+
 function showTourStep(){
   var st=TOUR_STEPS[_tourIdx];
   var el=document.querySelector(st.sel);
-  if(!el){ tourNext(); return; }
+  /* An .adv-only element is display:none in Simple mode, NOT removed - so
+     querySelector still finds it and getBoundingClientRect returns all zeros,
+     which would park the spotlight in the top-left corner over nothing.
+     offsetParent is null for anything display:none, so this one check covers
+     both the missing and the hidden case. */
+  if(!el || el.offsetParent === null){ tourNext(); return; }
   try{ el.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
   setTimeout(function(){
     var r=el.getBoundingClientRect();
@@ -6957,16 +7737,37 @@ function showTourStep(){
     spot.classList.add('show');
     document.getElementById('tour-tn').textContent=st.n;
     document.getElementById('tour-td').textContent=st.d;
+    /* Dots count only the steps this user will actually reach. In Simple mode
+       the Perspective step is skipped, and a dot that never lights up looks
+       like the tour is broken. */
+    var vis=[], curDot=0;
+    TOUR_STEPS.forEach(function(stp,i){
+      var e=document.querySelector(stp.sel);
+      if(e && e.offsetParent !== null){ if(i===_tourIdx) curDot=vis.length; vis.push(i); }
+    });
     var dots=document.getElementById('tour-dots'); dots.innerHTML='';
-    TOUR_STEPS.forEach(function(_,i){ var d=document.createElement('div'); d.className='tour-dot'+(i===_tourIdx?' on':''); dots.appendChild(d); });
-    document.getElementById('tour-next').textContent=(_tourIdx===TOUR_STEPS.length-1)?'Finish':'Next';
+    vis.forEach(function(_,i){ var d=document.createElement('div'); d.className='tour-dot'+(i===curDot?' on':''); dots.appendChild(d); });
+    var isLast = vis.length ? (_tourIdx >= vis[vis.length-1]) : (_tourIdx===TOUR_STEPS.length-1);
+    document.getElementById('tour-next').textContent = isLast ? 'Finish' : 'Next';
     var tip=document.getElementById('tour-tip'); tip.classList.add('show');
     var vh=window.innerHeight, vw=window.innerWidth;
-    var below = (r.bottom + 160) < vh;
-    var tipTop = below ? (r.bottom+14) : (r.top-160);
-    tipTop=Math.max(10, Math.min(vh-172, tipTop));
-    var tipLeft=Math.max(10, Math.min(vw-272, r.left + r.width/2 - 131));
-    tip.style.top=tipTop+'px'; tip.style.left=tipLeft+'px';
+
+    /* POSITIONING - rewritten. Two things were wrong.
+
+       1. The old code assumed the tip was 160-172px tall and clamped against
+          those numbers. Tip height actually varies a lot with how long the
+          step text is, so a wordy step ran straight off the bottom of the
+          screen. Now we MEASURE it (offsetHeight) after the text is set.
+
+       2. It re-centred horizontally on each highlighted element. Elements vary
+          hugely in width - a full-width card, then a small button - so the tip
+          leapt left and right between steps. It is a narrow box on a phone, so
+          it now just sits horizontally centred in the VIEWPORT and never moves
+          sideways at all.
+
+       Vertically it docks to one of two places: below the highlight, or above
+       it. Nothing in between, so it settles instead of drifting. */
+    _placeTourTip(r);
   }, 550);
 }
 // Keep the spotlight glued to its element if the user scrolls or rotates mid-tour.
@@ -6978,15 +7779,13 @@ function _tourReposition(){
   var r=el.getBoundingClientRect();
   var spot=document.getElementById('tour-spot');
   spot.style.top=(r.top-6)+'px'; spot.style.left=(r.left-6)+'px'; spot.style.width=(r.width+12)+'px'; spot.style.height=(r.height+12)+'px';
-  var tip=document.getElementById('tour-tip');
-  var vh=window.innerHeight, vw=window.innerWidth;
-  var below=(r.bottom+160)<vh;
-  var tipTop=below?(r.bottom+14):(r.top-160);
-  tipTop=Math.max(10, Math.min(vh-172, tipTop));
-  tip.style.top=tipTop+'px';
-  tip.style.left=Math.max(10, Math.min(vw-272, r.left+r.width/2-131))+'px';
+  _placeTourTip(r);
 }
-window.addEventListener('scroll', _tourReposition, {passive:true});
+var _tourRepoRAF = null;
+window.addEventListener('scroll', function(){
+  if (_tourRepoRAF) return;                 // at most one reposition per frame
+  _tourRepoRAF = requestAnimationFrame(function(){ _tourRepoRAF = null; _tourReposition(); });
+}, {passive:true});
 window.addEventListener('resize', _tourReposition);
 // Escape closes the welcome or tour (desktop nicety)
 window.addEventListener('keydown', function(e){ if(e.key==='Escape'){ dismissWelcome(); endTour(); } });
@@ -7003,6 +7802,25 @@ window.addEventListener('DOMContentLoaded', function() {
 /* ═══════════════════════════════════════════
    COACHING MODE
 ═══════════════════════════════════════════ */
+/* TABLE-SIZE FEEL — a starting estimate, NOT physics.
+   How spin and speed behave depends a lot on table length: a bar box gives the
+   cue ball far less room, so spin has less distance to act and position play
+   runs shorter; a 9-footer gives it room to carry. These are qualitative
+   clauses appended to the existing spin advice, deliberately conservative.
+
+   THESE VALUES ARE A PLACEHOLDER MEANT TO BE TUNED AFTER REAL PLAY. This is a
+   feel problem, not a maths problem — the right wording will come from playing
+   on a bar box and a 9-footer and noticing what reads wrong. Everything is in
+   this one object so that tuning is a one-line change. '7' is the reference
+   table and deliberately says nothing, because saying nothing is correct when
+   there is no adjustment to make. */
+var TABLE_FEEL = {
+  '6': ' On a 6-ft bar box there\u2019s less room for any of this to happen \u2014 use a touch less spin than feels right, and expect the cue ball to reach the rail sooner than you planned (estimate).',
+  '7': '',
+  '8': ' On an 8-ft table the cue ball has a little more room to work with than a bar box \u2014 much the same feel, just less hurried (estimate).',
+  '9': ' On a 9-ft table there\u2019s real distance to cover \u2014 spin has longer to take hold and follow and draw carry noticeably further, so commit to the stroke (estimate).'
+};
+
 function buildCoachingText(cutAngle, difficulty, cueToTarget, spin) {
   var lines = [];
 
@@ -7072,7 +7890,13 @@ function buildCoachingText(cutAngle, difficulty, cueToTarget, spin) {
       var aimDir = spin === 'l' ? 'left' : 'right';
       s = '<strong>' + capitalize(side) + ' english:</strong> Side spin "throws" the object ball slightly ' + throwDir + ', so aim a touch ' + aimDir + ' to compensate. It also widens your rebound off the ' + side + ' rail. Use it for position, not for potting — it makes aiming harder, so skip it unless you need the shape.';
     }
-    if (s) lines.push(s);
+    /* Append the table-size clause to the SPIN line only. Aiming and Stroke
+       are unaffected: cut geometry and stroke mechanics don't change with
+       table length, only how far the cue ball then travels. */
+    if (s) {
+      var feel = TABLE_FEEL[TABLE_SIZE] || '';
+      lines.push(s + feel);
+    }
   } else if (spin === 'c' && cutAngle !== null) {
     lines.push('<strong>Center ball:</strong> No spin is the most reliable, most repeatable hit. On this shot it\'s the percentage play — only reach for spin when you specifically need to move the cue ball somewhere center won\'t take it.');
   }
@@ -7486,6 +8310,50 @@ try {
           <div><div class="help-item-title">A work in progress</div><div class="help-item-desc">This is a passion project we keep improving. It won't be perfect on every table or angle yet — overhead photos in good light work best. Your feedback makes it better.</div></div>
         </div>
         <div class="help-item">
+          <div class="help-icon">&#9654;&#65039;</div>
+          <div><div class="help-item-title">Table Mode &mdash; hands-free on a tripod</div><div class="help-item-desc">Tap <strong>&#9654; Start Table Mode</strong> above the camera. The setup controls disappear and you get just the camera, plus one bar along the bottom with the call: which ball, which pocket, and how sure it is. It reads the table by itself every time the balls move and settle &mdash; <strong>you never touch the phone between shots</strong>. <strong>Tap the video</strong> any time to make it read again straight away. <strong>&#10005; EXIT</strong> puts everything back exactly as it was.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#128266;</div>
+          <div><div class="help-item-title">Hearing the shot called out</div><div class="help-item-desc">In Table Mode the app can <strong>say the shot out loud</strong> &mdash; &ldquo;Take the solid to the corner pocket. This one is easy.&rdquo; &mdash; so you don&rsquo;t have to look at the screen at all. It&rsquo;s tied to the <strong>&#128276; Sound chime alerts</strong> switch in Advanced Tuning: chimes on means it speaks, chimes off means it stays quiet. It only speaks when the call actually changes, so it won&rsquo;t repeat itself at you.</div>
+          <div class="help-item-desc" style="margin-top:8px"><strong>What it actually says.</strong> Three parts, every time &mdash; which ball, which pocket, and how hard it reckons the shot is:<br>
+          &ldquo;<em>Take the <strong>solid</strong> to the <strong>corner pocket</strong>. <strong>This one is easy.</strong></em>&rdquo;<br>
+          The ball is <em>solid</em>, <em>stripe</em> or <em>eight ball</em>. The pocket is <em>corner pocket</em> or <em>side pocket</em>. The last part is one of four, depending on the difficulty score: <em>This one is easy</em> (1&ndash;3), <em>Moderate shot</em> (4&ndash;5), <em>Tough shot</em> (6&ndash;8), or <em>Very low percentage. A safety may be smarter</em> (9&ndash;10). If the path is blocked it says so instead: &ldquo;<em>The stripe is blocked. Check the kick or combo option.</em>&rdquo;<br>
+          <strong>It only talks &mdash; it doesn&rsquo;t listen.</strong> There are no voice commands and the microphone is never used. On an older iPhone, or an Android without Google Text-to-Speech installed, there may be no voice available &mdash; everything else still works.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#128161;</div>
+          <div><div class="help-item-title">The screen stays on in Table Mode</div><div class="help-item-desc">While Table Mode is running the app asks your phone to <strong>keep the screen awake</strong>, so it doesn&rsquo;t dim halfway through a rack. If you switch apps and come back, it asks again automatically. Leaving Table Mode hands control straight back to your phone&rsquo;s normal timeout. On iPhones older than iOS 16.4 this isn&rsquo;t available and the screen dims as usual &mdash; nothing else is affected.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#9881;&#65039;</div>
+          <div><div class="help-item-title">Quick Setup &amp; Advanced Tuning</div><div class="help-item-desc">The top of the page now runs in the order you actually need it: the <strong>Simple / Advanced</strong> switch first, then <strong>&#128208; Perspective Mode</strong> (Advanced only), then <strong>Quick Setup</strong> with game mode and table size. Set them once at the start and leave them. Everything you rarely touch &mdash; auto-scan, person check, sensitivity, still delay, chimes, coaching, spin and the aiming aids &mdash; is tucked behind <strong>&#9881; Advanced Tuning</strong> just below it. Tap anywhere on that row to open or close it.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#127919;</div>
+          <div><div class="help-item-title">Change pocket</div><div class="help-item-desc">Changed your mind about the target? Tap <strong>&#127919; Change pocket</strong> in the toolbar above the photo, then tap the pocket you want. <strong>Your detected balls stay exactly where they are</strong> &mdash; no need to run AI Detect again. You can also just <strong>drag a pocket marker</strong>; dragging a <strong>corner</strong> instead moves the whole table box and re-places all six pockets.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#128273;</div>
+          <div><div class="help-item-title">ANGLE &amp; TABLE FILLS readout</div><div class="help-item-desc">While the camera is live, two numbers sit under the motion bar. <strong>ANGLE</strong> is your phone's tilt &mdash; 0&deg; is flat overhead, 90&deg; is upright; under 25&deg; reads best because the geometry is exact. <strong>TABLE FILLS</strong> is how much of the frame the table covers &mdash; aim for roughly 15&ndash;80%. Both are measured independently of the table finder, so they keep telling you the truth even when it's struggling. (Phone height can't be measured &mdash; there's no sensor for it &mdash; and frame fill is what actually matters anyway.)</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#9201;&#65039;</div>
+          <div><div class="help-item-title">Auto-scan fires once per shot</div><div class="help-item-desc">With the camera running, the app waits for the table to be still, takes <strong>one</strong> photo, and then holds it. It won't take another until the <strong>balls actually move and come to rest again</strong> &mdash; i.e. until someone plays a shot. That's deliberate: without it the screen would re-read every fraction of a second and you'd never get to look at the shot you asked for. Set the phone on a tripod, break, and it reads each new layout as the table settles.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#9707;</div>
+          <div><div class="help-item-title">Landscape split &mdash; and turning it off</div><div class="help-item-desc">Turn the phone sideways and the table pins to one side with the advice beside it. Two round buttons sit on the divider: <strong>&#8646;</strong> swaps which side the table is on, and <strong>&#9707;</strong> turns the split off entirely if you'd rather have the normal scrolling page. Both choices are remembered.</div></div>
+        </div>
+
+        <div class="help-item">
           <div class="help-icon">&#8505;&#65039;</div>
           <div><div class="help-item-title">Fair use &amp; league play</div><div class="help-item-desc">A free tool built <strong>for fun and for learning</strong> the game. Its advice is a <strong>starting point, not a guarantee</strong> &mdash; it reads a photo, so angles, lighting and your own table always have the final say. <strong>Playing competitively?</strong> Many leagues and tournaments restrict electronic assistance during a match and the rules differ between organizations, so <strong>check your league or tournament rules first</strong>. Provided as-is with no warranty &mdash; Curran Opticians isn&rsquo;t responsible for missed shots or lost games.</div></div>
         </div>
@@ -7528,7 +8396,19 @@ try {
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
     <span style="font-family:'Playfair Display',serif;font-weight:700;color:var(--gold-lt);font-size:15px">💠 How to use the Diamond System</span>
     <button onclick="dismissDiamondExplainer()" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px;line-height:1">✕</button>
-  </div>
+  
+      <div style="margin-top:12px;border-top:1px solid #2a3f63;padding-top:10px">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:#9fe4ff;letter-spacing:.4px;margin-bottom:6px">A WORKED EXAMPLE</div>
+        <div style="font-size:12.5px;line-height:1.55;color:#cfe0f5">
+          Your cue ball is blocked, so you kick off a rail. Corner-5 is just subtraction:<br><br>
+          <strong>1.</strong> Read where your <strong>cue ball</strong> sits &mdash; say <strong>5</strong> on the long rail.<br>
+          <strong>2.</strong> Read where the <strong>ball you want to hit</strong> sits &mdash; say <strong>2</strong>.<br>
+          <strong>3.</strong> Subtract: 5 &minus; 2 = <strong>3</strong>. That&rsquo;s your <strong>aim diamond</strong> on the far rail.<br>
+          <strong>4.</strong> Send the cue ball at diamond <strong>3</strong>. It comes off the cushion and meets the object ball.<br><br>
+          Shot Reader does the reading and the subtraction for you &mdash; the gold dot on the rail is the answer, and the number beside it is the diamond. Turn spin on and you&rsquo;ll see a second number marked <em>est.</em>: running english opens the angle and sends it longer, reverse shortens it.<br><br>
+          <span style="color:#8ba394">Every pool table &mdash; bar box or 9-footer &mdash; has the same eight intervals along the long rail, so these numbers read the same on any table you play.</span>
+        </div>
+      </div></div>
   <div style="font-size:13px;color:#cdddd0;line-height:1.55">
     The rails are numbered. For a <b style="color:var(--cream)">kick or bank shot</b>, use the rule:<br>
     <div style="text-align:center;margin:8px 0;padding:7px;background:#0b1811;border-radius:9px;border:1px solid var(--border);color:#ffe08a;font-weight:700;font-size:14px">cue-ball # − target # = aim diamond</div>
