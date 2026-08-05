@@ -36,6 +36,8 @@
   --gold:        #c8972e;
   --gold-bright: #f0b840;
   --gold-dim:    #8a6820;
+  --gold-lt:     #e8c766;   /* was referenced in 16 rules but never defined */
+  --muted:       #8ba394;   /* likewise: referenced but undefined */
   --cream:       #ede0c4;
   --green-neon:  #2dff8a;
   --green-soft:  #3ddd7a;
@@ -257,16 +259,6 @@ body::before {
   gap:6px; min-height:140px; color:var(--text-muted); font-size:12px; font-weight:500;
 }
 .canvas-placeholder .big { font-size:34px; opacity:.3; }
-.canvas-top-btns {
-  position:absolute; top:8px; right:8px;
-  display:flex; gap:5px; z-index:5;
-  transform: translateZ(0);
-  will-change: transform;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  isolation: isolate;
-  contain: layout paint;
-}
 .icon-btn {
   height:32px; min-width:32px; background:rgb(18,18,18);
   border:1px solid rgba(255,255,255,.2); border-radius:7px;
@@ -511,6 +503,16 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   border-top: 2px solid var(--gold-dim);
   box-shadow: 0 -4px 20px rgba(0,0,0,.6);
   z-index: 50;
+  /* ITEM 1 - flicker on fast scroll. The bar is position:fixed carrying a big
+     box-shadow and a gradient ::before, but it was never promoted to its own
+     compositor layer, so every fast scroll forced the browser to repaint it
+     against moving content. translateZ(0) + will-change give it a layer of its
+     own; contain limits repaint to the bar itself. translateZ introduces no
+     fractional offset, so the half-pixel blur noted above is not reintroduced. */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  contain: layout paint;
 }
 .sticky-action-bar::before {
   content: '';
@@ -556,8 +558,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   #live-video { max-height: 40vw; width: 100%; }
 
   /* Everything else stacks below at full width */
-  .card, .upload-zone, .detections-box, #history-panel,
-  #view-mode-card, #english-panel, #suggestion-card {
+  .card, .upload-zone, .detections-box,
+  #view-mode-card, #english-panel {
     width: 100%;
   }
 
@@ -1121,6 +1123,335 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .tour-tip.show{ display:block;}
 .tour-tip .tn{ font-family:'Playfair Display',serif; font-weight:700; color:#e8c07a; font-size:16px; margin:0 0 5px;}
 .tour-tip .td{ font-size:13.5px; color:#eadfc8; line-height:1.45;}
+
+/* ── DESTINATION BAR: where am I, how do I get back, and the mode switch ──
+   The hub is home; every destination names itself here so you always know
+   which section you picked. */
+/* ITEM 7 - the destination bar is the app's primary wayfinding, so it now
+   carries real weight and the same brass material as .disc-caret and the hub
+   badges, on every screen rather than just Table Mode. */
+#dest-bar{ display:flex; align-items:center; gap:10px; min-height:52px;
+  margin:0 0 8px; padding:5px 2px; }
+#back-to-menu{ display:flex; align-items:center; gap:6px; cursor:pointer;
+  color:var(--gold-lt); font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  font-size:15.5px; letter-spacing:.9px; flex-shrink:0;
+  min-height:44px; padding:6px 13px 6px 9px; border-radius:22px;
+  background:linear-gradient(180deg, rgba(200,151,46,.16), rgba(200,151,46,.05));
+  border:1px solid var(--gold-dim);
+  box-shadow:0 1px 3px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  transition:background .18s ease, border-color .18s ease, transform .18s ease; }
+#back-to-menu:active{ background:rgba(200,151,46,.3); border-color:var(--gold);
+  transform:translateX(-2px); }
+#back-to-menu span:first-child{ font-size:22px; line-height:.8; margin-top:-2px; }
+#page-title{ flex:1; min-width:0; font-family:'Playfair Display',serif; font-weight:800;
+  /* clamp so a long name shrinks rather than truncating: the bar also carries
+     the MENU pill and the SIMPLE/ADV switch, which leaves little room at 360px */
+  font-size:clamp(13px, 4.1vw, 17px); letter-spacing:.4px; color:var(--ivory); text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  text-shadow:0 1px 2px rgba(0,0,0,.5); }
+#mini-view{ display:flex; flex-shrink:0; background:#0b1811; border:1px solid #33507e;
+  border-radius:14px; padding:2px; }
+#mini-view div{ padding:5px 9px; border-radius:12px; cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:10.5px;
+  letter-spacing:.6px; color:#9fe4ff; }
+#mini-view div.on{ background:#40ceff; color:#06171f; }
+
+/* ── Scoreboard: tap-to-rename affordance + hint ── */
+.sb-name-edit-ico{ font-size:.72em; opacity:.55; margin-left:6px; vertical-align:baseline; }
+.sb-name-chip{ display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  background:rgba(255,255,255,.05); border:1.5px dashed rgba(159,228,255,.5); border-radius:9px;
+  padding:4px 10px; max-width:100%; min-height:34px; }
+.sb-name-chip .pen{ font-size:.8em; color:#9fe4ff; opacity:.9; flex-shrink:0; }
+.sb-name-chip .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sb-rename-tag{ font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:1px;
+  color:#9fe4ff; opacity:.85; text-transform:uppercase; margin-top:4px; }
+/* Rename dialog — a proper modal, so it works the same on any phone */
+.sb-rn{ position:fixed; inset:0; z-index:10060; display:flex; align-items:center; justify-content:center;
+  padding:18px; background:rgba(4,10,7,.86); }
+.sb-rn-card{ width:min(360px,94vw); background:linear-gradient(180deg,#16281c,#0b1710);
+  border:1px solid var(--gold-dim); border-radius:16px; padding:18px;
+  box-shadow:0 24px 68px rgba(0,0,0,.75); animation:popIn .2s cubic-bezier(.34,1.56,.64,1); }
+.sb-rn-card h4{ margin:0 0 12px; font-family:'Playfair Display',serif; font-size:17px; color:var(--gold-lt); }
+.sb-rn-card input{ width:100%; box-sizing:border-box; min-height:50px; background:#0b1811;
+  border:1.5px solid var(--green-soft); border-radius:10px; color:var(--cream);
+  padding:10px 12px; font-size:17px; font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  letter-spacing:.5px; outline:none; }
+.sb-rn-btns{ display:flex; gap:8px; margin-top:14px; }
+.sb-rn-btns button{ flex:1; min-height:46px; border-radius:10px; cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; letter-spacing:.5px; }
+.sb-name-edit{ font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.5px;
+  font-size: clamp(13px,3.8vw,16px); background:#0b1811; border:1.5px solid var(--green-soft);
+  border-radius:8px; color:var(--cream); padding:4px 9px; width:100%; max-width:220px;
+  min-height:36px; outline:none; }
+#sb-hint{ text-align:center; font-family:'Barlow Condensed',sans-serif; letter-spacing:.5px;
+  font-size: clamp(11px,3.1vw,13px); color:var(--gold-lt); opacity:.92; margin-top:7px; flex-shrink:0;
+  background:rgba(200,151,46,.10); border:1px solid rgba(200,151,46,.28); border-radius:8px;
+  padding:6px 10px; }
+
+/* ── Diamond System: proper full-screen teaching modal ── */
+.dl-modal{ position:fixed; inset:0; z-index:10050; align-items:center; justify-content:center;
+  padding:16px; background:rgba(4,10,7,.86); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
+.dl-card{ width:min(430px,94vw); max-height:88vh; display:flex; flex-direction:column;
+  background:linear-gradient(180deg,#16281c,#0b1710); border:1px solid var(--gold-dim);
+  border-radius:18px; box-shadow:0 26px 74px rgba(0,0,0,.72); overflow:hidden;
+  animation:popIn .22s cubic-bezier(.34,1.56,.64,1); }
+.dl-head{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:15px 18px; border-bottom:1px solid rgba(200,151,46,.22); flex-shrink:0; }
+.dl-title{ font-family:'Playfair Display',serif; font-weight:800; color:var(--gold-lt); font-size:18px; }
+.dl-x{ background:none; border:none; color:var(--muted); font-size:21px; cursor:pointer;
+  line-height:1; padding:2px 4px; }
+.dl-scroll{ overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 18px 20px; }
+.dl-rule{ text-align:center; background:#0b1811; border:1px solid var(--gold-dim); border-radius:12px;
+  padding:12px 10px; color:#ffe08a; font-weight:800; font-size:16px; letter-spacing:.3px;
+  font-family:'Barlow Condensed',sans-serif; }
+.dl-lead{ font-size:13.5px; line-height:1.6; color:#cdddd0; margin:14px 0 0; }
+.dl-lead b{ color:var(--cream); }
+.dl-diagram{ margin:16px 0 2px; }
+.dl-key{ display:flex; justify-content:center; flex-wrap:wrap; gap:14px; margin:4px 0 2px; }
+.dl-key span{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:#b9cabd;
+  font-family:'Barlow Condensed',sans-serif; letter-spacing:.4px; }
+.dl-key i{ width:11px; height:11px; border-radius:50%; display:inline-block; font-style:normal; }
+.dl-eq{ display:flex; align-items:center; justify-content:center; gap:9px; flex-wrap:wrap;
+  margin:14px 0 2px; padding:11px 10px; background:#0b1811; border:1px solid var(--gold-dim);
+  border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:17px; }
+.dl-eq b{ font-size:22px; }
+.dl-eq .c{ color:#f4efe2; } .dl-eq .o{ color:#ff8a8a; } .dl-eq .a{ color:#ffd76a; }
+.dl-eq .op{ color:#8ba394; font-weight:400; }
+.dl-eq small{ display:block; font-size:9.5px; letter-spacing:1px; color:#7f9a86; font-weight:400; }
+.dl-try{ text-align:center; font-size:12.5px; color:#9fe4ff; margin:10px 0 0; line-height:1.45;
+  /* was display:flex, which made <b> a flex item and collapsed the spaces
+     around it - "drop blockers in" rendered as "dropblockersin". */
+  display:block; min-height:34px; padding-top:9px; }
+.dl-dot{ display:inline-block; width:11px; height:11px; border-radius:50%;
+  vertical-align:-1px; margin-right:2px; }
+#dl-obs-count{ opacity:.75; font-weight:400; }
+.dl-try b{ color:#ffe08a; }
+.dl-eq.bad{ border-color:#7a4a4a; }
+.dl-mirror{ flex-basis:100%; text-align:center; margin:9px 0 0; padding:8px 10px 0;
+  border-top:1px solid rgba(159,228,255,.18); font-family:'Barlow',sans-serif;
+  font-weight:400; font-size:12px; line-height:1.5; color:#9fe4ff; letter-spacing:0; }
+.dl-mirror b{ color:#ffe08a; }
+.dl-pocket{ flex-basis:100%; text-align:left; margin:9px 0 0; padding:9px 11px;
+  background:rgba(196,106,74,.12); border:1px solid #a5563a; border-left:4px solid #ff9d7a;
+  border-radius:9px; font-family:'Barlow',sans-serif; font-weight:400; font-size:12px;
+  line-height:1.5; color:#ffc0a8; letter-spacing:0; }
+.dl-pocket b{ color:#ffd7c4; }
+.dl-eq .warn{ font-family:'Barlow Condensed',sans-serif; font-weight:400; font-size:13px;
+  color:#ffb0b0; letter-spacing:.3px; text-align:center; }
+.dl-eq-actions{ display:flex; justify-content:center; margin:9px 0 0; }
+.dl-modes{ display:flex; gap:6px; margin:11px 0 2px; }
+.dl-modes button{ flex:1; min-height:42px; border-radius:10px; cursor:pointer;
+  background:#0b1811; border:1px solid var(--border); color:var(--text-muted);
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:12px;
+  letter-spacing:.4px; padding:6px 4px; transition:background .18s ease, border-color .18s ease, color .18s ease; }
+.dl-modes button.on{ background:rgba(200,151,46,.18); border-color:var(--gold); color:var(--gold-lt); }
+.dl-eq-actions button{ background:none; border:1px solid var(--border); color:var(--text-muted);
+  border-radius:9px; padding:7px 14px; font-size:12px; cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif; letter-spacing:.5px; }
+.dl-hit{ cursor:pointer; }
+
+/* ═══ ITEM 9 - SCAN & READ HIERARCHY ═══════════════════════════════
+   Auto is the path almost everyone should take, so it reads as the primary
+   action and manual alignment sits underneath it as the labelled fallback. */
+#align-controls{ display:flex; flex-direction:column; gap:8px; }
+#align-explain{ font-size:12.5px; line-height:1.5; color:var(--text-muted); margin:0 2px 1px; }
+#align-explain strong{ color:var(--gold-lt); }
+#auto-align-btn{
+  width:100%; min-height:54px; font-size:16px; font-weight:800; letter-spacing:.8px;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  background:linear-gradient(180deg,#e0b444,#b98a22);
+  color:#1b1405; border:1px solid #f0cd72;
+  box-shadow:0 3px 12px rgba(200,151,46,.3), inset 0 1px 0 rgba(255,255,255,.35);
+}
+#auto-align-btn:active{ background:linear-gradient(180deg,#c99f34,#a2761a); }
+#step2-anchor{
+  width:100%; min-height:44px; font-size:13.5px; font-weight:600;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  background:#0d2430; color:#9fe4ff; border:1px solid #2c4a63;
+}
+#step2-anchor .sub{ opacity:.6; font-weight:400; }
+
+/* Step markers: brass discs, so the numbered flow reads as a guided path */
+.step-dot{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:27px; height:27px; border-radius:50%; flex-shrink:0;
+  background:radial-gradient(circle at 50% 32%, #f0cd72, #b98a22);
+  color:#1b1405; font-family:'Barlow Condensed',sans-serif;
+  font-weight:800; font-size:15px; letter-spacing:0;
+  border:1px solid #f0cd72;
+  box-shadow:0 2px 6px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.4);
+}
+
+/* The OR divider is a real fork in the flow, not a stray label */
+.or-fork{ display:flex; align-items:center; gap:12px; margin:14px 2px 11px; }
+.or-fork span.line{ flex:1; height:1px;
+  background:linear-gradient(90deg, transparent, var(--gold-dim), transparent); }
+.or-fork span.word{ font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  font-size:11.5px; letter-spacing:2.5px; color:var(--gold-lt);
+  border:1px solid var(--gold-dim); border-radius:13px; padding:3px 13px;
+  background:rgba(200,151,46,.08); }
+
+/* Angle / fill readout is decision-relevant, so it is sized to be read */
+#pos-bar{ font-size:13.5px !important; letter-spacing:.3px; padding:8px 12px 9px !important; }
+#pos-bar b, #pos-bar strong{ color:var(--cream); }
+
+/* Still badge: a clear arrival, not a subtle tint shift */
+.still-badge{ transition:opacity .2s ease, transform .2s ease, background .2s ease; }
+.still-badge.show{
+  background:linear-gradient(180deg,#2dff8a,#17b45e); color:#06120b;
+  border-color:#7dffb9; transform:scale(1.06);
+  box-shadow:0 0 14px rgba(45,255,138,.5);
+}
+
+/* ONE visual language for every "try again" prompt, inline or fixed */
+.retry-prompt{
+  display:flex; align-items:center; gap:9px;
+  background:linear-gradient(180deg,#3a2410,#241706);
+  border:1px solid #b5761f; border-left:4px solid #e0a63c;
+  border-radius:10px; padding:10px 13px;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.4px;
+  font-size:13.5px; color:#ffcf7a;
+}
+
+/* ═══ AFFORDANCE PASS ═══════════════════════════════════════════════
+   Carets, info chips and icon-only buttons were thin glyphs that read as
+   punctuation rather than controls. They now sit in brass-rimmed chips that
+   match the Modes Hub material language. Visual only - no handler, no state
+   and no layout flow is changed by anything in this block. */
+
+/* Disclosure carets - one shared look for every expand/collapse in the app */
+.disc-caret{
+  flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
+  width:32px; height:32px; border-radius:50%; padding:0;
+  background:radial-gradient(circle at 50% 32%, rgba(200,151,46,.22), rgba(200,151,46,.06));
+  border:1px solid var(--gold-dim);
+  color:var(--gold-lt);
+  font-size:0; line-height:0;         /* nothing but the SVG occupies the chip */
+  box-shadow:0 1px 3px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .18s ease, background .18s ease, border-color .18s ease;
+}
+/* A real SVG chevron rather than a font glyph or a rotated bordered box:
+   the viewBox is symmetric, so it centres exactly at any size and rotates
+   about the true middle of the chip. */
+.disc-caret svg{ display:block; overflow:visible; }
+.disc-caret.open{ transform:rotate(90deg); background:rgba(200,151,46,.26); border-color:var(--gold); }
+
+/* Quick Setup header - the row is the control, so give it a real target */
+#qs-head{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+  cursor:pointer; min-height:48px; padding:2px 0; }
+/* Advanced Tuning is now its own card rather than a row buried inside a
+   collapsed Quick Setup - two nested drawers meant coaching mode and the
+   toggles took two taps to even find. */
+#adv-tune-card #adv-tune-link{ margin:0 -8px; font-size:13.5px; letter-spacing:1.4px; }
+#qs-head .card-label{ margin:0; font-size:12px; letter-spacing:1.6px; color:var(--gold-lt);
+  display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; min-width:0; }
+#qs-summary{
+  /* .card-label force-uppercases everything, which turned the summary into a
+     long shouty string. Normal case reads as a value, not a heading. */
+  text-transform:none; letter-spacing:.2px; font-weight:400; font-size:12.5px;
+  color:var(--text-muted); font-family:'Barlow',sans-serif;
+}
+/* A 30px chip inside an 11px uppercase label needs the row to be a flex line,
+   or the chip drops the baseline and the text sits off-centre next to it. */
+.tip-toggle{ align-items:center; gap:9px; }
+/* Shared disclosure row: label on the left, caret always on the right, so
+   every expandable section in the app opens from the same place. */
+.disc-row{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+  cursor:pointer; min-height:48px; }
+
+/* Info "?" chips - 44px tap target via an invisible expander, brass rim */
+.info-chip{
+  position:relative; display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:50%; margin-left:7px; cursor:pointer;
+  background:radial-gradient(circle at 50% 35%, rgba(200,151,46,.22), rgba(200,151,46,.06));
+  border:1px solid var(--gold-dim); color:var(--gold-lt);
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; line-height:1;
+  box-shadow:0 0 0 1px rgba(0,0,0,.25), 0 0 10px rgba(200,151,46,.14);
+  transition:background .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.info-chip:after{ content:''; position:absolute; top:50%; left:50%;
+  width:44px; height:44px; transform:translate(-50%,-50%); }   /* tap target only */
+.info-chip:active{ background:rgba(200,151,46,.34); border-color:var(--gold);
+  box-shadow:0 0 0 1px rgba(0,0,0,.25), 0 0 16px rgba(200,151,46,.3); }
+
+/* Icon-only close / action buttons in panels and modals */
+.x-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:50%; cursor:pointer;
+  background:rgba(255,255,255,.04); border:1px solid var(--gold-dim);
+  color:var(--gold-lt); font-size:17px; line-height:1; padding:0;
+  transition:background .18s ease, border-color .18s ease, color .18s ease;
+}
+.x-btn:active{ background:rgba(200,151,46,.22); border-color:var(--gold); }
+
+/* Existing round icon buttons already had 44px targets but flat grey rims.
+   Same geometry, brass material - overrides colour only. */
+.help-close, .spin-popup-close{
+  background:rgba(255,255,255,.04); border:1px solid var(--gold-dim); color:var(--gold-lt);
+  transition:background .18s ease, border-color .18s ease;
+}
+.help-close:active, .spin-popup-close:active{
+  background:rgba(200,151,46,.22); border-color:var(--gold);
+}
+.icon-btn{
+  border:1px solid var(--gold-dim); color:var(--gold-lt);
+  background:linear-gradient(180deg, rgba(200,151,46,.10), rgba(200,151,46,.03));
+  transition:background .18s ease, border-color .18s ease;
+}
+.icon-btn:active{ background:rgba(200,151,46,.24); border-color:var(--gold); }
+
+/* Hub row arrow - was a 21px dim glyph; now a brass disc that reads as "go" */
+.hub-go{
+  flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:30px; border-radius:50%;
+  background:radial-gradient(circle at 50% 35%, rgba(200,151,46,.18), rgba(200,151,46,.05));
+  border:1px solid var(--gold-dim); color:var(--gold-lt);
+  font-size:19px; line-height:1;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  transition:background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.hub-row:active .hub-go{ background:rgba(200,151,46,.3); border-color:var(--gold); transform:translateX(2px); }
+.hub-row.home .hub-go{ color:#5df0a5; border-color:#2f5a3e;
+  background:radial-gradient(circle at 50% 35%, rgba(45,255,138,.16), rgba(45,255,138,.04)); }
+#tm-mute{ margin-top:5px; background:#3a2410; border:1px solid #b5761f; color:#ffcf7a;
+  border-radius:8px; padding:4px 8px; cursor:pointer; text-align:center;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.6px;
+  font-size: clamp(9px, 2.4vw, 11px); line-height:1.2; }
+.dl-hit:active .dl-hitbg{ fill:rgba(159,228,255,.22); }
+.dl-ex-head{ font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:1.5px;
+  text-transform:uppercase; color:#9fe4ff; font-size:12px; margin:18px 0 12px; }
+.dl-steps{ margin:0; padding:0; list-style:none; counter-reset:dl; }
+.dl-steps li{ position:relative; padding:0 0 15px 42px; font-size:13.5px; line-height:1.55; color:#dbe8dd; }
+.dl-steps li:last-child{ padding-bottom:2px; }
+.dl-steps li:before{ counter-increment:dl; content:counter(dl); position:absolute; left:0; top:-2px;
+  width:27px; height:27px; border-radius:50%; background:#12291c; border:1.5px solid var(--gold-dim);
+  color:var(--gold-lt); font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px;
+  display:flex; align-items:center; justify-content:center; }
+.dl-steps b{ color:#ffe08a; }
+.dl-note{ font-size:12.5px; line-height:1.55; color:#b9cabd; margin:16px 0 0;
+  border-top:1px solid rgba(255,255,255,.06); padding-top:12px; }
+.dl-note em{ color:#ffe08a; font-style:italic; }
+.dl-fine{ font-size:12px; line-height:1.5; color:#8ba394; margin:12px 0 0; }
+
+/* ── Scan flow: live progress ribbon + collapsible guidance ── */
+#scan-steps{ display:flex; gap:6px; margin:2px 2px 12px; }
+.scan-step{ flex:1; display:flex; align-items:center; gap:6px; padding:7px 8px; border-radius:9px;
+  background:#0e1a12; border:1px solid var(--border); min-width:0; transition:background .2s,border-color .2s; }
+.scan-step .n{ width:18px; height:18px; border-radius:50%; background:#22301f; color:#7f9a86;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:11px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; }
+.scan-step .t{ font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.3px;
+  font-size:11.5px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.scan-step.done{ background:#12271a; border-color:#2f5a3e; }
+.scan-step.done .n{ background:#2dff8a; color:#06120b; }
+.scan-step.done .t{ color:var(--green-soft); }
+.tip-toggle{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.4px; font-size:11px;
+  text-transform:uppercase; color:#9fe4ff; margin:2px 0; }
+.tip-toggle .caret{ transition:transform .18s ease; }   /* size/shape comes from .disc-caret */
+.tip-body{ display:none; }
+.tip-wrap.open .tip-body{ display:block; }
+.tip-wrap.open .tip-toggle .caret{ transform:rotate(90deg); background:rgba(200,151,46,.24); border-color:var(--gold); }
 .tour-ctl{ display:flex; align-items:center; margin-top:12px; gap:8px;}
 .tour-dots{ display:flex; gap:5px; flex:1;}
 .tour-dot{ width:6px; height:6px; border-radius:50%; background:rgba(200,150,62,.3);}
@@ -1184,7 +1515,7 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
   #stage-core .canvas-card { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 0; }
   #main-canvas { max-height: calc(100vh - 200px); max-width: 100%; }
   .sticky-action-bar {
-    left: auto; right: 0; transform: none; width: 52vw; max-width: none; z-index: 6;
+    left: auto; right: 0; transform: translateZ(0); width: 52vw; max-width: none; z-index: 6;
   }
 
   /* ── LANDSCAPE SIDE SWAP ──────────────────────────────────────────────
@@ -1215,18 +1546,35 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
    soft-looking type on high-density Android and iPhone screens alike. Sizes
    use clamp() so they scale with the viewport but stay inside sane bounds,
    and never fall below legibility at a 360px-wide phone. */
+/* These headers had no ids, so they were never hidden - they showed through
+   Table Mode and collided with the banner, worst of all in landscape. */
+body.table-mode #step2-header,
+body.table-mode #step3-header,
+/* The bottom EXIT is redundant: MENU at the top leaves Table Mode properly. */
+body.table-mode #tm-exit,
 body.table-mode #step1-header,
 body.table-mode #step1-anchor,
+/* These leaked through: the OR fork, the Upload button and the whole align
+   block have no ids and were never in this list, so they showed behind the
+   Table Mode banner - and uploading from there painted into a hidden canvas. */
+body.table-mode #or-fork,
+body.table-mode #upload-btn,
+body.table-mode #align-controls,
 body.table-mode #upload-zone,
-body.table-mode #viewmode-anchor,
 body.table-mode #table-stage,
 body.table-mode #step3-anchor,
 body.table-mode #step4-anchor,
 body.table-mode #quick-setup,
+body.table-mode #adv-tune-card,   /* moved out of Quick Setup, so hide it explicitly */
 body.table-mode #view-mode-card,
 body.table-mode #gamemode-card,
 body.table-mode #english-panel,
+/* ITEM 6: Tour and Guide describe the setup flow, which Table Mode hides.
+   Rules stays - official game rules are useful mid-game on any screen. */
+body.table-mode #hdr-tour-btn,
+body.table-mode #hdr-guide-btn,
 body.table-mode #app-footer,
+body.table-mode #scan-steps,
 body.table-mode #sticky-action-bar { display: none !important; }
 
 /* The tilt/fill readout stays, shrunk, and stays IN FLOW under the video so
@@ -1273,39 +1621,245 @@ body.table-mode #tm-banner {
   font-family: 'Barlow Condensed', sans-serif; letter-spacing: .4px; cursor: pointer;
   min-height: 44px;
   display: inline-flex; align-items: center; justify-content: center;}
-#adv-tune-caret {
-  /* Was a bare 12.5px triangle that inherited the row's size. Now an explicit
-     chevron that rotates rather than swapping glyphs, so the open/closed state
-     reads as one continuous control. */
-  font-size: 16px; line-height: 1; display: inline-block;
-  transition: transform .18s ease;
-}
-#adv-tune-caret.open { transform: rotate(90deg); }
+/* #adv-tune-caret is styled by .disc-caret like every other disclosure caret.
+   Its old ID rule set display:inline-block and font-size, which outranked the
+   class (ID beats class) and knocked the chevron out of centre - it rendered
+   as an empty circle with a sliver at the edge. */
 #tm-fix {
   display: none; width: 100%; margin-top: 9px;
   min-height: 48px;                       /* comfortably over the 44px minimum */
-  background: #2a1e07; color: #ffe08a; border: 2px solid var(--gold);
+  /* ITEM 9 - same amber "try again" language as .retry-prompt and the recover
+     banner accent, so every retry cue in the app reads as one system. */
+  background: linear-gradient(180deg,#3a2410,#241706);
+  color: #ffcf7a; border: 1px solid #b5761f; border-left: 4px solid #e0a63c;
   border-radius: 12px; padding: 12px;
   font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
   font-size: clamp(14px, 4vw, 17px); letter-spacing: .5px; cursor: pointer;
 }
 body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
-#tm-start {
-  /* Was an outline button that read as secondary. Table Mode is a primary
-     entry point, so it now carries the same visual weight as .btn-green:
-     solid fill, dark text, and a 52px target rather than ~38px. */
-  width: 100%; margin: 10px 0 4px;
-  min-height: 52px; padding: 14px 16px;
-  background: var(--green-soft); color: var(--felt);
-  border: none; border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(52,201,106,.28);
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
-  font-size: clamp(14px, 4vw, 16px); letter-spacing: .5px; cursor: pointer;
+
+/* ═══ SCOREBOARD MODE ════════════════════════════════════════════════
+   Its own full-screen mode, entered and left the same way Table Mode is.
+   Built as a fixed overlay rather than by hiding the page element-by-element:
+   an overlay cannot leak if new markup is added later, whereas a hide-list has
+   to be maintained forever. No transforms anywhere - the numbers are the whole
+   point and a scaled layer renders type on fractional pixels. */
+#scoreboard { display: none; }
+body.score-mode { overflow: hidden; }
+body.score-mode #scoreboard {
+  display: flex; flex-direction: column;
+  position: fixed; inset: 0; z-index: 90;
+  background: var(--felt);
+  padding: calc(10px + env(safe-area-inset-top, 0px))
+           calc(16px + env(safe-area-inset-right, 0px))
+           calc(10px + env(safe-area-inset-bottom, 0px))
+           calc(16px + env(safe-area-inset-left, 0px));
 }
-#tm-start:active { transform: none; filter: brightness(.93); }
+#sb-head { text-align: center; flex-shrink: 0; }
+#sb-title { font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:1px;
+            font-size: clamp(14px, 4vw, 17px); color: var(--gold-bright); }
+#sb-context { font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.8px;
+              font-size: clamp(10px, 3vw, 12px); color: var(--text-muted); margin-top: 3px; }
+
+/* Turn bar and panels: identical across all three games. Only the middle
+   content block inside a panel changes with game mode. */
+#sb-turn { display:flex; align-items:center; gap:10px; margin-top:10px; flex-shrink:0;
+           background:#0d2430; border:2px solid var(--green-soft); border-radius:12px;
+           padding: clamp(10px,3vw,14px) clamp(12px,3.5vw,16px); }
+#sb-turn-name { font-family:'Barlow Condensed',sans-serif; font-weight:700;
+                font-size: clamp(19px, 5.6vw, 25px); color: var(--cream);
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#sb-panels { display:flex; flex-direction:column; gap:12px; margin-top:12px; flex:1 1 auto; min-height:0; }
+.sb-panel { flex:1 1 0; min-height:0; border-radius:14px; padding: clamp(10px,3vw,16px);
+            display:flex; flex-direction:column; justify-content:space-between; }
+.sb-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.5px;
+           font-size: clamp(13px, 3.8vw, 16px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sb-big  { font-family:'Barlow Condensed',sans-serif; font-weight:700; line-height:.92;
+           font-size: clamp(46px, 17vw, 82px); white-space:nowrap; }
+.sb-unit { font-family:'Barlow Condensed',sans-serif; font-size: clamp(9px,2.8vw,11px);
+           letter-spacing:1px; color: var(--text-muted); }
+.sb-group { font-family:'Barlow Condensed',sans-serif; font-weight:700;
+            font-size: clamp(22px, 7vw, 34px); letter-spacing:.5px; }
+.sb-pip  { width: clamp(20px,6.5vw,28px); height: clamp(20px,6.5vw,26px);
+           border-radius:5px; border:2px solid var(--border); }
+.sb-pip.on { border-color:#ff9d7a; background:#3a1414; }
+#sb-warn { display:none; margin-top:10px; flex-shrink:0; background:#2a1414; border:1px solid #7a3a2a;
+           border-radius:10px; padding:10px; text-align:center;
+           font-family:'Barlow Condensed',sans-serif; font-weight:700; color:#ff9d7a;
+           font-size: clamp(11px,3.3vw,13px); letter-spacing:.3px; }
+#sb-pass { flex:1; min-height:56px; background:var(--green-dim); color:#eafff2;
+           border:2px solid var(--green-soft); border-radius:12px;
+           font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.6px;
+           font-size: clamp(16px,4.8vw,21px); cursor:pointer; }
+/* Tap strip sits BELOW pass turn on purpose: everything above it is meant to be
+   read from across a table, so no controls are allowed to crowd it. */
+#sb-taps { display:flex; gap:6px; margin-top:8px; flex-shrink:0; }
+#sb-taps button { flex:1; min-height:48px; border-radius:10px; cursor:pointer;
+                  font-family:'Barlow Condensed',sans-serif; font-weight:700;
+                  font-size: clamp(13px,4vw,16px); letter-spacing:.4px; }
+#sb-controls { display:flex; flex-direction:column; flex-shrink:0; }
+#sb-exit { margin-top:8px; flex-shrink:0; align-self:center; min-height:44px;
+           background:none; border:1px solid var(--border); border-radius:11px;
+           color:var(--text-dim); padding:0 18px; font-size:12px; cursor:pointer; }
+
+/* ── SCOREBOARD IN LANDSCAPE ON A SHORT PHONE ──────────────────────────
+   MEASURED at iPhone SE landscape (667x375): the portrait layout gives each
+   panel 21px of height while one needs about 140px - and only 6px once the
+   two-foul warning appears. Capping panel height cannot fix that, because
+   there is no height to cap; the stacked layout simply does not belong in
+   367px of vertical space.
+
+   So landscape re-flows rather than shrinks: panels sit SIDE BY SIDE (halving
+   the height needed and doubling the width available), the header and turn bar
+   share one line, and every control moves onto a single row. The type sizes are
+   untouched - a scoreboard you cannot read from across a table has failed at
+   its only job. */
+@media (orientation: landscape) and (max-height: 500px) {
+  body.score-mode #scoreboard { padding-top: calc(8px + env(safe-area-inset-top,0px));
+                                padding-bottom: calc(8px + env(safe-area-inset-bottom,0px)); }
+  /* header and turn on one line */
+  #sb-head { display: flex; align-items: baseline; gap: 10px; text-align: left; }
+  #sb-context { margin-top: 0; }
+  body.score-mode #sb-turn { margin-top: 6px; padding: 6px 12px; }
+  #sb-turn-name { font-size: clamp(17px, 3.4vw, 22px); }
+  /* the actual fix: two panels across, not down */
+  #sb-panels { flex-direction: row; margin-top: 8px; gap: 10px; }
+  .sb-panel { flex: 1 1 0; }
+  /* controls collapse onto one row */
+  /* Three stacked control rows cost 156px of the 375 available. On one line
+     they cost 56, which is what finally makes the panels fit. */
+  #sb-controls { flex-direction: row; align-items: stretch; gap: 8px; margin-top: 8px; }
+  #sb-controls > div:first-child { margin-top: 0 !important; flex: 0 0 34%; }
+  #sb-pass { min-height: 48px; font-size: clamp(14px, 2.4vw, 17px); }
+  #sb-taps { margin-top: 0; flex: 1 1 auto; }
+  #sb-taps button { min-height: 48px; }
+  #sb-warn { margin-top: 6px; padding: 6px 8px; }
+  #sb-exit { margin-top: 0; min-height: 48px; padding: 0 14px; flex: 0 0 auto; align-self: stretch; }
+}
+
+/* ═══ MODES HUB ══════════════════════════════════════════════════════
+   A full-screen overlay, like Scoreboard - never a step in the workflow.
+   An overlay rather than a hide-list because a hide-list has to be updated
+   every time markup is added, and this file has already been bitten by that.
+
+   Palette is deliberately NOT the app's felt green: mahogany, brass and ivory,
+   the materials of a real table and a good pair of frames. The one green row
+   is the familiar path, so it cannot be mistaken for one option among six. */
+#modes-hub { display:none; }
+body.hub-mode { overflow:hidden; }
+/* The fixed action bar repaints on its own compositor layer, so during a fast
+   scroll it could flash over the hub before the hub's own paint caught up.
+   The hub is a destination picker - the bar has no business there at all. */
+body.hub-mode #sticky-action-bar { display: none !important; }
+body.hub-mode #modes-hub {
+  display:block; position:fixed; inset:0; z-index:95; overflow-y:auto;
+  background:#14100c; -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+}
+#hub-rail { background:linear-gradient(180deg,#4a3119,#3f2a17 34%,#2a1c10);
+  padding:calc(16px + env(safe-area-inset-top,0px)) 18px 15px; position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10); }
+#hub-rail:after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px;
+  background:linear-gradient(180deg,#e8c766,#c9a227 40%,#6e5a1c); }
+.hub-crest { display:flex; align-items:center; gap:13px; }
+.hub-8 { width:40px; height:40px; border-radius:50%; flex-shrink:0; position:relative;
+  background:radial-gradient(circle at 33% 28%,#6b6b6b,#141414 52%,#000);
+  box-shadow:0 2px 5px rgba(0,0,0,.55); }
+.hub-8 span { position:absolute; top:26%; left:26%; width:48%; height:48%; border-radius:50%;
+  background:radial-gradient(circle at 36% 30%,#fff,#e6ddc9); display:flex; align-items:center;
+  justify-content:center; font-family:'Playfair Display',serif; font-weight:900; font-size:12px; color:#111; }
+.hub-crest h2 { margin:0; font-family:'Playfair Display',serif; font-weight:900;
+  font-size:clamp(20px,5.8vw,24px); color:#f2ece0; line-height:1.04; }
+.hub-crest p { margin:3px 0 0; font-family:'Barlow Condensed',sans-serif; letter-spacing:2.3px;
+  font-size:10px; color:#c9a227; }
+.hub-eyebrow { font-family:'Barlow Condensed',sans-serif; letter-spacing:2.4px; font-size:10px;
+  color:#8a7a66; padding:18px 18px 8px; }
+.hub-rack { padding:0 12px; }
+.hub-row { display:flex; align-items:center; gap:14px; padding:14px 12px; cursor:pointer;
+  border-radius:13px; position:relative; background:none; border:none; width:100%;
+  text-align:left; font-family:inherit; color:inherit; }
+.hub-row:active { background:#1f1811; }
+.hub-row:not(:last-child):after { content:""; position:absolute; left:76px; right:12px; bottom:0;
+  height:1px; background:#2e2418; }
+.hub-badge { width:56px; height:56px; flex-shrink:0; border-radius:14px;
+  background:linear-gradient(180deg,#20180f,#140e08); border:1px solid #3d3020;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
+.hub-badge svg { width:34px; height:34px; display:block; }
+.hub-txt { flex:1; min-width:0; }
+.hub-txt b { display:block; font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  letter-spacing:.7px; font-size:clamp(15px,4.4vw,17px); color:#f2ece0; }
+.hub-txt span { display:block; font-size:12.5px; color:#8a7a66; margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* .hub-go is styled in the affordance pass above (brass disc). */
+.hub-row.home { background:linear-gradient(180deg,#1d2c20,#16211a); border:1px solid #2f5a3e;
+  padding:16px 12px; margin-bottom:4px; box-shadow:0 2px 10px rgba(0,0,0,.3); }
+.hub-row.home:after { display:none; }
+.hub-row.home .hub-badge { border-color:#2f5a3e; background:linear-gradient(180deg,#12291c,#0d1e14); }
+.hub-row.home .hub-txt span { color:#8fbfa3; }
+.hub-row.home .hub-go { color:#39b273; }
+.hub-tag { position:absolute; top:-9px; left:76px; background:#0f2318; border:1px solid #39b273;
+  color:#39b273; border-radius:7px; font-size:8.5px; letter-spacing:1.2px; padding:2px 8px;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; }
+.hub-util { display:flex; gap:8px; padding:16px 12px 0; }
+.hub-util button { flex:1; min-height:44px; background:none; border:1px solid #3a2c18;
+  border-radius:10px; color:#c9a227; font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  font-size:12.5px; letter-spacing:.6px; cursor:pointer; }
+.hub-mark { margin:20px 12px 0; padding:20px 16px 4px; border-top:1px solid #2e2418; text-align:center; }
+.hub-mark .lg { font-family:'Playfair Display',serif; font-weight:900; font-size:22px; color:#f2ece0; }
+/* ITEM 3: the name reads as ONE wordmark. Gold is reserved for interactive
+   and emphasis elements; static brand text stays ivory. */
+.hub-mark .lg em { font-style:normal; color:inherit; }
+.hub-mark .sm { font-size:11.5px; color:#8a7a66; margin-top:4px; }
+.hub-mark a.site { display:inline-block; margin-top:13px; font-family:'Barlow Condensed',sans-serif;
+  font-weight:700; font-size:13.5px; letter-spacing:.6px; color:#e8c766; text-decoration:none;
+  border-bottom:1px solid #6e5a1c; padding-bottom:3px; }
+.hub-soc { display:flex; justify-content:center; gap:10px; margin-top:17px; }
+.hub-soc a { width:44px; height:44px; border:1px solid #3a2c18; border-radius:12px; display:flex;
+  align-items:center; justify-content:center; color:#8a7a66; text-decoration:none; }
+.hub-soc svg { width:19px; height:19px; }
+.hub-foot { padding:18px 22px 8px; text-align:center; font-size:12px; line-height:1.6; color:#6d6051; }
+
+/* ═══ SHOT HISTORY ═══════════════════════════════════════════════════ */
+#history-panel { display:none; }
+body.hist-mode { overflow:hidden; }
+body.hist-mode #history-panel {
+  display:block; position:fixed; inset:0; z-index:96; overflow-y:auto;
+  background:#14100c; -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+}
+#hist-rail { background:linear-gradient(180deg,#4a3119,#3f2a17 34%,#2a1c10);
+  padding:calc(14px + env(safe-area-inset-top,0px)) 14px 12px; display:flex; align-items:center;
+  gap:12px; position:relative; }
+#hist-rail:after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px;
+  background:linear-gradient(180deg,#e8c766,#c9a227 40%,#6e5a1c); }
+#hist-rail h2 { margin:0; flex:1; min-width:0; font-family:'Barlow Condensed',sans-serif;
+  font-weight:700; letter-spacing:.7px; font-size:clamp(16px,4.6vw,19px); color:#f2ece0; }
+#hist-rail button { min-width:44px; min-height:44px; border-radius:11px; background:rgba(0,0,0,.25);
+  border:1px solid #6e5a1c; color:#e8c766; font-size:17px; cursor:pointer; }
+.hist-list { padding:12px; }
+.hist-item { display:flex; gap:11px; align-items:center; background:#1a130b; border:1px solid #3a2c18;
+  border-radius:12px; padding:10px; margin-bottom:9px; }
+.hist-item canvas { width:86px; height:56px; border-radius:7px; border:1px solid #4a3a20;
+  flex-shrink:0; display:block; background:#0d1a12; }
+.hist-info { flex:1; min-width:0; }
+.hist-info b { display:block; font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  font-size:14.5px; color:#f2ece0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hist-info span { display:block; font-size:11.5px; color:#8a7a66; margin-top:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hist-act { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
+.hist-act button { min-height:38px; min-width:64px; border-radius:9px; cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:12px; letter-spacing:.4px; }
+.hist-empty { text-align:center; padding:44px 24px; color:#8a7a66; font-size:13px; line-height:1.6; }
+.hist-empty b { display:block; font-family:'Barlow Condensed',sans-serif; font-size:16px;
+  color:#f2ece0; margin-bottom:8px; letter-spacing:.5px; }
+#hist-save-btn { width:100%; margin:0 0 10px; min-height:48px; border-radius:11px;
+  background:#1a2c20; border:1px solid #2f5a3e; color:#8fbfa3;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px;
+  letter-spacing:.5px; cursor:pointer; }
 </style>
 </head>
-<body>
+<body class="hub-mode">
 <button id="ls-split-btn" aria-label="Turn the split-screen landscape layout on or off" title="Split layout on/off" onclick="toggleLandscapeSplit()">&#9707;</button>
 <button id="ls-swap-btn" aria-label="Swap table to the other side of the screen" title="Swap sides" onclick="toggleLandscapeSide()">&#8646;</button>
 <div id="app">
@@ -1316,16 +1870,28 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
         <img src="curran-logo.png" alt="Curran Opticians" style="max-width:100%;max-height:60px;height:auto;display:block">
       </div>
     </div>
+      <!-- BACK TO MENU. The hub is the main page; this page is a destination
+           you navigated to, so it gets a back arrow, not a peer button. -->
+      <div id="dest-bar">
+        <div id="back-to-menu" onclick="openHub()" role="button" tabindex="0">
+          <span style="font-size:20px;line-height:1">&#8249;</span><span>MENU</span>
+        </div>
+        <div id="page-title">SCAN &amp; READ</div>
+        <div id="mini-view" role="group" aria-label="Simple or Advanced">
+          <div id="mini-simple" onclick="setSimpleView(true)">SIMPLE</div>
+          <div id="mini-adv" onclick="setSimpleView(false)">ADV</div>
+        </div>
+      </div>
     <div class="hdr-inner" style="border-top:1px solid rgba(200,151,46,.2);padding-top:9px">
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V7.28.0136</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.5.0631</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
-        <button class="help-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
+        <button class="help-btn" id="hdr-tour-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
         <button class="help-btn" onclick="toggleRules()" title="Official game rules"><span style="font-size:14px">📜</span> Rules</button>
-        <button class="help-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
+        <button class="help-btn" id="hdr-guide-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
         <button class="help-btn" id="install-btn" onclick="promptInstall()" title="Install Shot Reader" style="display:none;border-color:#40ceff;color:#9fe4ff"><span style="font-size:14px">📲</span> Install</button>
       </div>
     </div>
@@ -1336,13 +1902,6 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
     <div class="model-dot" id="model-dot"></div>
     <span id="model-msg">Loading your custom trained model...</span>
   </div>
-
-  <!-- VIEW: Simple / Advanced -->
-  <div id="viewmode-anchor" style="display:flex;background:#0b1811;border:1px solid #40ceff;border-radius:22px;padding:3px;margin:12px 0 2px">
-    <div id="viewpill-simple" onclick="setSimpleView(true)"  style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;background:#40ceff;color:#06171f">✨ Simple</div>
-    <div id="viewpill-adv"    onclick="setSimpleView(false)" style="flex:1;text-align:center;padding:7px;border-radius:18px;font-size:12.5px;font-weight:700;cursor:pointer;color:#9fe4ff">Advanced</div>
-  </div>
-  <div style="text-align:center;font-size:11px;color:var(--text-muted);margin:5px 2px 2px;line-height:1.4">Switch to <span style="color:#9fe4ff;font-weight:600">Advanced</span> to unlock extra features &amp; settings below</div>
 
     <!-- VIEW MODE -->
     <div class="card adv-only" id="view-mode-card">
@@ -1390,7 +1949,11 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
            Set once at the start of a session; hidden entirely in Table Mode
            by the #quick-setup rule. -->
       <div id="quick-setup" class="card" style="margin-bottom:8px">
-        <div class="card-label">⚡ Quick Setup <span style="color:var(--text-muted);font-weight:400">— set once</span></div>
+        <div id="qs-head" onclick="toggleQuickSetup()" role="button" tabindex="0" aria-controls="qs-drawer">
+          <span class="card-label" style="margin:0">⚡ Quick Setup <span id="qs-summary">— set once</span></span>
+          <span id="qs-caret" class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div id="qs-drawer" style="display:none">
     <div id="gamemode-card" class="card">
       <div class="card-label">Game Mode</div>
       <div class="pills">
@@ -1404,7 +1967,35 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
         <button class="btn" id="lowest-ball-btn" onclick="lowestBallAction()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:9px">🎯 Set Lowest Ball <span style="opacity:.65;font-weight:400">— the ball you must hit first</span></button>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">9-ball rule: the cue ball must contact the <strong style="color:var(--cream)">lowest-numbered ball</strong> first. The AI can't read numbers yet — tap this, then tap that ball, and the suggestion will plan it.</div>
       </div>
-      <!-- STRAIGHT POOL RUN COUNTER (Straight only) -----------------------
+      <!-- TWO-PLAYER PANEL (optional; 1 Player by default) ------------------
+       Manual throughout, following the run counter's precedent: the app cannot
+       see a make or a miss, so it never guesses whose turn it is. -->
+  <div id="players-row" style="margin:2px 0 8px">
+    <div class="autoscan-label" style="margin-bottom:6px">Players</div>
+    <div class="pills" style="display:flex;gap:6px;margin-bottom:6px">
+      <div class="pill active" id="pl-1p" onclick="setTwoPlayer(false,this)" style="flex:1;text-align:center">1 Player</div>
+      <div class="pill" id="pl-2p" onclick="setTwoPlayer(true,this)" style="flex:1;text-align:center">2 Players</div>
+    </div>
+    <div id="players-names" style="display:none;gap:6px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#9fe4ff;margin:2px 2px 6px">&#9998; Player names &mdash; tap to type your own</div>
+      <div style="display:flex;gap:6px">
+        <input id="pl-name-0" type="text" maxlength="14" placeholder="Player 1"
+               oninput="setPlayerName(0,this.value)"
+               style="flex:1;min-width:0;min-height:44px;background:#0b1811;border:1px solid var(--border);border-radius:9px;color:var(--cream);padding:8px 10px;font-size:14px;font-family:inherit">
+        <input id="pl-name-1" type="text" maxlength="14" placeholder="Player 2"
+               oninput="setPlayerName(1,this.value)"
+               style="flex:1;min-width:0;min-height:44px;background:#0b1811;border:1px solid var(--border);border-radius:9px;color:var(--cream);padding:8px 10px;font-size:14px;font-family:inherit">
+      </div>
+      <div id="turn-bar" style="display:flex;align-items:center;gap:8px;margin-top:7px;background:#0d2430;border:1px solid #2a4433;border-radius:10px;padding:8px 10px">
+        <div id="turn-who" style="flex:1;min-width:0;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:#9fe4ff;letter-spacing:.4px">Player 1&rsquo;s shot</div>
+        <button class="btn" onclick="passTurn()" style="min-width:96px;background:#0d2e1c;color:#5df0a5;border:1px solid #34c96a">Pass turn</button>
+      </div>
+      <div id="player-scores" style="display:flex;gap:6px;margin-top:7px"></div>
+      <!-- Two-player names + turn tracking live here in Quick Setup. -->
+    </div>
+  </div>
+
+  <!-- STRAIGHT POOL RUN COUNTER (Straight only) -----------------------
        Purely manual UI state. Deliberately NOT wired to allTargets or any
        ball-clearing logic: the app cannot see a ball leave the table, so a
        count it maintained itself would drift and quietly lie. The player
@@ -1412,10 +2003,12 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
   <div id="straight-run-row" style="display:none;margin:2px 0 8px">
     <div style="display:flex;align-items:center;gap:8px">
       <div style="flex:1;min-width:0">
-        <div class="autoscan-label">\ud83c\udfb1 Run Counter</div>
-        <div class="autoscan-desc">Tap after each ball you pot</div>
+        <div class="autoscan-label">Score</div>
+        <div class="autoscan-desc">+1 a ball potted &middot; &minus;1 a foul</div>
+        <div id="foul-streak" style="display:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.6px;margin-top:2px"></div>
       </div>
       <div id="run-count" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;color:var(--gold);min-width:44px;text-align:center;line-height:1">0</div>
+        <button class="btn" onclick="bumpRun(-1)" style="min-width:56px;background:#2a1414;color:#ff9d7a;border:1px solid #7a3a2a">&minus;1</button>
       <button class="btn" onclick="bumpRun(1)" style="min-width:60px;background:#0d2e1c;color:#5df0a5;border:1px solid #34c96a">+1</button>
       <button class="btn" onclick="resetRun()" style="min-width:52px;background:#2a1414;color:#ff9d7a;border:1px solid #7a3a2a">Reset</button>
     </div>
@@ -1434,10 +2027,6 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
         </div>
       </div>
 
-      <div class="div"></div>
-      <!-- Readiness checklist — replaces the old Suggest button (now sticky-only) -->
-      <div style="background:#0b1811;border:1px solid var(--border);border-radius:10px;padding:11px 13px">
-      </div>
     </div>
   <div class="adv-only" style="margin-top:9px"><div id="tablesize-row" class="adv-only" style="margin-bottom:12px">
         <div class="autoscan-label" style="margin-bottom:6px">📏 Table Size</div>
@@ -1450,8 +2039,12 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">Balls are the same size on every table — so they crowd a bar box more than a 9-footer. This sharpens blocked-path checks on aligned tables.</div>
       </div>
 </div>
-      <div id="adv-tune-link" onclick="toggleAdvTuning()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:44px;padding:10px 8px;margin:2px -8px 0;border-radius:8px;color:#9fe4ff;font-size:12.5px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.4px">
-        <span>⚙ ADVANCED TUNING</span><span id="adv-tune-caret">&#8250;</span>
+      
+      </div>
+      </div>
+      <div id="adv-tune-card" class="card" style="margin-bottom:8px">
+        <div id="adv-tune-link" onclick="toggleAdvTuning()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:44px;padding:10px 8px;margin:2px -8px 0;border-radius:8px;color:#9fe4ff;font-size:12.5px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.4px">
+        <span>⚙ ADVANCED TUNING</span><span id="adv-tune-caret" class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
       </div>
       <div id="adv-tune-drawer" style="display:none">
             <div class="autoscan-row">
@@ -1518,8 +2111,8 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
       <div class="div"></div>
       <div class="autoscan-row">
         <div>
-          <div class="autoscan-label">🔔 Sound chime alerts</div>
-          <div class="autoscan-desc">Soft chime on scan · louder tone when suggestion ready</div>
+          <div class="autoscan-label">🔔 Sound &amp; spoken shot calls</div>
+          <div class="autoscan-desc">Soft chime on scan · louder tone when ready · <strong>also controls the spoken shot call in Table Mode</strong></div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="chime-toggle" checked>
@@ -1555,7 +2148,7 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
       <div class="div adv-only"></div>
     <div class="autoscan-row adv-only">
         <div>
-          <div class="autoscan-label">💠 Diamond System <span onclick="event.stopPropagation();var e=document.getElementById('diamond-explainer');if(e)e.style.display='block';" style="cursor:pointer;color:#9fe4ff;font-size:12px;border:1px solid #33507e;border-radius:50%;padding:0 5px;margin-left:4px">?</span></div>
+          <div class="autoscan-label">💠 Diamond System <span class="info-chip" role="button" aria-label="What is the diamond system?" onclick="event.stopPropagation();showDiamondLesson();">?</span></div>
           <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap 📐 Align Table or ✨ Auto, then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
         </div>
         <label class="toggle">
@@ -1575,7 +2168,7 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
         </label>
       </div>
       </div>
-      </div>
+      </div><!-- /quick-setup -->
 
   <!-- LIVE VIEW -->
   <div class="live-section" id="live-section">
@@ -1603,6 +2196,7 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
         <div id="tm-conf">–</div>
         <div id="tm-conf-lbl">SURE</div>
         <button id="tm-exit" onclick="exitTableMode()">✕ EXIT</button>
+        <div id="tm-mute" onclick="tableModeUnmute()" role="button" tabindex="0" style="display:none">🔇 MUTED — TAP</div>
       </div>
     </div>
     <!-- Stage 7: single large recovery target, hidden unless something broke -->
@@ -1625,11 +2219,20 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
     <span>TABLE FILLS <strong id="fill-val" style="color:var(--cream)">--</strong><span id="fill-note" style="margin-left:5px"></span></span>
   </div>
 
-  <button id="tm-start" onclick="enterTableMode()">▶ START TABLE MODE — hands-free on a tripod</button>
+  <!-- Table Mode moved to the Modes hub. One door per destination. -->
+
+  <!-- SCAN PROGRESS RIBBON: compact live state, so returning users can see
+       where they are without reading the full step copy every time. -->
+  <div id="scan-steps">
+    <div class="scan-step" id="scan-step-1"><span class="n">1</span><span class="t">Photo</span></div>
+    <div class="scan-step" id="scan-step-2"><span class="n">2</span><span class="t">Align</span></div>
+    <div class="scan-step" id="scan-step-3"><span class="n">3</span><span class="t">Balls</span></div>
+    <div class="scan-step" id="scan-step-4"><span class="n">4</span><span class="t">Shot</span></div>
+  </div>
 
   <!-- STEP 1 HEADER -->
   <div id="step1-header" style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:4px 2px 8px;display:flex;align-items:center;gap:8px">
-    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">1</span> Take a picture of your table
+    <span class="step-dot">1</span> Take a picture of your table
   </div>
 
   <!-- CAMERA CONTROLS -->
@@ -1637,10 +2240,10 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
     <button class="btn btn-green" id="cam-btn" onclick="toggleCamera()" style="flex:1">📷 Start Camera</button>
     <button class="btn btn-scan"  id="scan-btn" onclick="triggerManualScan()" disabled style="flex:1">⚡ SCAN NOW</button>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;margin:9px 2px;color:var(--text-muted);font-size:12px;letter-spacing:2px">
-    <span style="flex:1;height:1px;background:var(--border)"></span>OR<span style="flex:1;height:1px;background:var(--border)"></span>
+  <div class="or-fork" id="or-fork">
+    <span class="line"></span><span class="word">OR</span><span class="line"></span>
   </div>
-  <button class="btn" onclick="triggerUpload()" style="width:100%;background:#13233a;color:#bcd4ff;border:1px solid #33507e">📁 Upload Photo</button>
+  <button class="btn" id="upload-btn" onclick="triggerUpload()" style="width:100%;background:#13233a;color:#bcd4ff;border:1px solid #33507e">📁 Upload Photo</button>
   <input type="file" id="file-input" accept="image/*" style="display:none">
   <div id="upload-zone" style="display:none"></div>
 
@@ -1670,8 +2273,16 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
       <div class="canvas-placeholder" id="canvas-placeholder">
         <div class="big">🎯</div>
         <div>Captured frame appears here</div>
-        <button onclick="startSampleShot()" style="margin-top:12px;background:linear-gradient(180deg,#1a3a52,#0d2430);color:#9fe4ff;border:1.5px solid #40ceff;border-radius:12px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;box-shadow:0 4px 18px rgba(64,206,255,.15)">🎓 No table? Try a Sample Shot</button>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">A practice layout loads instantly — see how Shot Reader thinks</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;align-items:center">
+          <button class="btn" onclick="event.stopPropagation();startSampleShot()" style="display:flex;align-items:center;gap:10px;background:#12271a;color:var(--gold-lt);border:1px solid var(--gold-dim);padding:9px 16px;font-size:13.5px;border-radius:11px"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:26px;height:26px;flex-shrink:0">
+        <rect x="10" y="9" width="44" height="15" rx="3" fill="#16281d" stroke="#3d5c48" stroke-width="1.6"/>
+        <rect x="8" y="24" width="48" height="16" rx="3" fill="#1a3a28" stroke="#4a7a5c" stroke-width="1.6"/>
+        <rect x="6" y="39" width="52" height="18" rx="3.5" fill="#1d6b42" stroke="#39b273" stroke-width="2"/>
+        <circle cx="17" cy="48" r="3.4" fill="#f2ece0"/><circle cx="34" cy="46" r="3.4" fill="#cc2222"/>
+        <path d="M20 47.5 L31 46" stroke="#e8c766" stroke-width="1.8" stroke-dasharray="2.5 2.5"/>
+      </svg><span>Try a sample shot</span></button>
+          <button class="btn" id="scan-history-btn" onclick="event.stopPropagation();openHistory()" style="background:none;color:var(--text-muted);border:1px solid var(--border);padding:7px 14px;font-size:12px;border-radius:10px">&#9711; Saved reads</button>
+        </div>
       </div>
       <div class="capture-flash" id="capture-flash"></div>
     </div>
@@ -1725,14 +2336,14 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
 
 
   <!-- STEP 2: ALIGN TABLE -->
-  <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:14px 2px 8px;display:flex;align-items:center;gap:8px">
-    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">2</span> Line up the table
+  <div id="step2-header" style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:14px 2px 8px;display:flex;align-items:center;gap:8px">
+    <span class="step-dot">2</span> Line up the table
   </div>
-  <div style="display:flex;gap:7px">
-    <button class="btn" id="step2-anchor" onclick="startAlign()" style="flex:1;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff"><span style="font-size:16px">📐</span> Align Table <span style="opacity:.65;font-weight:400">— tap 4 corners</span></button>
-    <button class="btn" onclick="autoAlignTable()" title="Let the app find the table" style="flex-shrink:0;background:linear-gradient(180deg,#2a2410,#1c1808);color:var(--gold-lt);border:1px solid var(--gold-dim);padding:0 14px">✨ Auto</button>
+  <div id="align-controls">
+    <div id="align-explain">✨ <strong>Auto finds the table for you.</strong> Use it first — only use <strong>📐 Align Table by hand</strong> if Auto can&rsquo;t see the corners.</div>
+    <button class="btn" id="auto-align-btn" onclick="autoAlignTable()" title="Let the app find the table"><span style="font-size:19px">✨</span> AUTO&nbsp;—&nbsp;FIND MY TABLE</button>
+    <button class="btn" id="step2-anchor" onclick="startAlign()"><span style="font-size:15px">📐</span> Align Table by hand <span class="sub">— tap the 4 corners</span></button>
   </div>
-  <div style="font-size:11.5px;color:var(--text-muted);margin:5px 2px 0;line-height:1.4"><strong style="color:var(--gold-lt)">✨ Auto</strong> finds the table for you — or tap 📐 and tap the 4 corners. Every visible pocket gets placed.</div>
   <div class="adv-only" style="font-size:11.5px;color:var(--text-muted);margin:3px 2px 0;line-height:1.4">Drag corners to fine-tune · add single pockets with <strong style="color:#9fe4ff">＋ Pocket</strong> · tap a pocket twice to remove it.</div>
 
 
@@ -1741,15 +2352,19 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
   <div class="body">
 
     <!-- STEP 3: MARK / FIX BALLS — manual chips collapsed by default -->
-    <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:6px 2px 8px;display:flex;align-items:center;gap:8px">
-      <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">3</span> Check the balls
+    <div id="step3-header" style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:6px 2px 8px;display:flex;align-items:center;gap:8px">
+      <span class="step-dot">3</span> Check the balls
     </div>
     <div class="card" id="step3-anchor">
-      <div style="font-size:11.5px;color:var(--text-muted);line-height:1.45">AI Detect places the balls for you — just <strong style="color:var(--cream)">tap any wrong one</strong> to fix it (Solid → Stripe → 8 → Cue), or <strong style="color:var(--cream)">drag any marker</strong> to nudge it into place. A zoomed view pops up while you drag so you can be precise.</div>
+      <div class="tip-wrap" id="tips-3">
+        <div class="tip-toggle" onclick="toggleTips('tips-3')"><span class="caret disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span> How to fix a ball</div>
+        <div class="tip-body" style="font-size:11.5px;color:var(--text-muted);line-height:1.45;margin-top:6px">AI Detect places the balls for you &mdash; just <strong style="color:var(--cream)">tap any wrong one</strong> to fix it (Solid &rarr; Stripe &rarr; 8 &rarr; Cue), or <strong style="color:var(--cream)">drag any marker</strong> to nudge it into place. A zoomed view pops up while you drag so you can be precise.</div>
+      </div>
       <div class="adv-only">
-      <div onclick="toggleManualMark()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:10px">
-        <div class="card-label" style="margin:0"><span id="manual-mark-caret">▸</span> Mark balls or pockets manually</div>
-        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#9fe4ff">advanced</div>
+      <div onclick="toggleManualMark()" class="disc-row" style="margin-top:10px">
+        <div class="card-label" style="margin:0;flex:1;min-width:0">Mark balls or pockets manually</div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#9fe4ff;flex-shrink:0">advanced</div>
+        <span id="manual-mark-caret" class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
       </div>
       <div style="font-size:11px;color:var(--text-muted);margin:5px 0 0;line-height:1.4">Place a cue, ball, or <strong style="color:var(--cream)">Target Pocket</strong> by hand — or drag any mark to fine-tune.</div>
       <div id="manual-mark-body" style="display:none;margin-top:10px">
@@ -1808,10 +2423,12 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
 
     <!-- GAME MODE + SUGGEST -->
     <div id="step4-anchor" style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--cream);margin:6px 2px 8px;display:flex;align-items:center;gap:8px">
-      <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#2dff8a;color:#06120b;font-weight:700;font-size:12px">4</span> Game &amp; shot
+      <span class="step-dot">4</span> Game &amp; shot
     </div>
       <div class="card">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Before you tap Suggest Best Shot</div>
+        <div class="tip-wrap" id="tips-4">
+        <div class="tip-toggle" onclick="toggleTips('tips-4')"><span class="caret disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span> Before you tap Suggest Best Shot</div>
+        <div class="tip-body" style="margin-top:8px">
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:13.5px;color:var(--cream);line-height:1.4">
           <span style="flex-shrink:0">⚪</span><div><strong>Mark the cue ball</strong> — the AI usually finds it, or tap a ball until it's the white cue.</div>
         </div>
@@ -1821,6 +2438,7 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;font-size:13.5px;color:var(--cream);line-height:1.4">
           <span style="flex-shrink:0">🕳️</span><div><strong>Add at least one pocket</strong> — tap <strong>📐 Align Table</strong> for all of them, or <strong>＋ Pocket</strong> above the table for one.</div>
         </div>
+        </div></div>
         <div style="font-size:12.5px;color:#9fe4ff;line-height:1.4;border-top:1px solid var(--border);padding-top:8px">
           ✓ All set? Tap <strong>🔍 Suggest Best Shot</strong> in the bar at the bottom of your screen.
         </div>
@@ -1837,7 +2455,7 @@ body.table-mode #tm-banner.recover { border-top-color: #ff9d7a; }
     <!-- SETTINGS (moved below the workflow) -->
    <!-- AUTO-SCAN SETTINGS -->
     <!-- The Settings card is gone: every global setting now lives in the
-         Advanced Tuning drawer inside Quick Setup. Only this hidden state
+         Advanced Tuning card below Quick Setup. Only this hidden state
          holder remains, because other code reads its checked value. -->
     <input type="checkbox" id="simplemode-toggle" checked style="display:none">
 
@@ -2577,6 +3195,56 @@ function iou(a, b) {
 function setStatus(msg, state) {
   document.getElementById('s-text').textContent = msg;
   document.getElementById('s-pip').className = 's-pip ' + (state || '');
+  if (typeof updateScanSteps === 'function') updateScanSteps();
+}
+
+/* ── SCAN FLOW UI (presentation only) ───────────────────────────────
+   The ribbon READS existing state and never computes anything. No geometry,
+   no ranking, no diamond math is touched or duplicated here. */
+function toggleTips(id) {
+  var w = document.getElementById(id);
+  if (!w) return;
+  w.classList.toggle('open');
+  try { localStorage.setItem('curran_tips_open', w.classList.contains('open') ? '1' : '0'); } catch(_) {}
+}
+
+function updateScanSteps() {
+ try {
+  var bar = document.getElementById('scan-steps');
+  if (!bar) return;
+
+  var hasPhoto  = !!sourceImg;
+  var hasAlign  = !!window._tHf || (typeof marks !== 'undefined' && marks.some(function(m){ return m.type === 'pocket'; }));
+  var hasCue    = (typeof marks !== 'undefined') && marks.some(function(m){ return m.type === 'cue'; });
+  var hasObj    = (typeof marks !== 'undefined') && marks.some(function(m){
+                    return m.type === 'obj' || m.type === 'stripe' || m.type === 'eight'; });
+  var hasBalls  = hasCue && hasObj;
+  var sug       = document.getElementById('suggestion');
+  var hasShot   = !!window._shotRead && !!(sug && sug.classList.contains('show'));
+
+  [[1,hasPhoto],[2,hasAlign],[3,hasBalls],[4,hasShot]].forEach(function(p){
+    var el = document.getElementById('scan-step-' + p[0]);
+    if (el) el.classList.toggle('done', !!p[1]);
+  });
+
+  // Once someone has completed a full read, the long copy stays collapsed by
+  // default on later visits. They can still open it any time.
+  if (hasShot) { try { localStorage.setItem('curran_scan_done', '1'); } catch(_) {} }
+ } catch(_) { /* a progress ribbon must never break the app */ }
+}
+
+function initScanTips() {
+  var seen = false, pref = null;
+  try {
+    seen = localStorage.getItem('curran_scan_done') === '1';
+    pref = localStorage.getItem('curran_tips_open');
+  } catch(_) {}
+  var open = (pref === null) ? !seen : (pref === '1');
+  ['tips-3','tips-4'].forEach(function(id){
+    var w = document.getElementById(id);
+    if (w && open) w.classList.add('open');
+  });
+  updateScanSteps();
 }
 
 
@@ -2817,7 +3485,24 @@ async function toggleCamera() {
   cameraOn ? stopCamera() : await startCamera();
 }
 
+var _camStarting = false;   // getUserMedia is slow; a second tap must not race it
+
 async function startCamera() {
+  /* Re-entrancy guard. getUserMedia can take a second or more, and nothing
+     stopped a second tap (or tableModeFix firing while the camera was already
+     live) from starting a SECOND stream - the first one leaked, its tracks were
+     never stopped, and stopCamera only ever knew about the latest. */
+  if (_camStarting || cameraOn) return;
+  /* Support check BEFORE the flag is raised. It used to sit further down, after
+     _camStarting was already true, so on a device without mediaDevices the flag
+     was never cleared and every later tap returned immediately - a permanently
+     dead camera button. Every exit path below clears the flag. */
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setStatus('Camera not supported \u2014 use photo upload', 'err');
+    return;
+  }
+  _camStarting = true;
+  try { camBtn.disabled = true; camBtn.textContent = '\u2026 Starting'; } catch (_) {}
   ensurePersonModel();   // background load; camera never waits on it
   var _to = document.getElementById('table-outline'); if (_to) _to.style.display = 'block';
   // Start the scanner animation immediately — searching state shows within a
@@ -2828,9 +3513,6 @@ async function startCamera() {
      the loop's own guard fired on its very first frame, cancelled itself and
      wiped its state. It never came back: no HUD, no ANGLE/FILLS row. It is
      started below, once the camera is actually live. */
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    setStatus('Camera not supported — use photo upload', 'err'); return;
-  }
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, frameRate: { ideal: 15 } }
@@ -2862,11 +3544,21 @@ async function startCamera() {
     setStatus('Camera live — point at table, auto-scan fires when still', 'live');
     startMotionLoop();
     if (!_scanRAF) _scanLoop();     // now that cameraOn is true, it will stay running
+    _camStarting = false;
+    try { camBtn.disabled = false; } catch (_) {}
   } catch (err) {
     const why = err.name === 'NotAllowedError' ? 'permission denied'
               : err.name === 'NotFoundError'   ? 'no camera found' : err.message;
     setStatus('Camera unavailable — ' + why + '. Use photo upload.', 'err');
     document.getElementById('cam-off-msg').style.display = '';
+    /* startCamera shows #table-outline before asking for the camera. On failure
+       it was never hidden again, leaving an empty overlay canvas sitting on top
+       of the live view. */
+    var _toF = document.getElementById('table-outline');
+    if (_toF) _toF.style.display = 'none';
+    try { camBtn.disabled = false; camBtn.textContent = '📷 Start Camera'; camBtn.className = 'btn btn-green'; } catch (_) {}
+  } finally {
+    _camStarting = false;
   }
 }
 
@@ -3452,6 +4144,10 @@ function loadImageFile(file) {
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
+    /* A photo is a Scan & Read action. If Table Mode is somehow still active,
+       leave it first - its CSS hides #table-stage, so the picture would load
+       into a canvas nobody can see. */
+    if (typeof tableMode !== 'undefined' && tableMode) { try { leaveTableMode(); } catch (_) {} }
     stopCamera(); sourceImg = img; marks = []; aligning = false; window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null; _pickingLowest = false; window._pendingPocketRemove = null; _sampleMode = false;
     renderCanvas();
     updateQuickModeRow();
@@ -3473,6 +4169,7 @@ function loadImageFile(file) {
    CANVAS RENDER
 ═══════════════════════════════════════════ */
 function renderCanvas() {
+  if (typeof updateScanSteps === 'function') updateScanSteps();
   if (typeof updateRePocketBtn === 'function') updateRePocketBtn();
   if (!sourceImg) return;
   const card = document.getElementById('canvas-card');
@@ -3607,8 +4304,17 @@ function renderCanvas() {
        soon as there are balls on the table, BEFORE a suggestion can form, so
        the player never sees a crowned shot that the rules might forbid. */
     else if (gameMode === '9ball' && !marks.some(function(m){ return m._mustHit; }))
-      msg = '\ud83c\udfaf 9-Ball: set your LOWEST ball so I know what\u2019s legal (Step 4)';
+      msg = '\ud83c\udfaf 9-Ball: set your LOWEST ball so I know what\u2019s legal (up in Quick Setup)';
+    /* LOWEST rung, deliberately last: a table that has never been aligned still
+       produces a confident-looking suggestion, but it runs on raw photo-space
+       geometry instead of the top-down homography, and it silently disables the
+       Diamond System with no explanation. Say so BEFORE the player commits to
+       skipping it - but never ahead of the pocket or lowest-ball prompts, which
+       actually block a result. Shown once per photo, then it stops. */
+    else if (ballMarks && !window._tHf && !_alignTipSeen)
+      msg = '\ud83d\udcd0 Tip: Align Table for sharper angles + diamonds \u2014 tap to dismiss';
     if (!msg) return;
+    window._chipIsAlignTip = (msg.indexOf('Align Table for sharper') >= 0);
     ctx.save();
     ctx.font = '600 ' + Math.max(11, Math.round(W*0.019)) + 'px Barlow Condensed, sans-serif';
     var tw = ctx.measureText(msg).width + 26;
@@ -4441,13 +5147,43 @@ function kickDiamondLabel(kick) {
       if (cue) travel = (kick.axis === 'y') ? Math.sign(b.fx - cue.fx) : Math.sign(b.fy - cue.fy);
       if (!travel) travel = 1;
       var running = side !== 0 && (Math.sign(side) === travel);
-      var shift = 0;
-      if (side !== 0) shift += (running ? 0.5 : -0.5) * travel;   // the big effect
-      shift += vert * 0.2 * travel;                               // follow/draw, smaller
+      /* Same two expressions as before, just named so the calibration readout
+         can report them separately - side english and follow/draw are tuned
+         independently. sideShift + vertShift is arithmetically identical to
+         the previous single accumulator. */
+      var sideShift = (side !== 0) ? (running ? 0.5 : -0.5) * travel : 0;   // the big effect
+      var vertShift = vert * 0.2 * travel;                                  // follow/draw, smaller
+      var shift = sideShift + vertShift;
       adj = Math.max(0, Math.min(diamonds, raw + shift));
       note = ' \u00b7 ' + adj.toFixed(1) + ' est. w/ spin';
     }
-    return 'Diamond ' + raw.toFixed(1) + note;
+    /* Calibration record for real-table testing. Records values already
+       computed above - it does NOT recompute anything and nothing reads it
+       back into the geometry. delta is the applied shift AFTER clamping,
+       which is the number worth logging against what the ball actually does. */
+    /* CORNER-5 READ-OUT. The overlay drawn on the table numbers a short rail
+       5.4.3.4.5 (corner pockets are 5), but this label was printing the raw
+       position index 0-4, so a short-rail kick was announced with a number
+       that did not match the numbers on the player's own table. Convert for
+       DISPLAY only - the spin correction above still works in position space,
+       so no physics changes. Long rails are already 0-8 and pass through. */
+    var showRaw = (kick.axis === 'y') ? raw : 3 + Math.abs(raw - 2);
+    var showAdj = (kick.axis === 'y') ? adj : 3 + Math.abs(adj - 2);
+    if (note) note = ' \u00b7 ' + showAdj.toFixed(1) + ' est. w/ spin';
+
+    try {
+      window._diamondCalc = {
+        raw: raw, showRaw: showRaw, showAdj: showAdj, rail: kick.axis === 'y' ? 'long' : 'short',
+        adj: adj,
+        delta: adj - raw,
+        kind: (side !== 0) ? ((typeof running !== 'undefined' && running) ? 'running' : 'reverse')
+                           : (vert > 0 ? 'follow' : (vert < 0 ? 'draw' : 'none')),
+        sideShift: (typeof sideShift !== 'undefined') ? sideShift : 0,
+        vertShift: (typeof vertShift !== 'undefined') ? vertShift : 0,
+        side: side, vert: vert, diamonds: diamonds
+      };
+    } catch (_) {}
+    return 'Diamond ' + showRaw.toFixed(1) + note;
   } catch(_) { return null; }
 }
 
@@ -4478,12 +5214,425 @@ function dismissDiamondExplainer() {
   var e = document.getElementById('diamond-explainer'); if (e) e.style.display = 'none';
   try { localStorage.setItem('curran_diamond_explained', '1'); } catch(_) {}
 }
+/* ── INTERACTIVE DIAMOND LESSON ──────────────────────────────────────
+   Teaching widget. Place the cue ball, the ball you want to hit, and any
+   blockers anywhere on the cloth; it works out the one-cushion kick off any
+   of the four rails and reads the contact point back as a diamond number.
+
+   HOW THE AIM POINT IS FOUND - the mirror method:
+     Reflect the target ball across the rail you want to use. Draw a straight
+     line from the cue ball to that reflection. Where it crosses the rail is
+     exactly where the cue ball must contact the cushion, because the angle in
+     equals the angle out. Every diamond system (Corner-5, the plus system,
+     the halving systems) is a shortcut for this same geometry.
+
+   PRESENTATION ONLY. Nothing here is read by the shot ranker, the homography,
+   or the on-table diamond overlay - this widget is self-contained. */
+
+var DL_X0 = 60, DL_Y0 = 26, DL_W = 280, DL_H = 140;   // 280x140 = a true 2:1 table
+var DL_X1 = DL_X0 + DL_W, DL_Y1 = DL_Y0 + DL_H;
+var DL_STEP = DL_W / 8;                                // 35 - equal on both axes
+var DL_SHORT = [5, 4, 3, 4, 5];
+var DL_R = 6.3;      // ball radius to scale: 2.25" ball on a 100" bed
+var DL_POCKET = 9;   // how close to a pocket mouth counts as "no cushion there"
+
+var _dlCue = { x: DL_X0 + DL_STEP * 1.2, y: DL_Y1 - 26 };
+var _dlObj = { x: DL_X0 + DL_STEP * 6.2, y: DL_Y0 + 30 };
+var _dlObs = [];
+var _dlMode = 'cue';
+
+function dlX(i) { return DL_X0 + i * DL_STEP; }
+function dlClamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+/* Keep a ball on the cloth, never inside a cushion. */
+function dlInside(p) {
+  return { x: dlClamp(p.x, DL_X0 + DL_R, DL_X1 - DL_R),
+           y: dlClamp(p.y, DL_Y0 + DL_R, DL_Y1 - DL_R) };
+}
+
+function dlSetMode(m) { _dlMode = m; dlRender(); }
+
+function dlReset() {
+  _dlCue = { x: DL_X0 + DL_STEP * 1.2, y: DL_Y1 - 26 };
+  _dlObj = { x: DL_X0 + DL_STEP * 6.2, y: DL_Y0 + 30 };
+  _dlObs = [];
+  _dlMode = 'cue';
+  dlRender();
+}
+function dlClearBlockers() { _dlObs = []; dlRender(); }
+
+/* ── geometry helpers ─────────────────────────────────────────────── */
+
+function dlSegBlocked(a, b, skip) {
+  for (var i = 0; i < _dlObs.length; i++) {
+    var o = _dlObs[i];
+    if (skip && skip.indexOf(o) !== -1) continue;
+    var vx = b.x - a.x, vy = b.y - a.y;
+    var wx = o.x - a.x, wy = o.y - a.y;
+    var L2 = vx * vx + vy * vy;
+    var t = L2 ? (wx * vx + wy * vy) / L2 : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    var dx = a.x + t * vx - o.x, dy = a.y + t * vy - o.y;
+    if (Math.sqrt(dx * dx + dy * dy) < DL_R * 2) return true;   // ball-width gap needed
+  }
+  return false;
+}
+
+/* Diamond number at a point on a given rail, plus whether that spot is a pocket. */
+function dlRailNumber(rail, p) {
+  var n, pocket;
+  if (rail === 'top' || rail === 'bottom') {
+    n = (p.x - DL_X0) / DL_STEP;                       // 0..8 along the long rail
+    pocket = (Math.abs(p.x - DL_X0) < DL_POCKET) ||
+             (Math.abs(p.x - DL_X1) < DL_POCKET) ||
+             (Math.abs(p.x - dlX(4)) < DL_POCKET);     // corners + side pocket
+  } else {
+    var yc = DL_Y0 + DL_H / 2;
+    n = 3 + 2 * Math.abs(p.y - yc) / (DL_H / 2);       // 3 at centre, 5 at the corners
+    pocket = (Math.abs(p.y - DL_Y0) < DL_POCKET) || (Math.abs(p.y - DL_Y1) < DL_POCKET);
+  }
+  return { n: n, pocket: pocket };
+}
+
+/* One-cushion kick off a named rail, by mirroring the target across it. */
+function dlKick(rail) {
+  var m;                                        // the mirrored target
+  if (rail === 'top')         m = { x: _dlObj.x, y: 2 * DL_Y0 - _dlObj.y };
+  else if (rail === 'bottom') m = { x: _dlObj.x, y: 2 * DL_Y1 - _dlObj.y };
+  else if (rail === 'left')   m = { x: 2 * DL_X0 - _dlObj.x, y: _dlObj.y };
+  else                        m = { x: 2 * DL_X1 - _dlObj.x, y: _dlObj.y };
+
+  var t, hit;
+  if (rail === 'top' || rail === 'bottom') {
+    var yr = (rail === 'top') ? DL_Y0 : DL_Y1;
+    if (Math.abs(m.y - _dlCue.y) < 1e-6) return null;
+    t = (yr - _dlCue.y) / (m.y - _dlCue.y);
+    if (t <= 0 || t >= 1) return null;                 // the line never reaches that rail
+    hit = { x: _dlCue.x + t * (m.x - _dlCue.x), y: yr };
+    if (hit.x < DL_X0 || hit.x > DL_X1) return null;   // crosses beyond the table
+  } else {
+    var xr = (rail === 'left') ? DL_X0 : DL_X1;
+    if (Math.abs(m.x - _dlCue.x) < 1e-6) return null;
+    t = (xr - _dlCue.x) / (m.x - _dlCue.x);
+    if (t <= 0 || t >= 1) return null;
+    hit = { x: xr, y: _dlCue.y + t * (m.y - _dlCue.y) };
+    if (hit.y < DL_Y0 || hit.y > DL_Y1) return null;
+  }
+
+  var info = dlRailNumber(rail, hit);
+  var blocked = dlSegBlocked(_dlCue, hit) || dlSegBlocked(hit, _dlObj);
+  var len = Math.hypot(hit.x - _dlCue.x, hit.y - _dlCue.y) +
+            Math.hypot(_dlObj.x - hit.x, _dlObj.y - hit.y);
+  return { rail: rail, hit: hit, n: info.n, pocket: info.pocket,
+           blocked: blocked, len: len };
+}
+
+/* Every legal kick, best first: unblocked and off a real cushion wins. */
+function dlAllKicks() {
+  var out = [], rails = ['top', 'bottom', 'left', 'right'];
+  for (var i = 0; i < rails.length; i++) {
+    var k = dlKick(rails[i]);
+    if (k) out.push(k);
+  }
+  out.sort(function (a, b) {
+    var sa = (a.blocked ? 2 : 0) + (a.pocket ? 1 : 0);
+    var sb = (b.blocked ? 2 : 0) + (b.pocket ? 1 : 0);
+    if (sa !== sb) return sa - sb;
+    return a.len - b.len;
+  });
+  return out;
+}
+
+function dlRailLabel(r) {
+  return r === 'top' ? 'the top rail' : r === 'bottom' ? 'the bottom rail'
+       : r === 'left' ? 'the left short rail' : 'the right short rail';
+}
+
+/* ── tap handling: place a ball anywhere on the cloth ─────────────── */
+
+function dlToSvgPoint(svg, evt) {
+  try {
+    var m = svg.getScreenCTM();
+    if (m) {
+      var pt = svg.createSVGPoint();
+      pt.x = evt.clientX; pt.y = evt.clientY;
+      var loc = pt.matrixTransform(m.inverse());
+      return { x: loc.x, y: loc.y };
+    }
+  } catch (_) {}
+  var r = svg.getBoundingClientRect();
+  var sc = Math.min(r.width / 400, r.height / 216) || (r.width / 400);
+  return { x: (evt.clientX - r.left - (r.width - 400 * sc) / 2) / sc,
+           y: (evt.clientY - r.top  - (r.height - 216 * sc) / 2) / sc };
+}
+
+/* Every ball can be picked up and moved, and a blocker can be tapped away.
+   Placing was one-way before: once a blocker was down there was no way to
+   shift it or get rid of it. */
+var DL_MAXOBS = 6;
+var _dlDrag = null;
+
+function dlHitBall(p) {
+  var i, dx, dy;
+  for (i = _dlObs.length - 1; i >= 0; i--) {          // topmost blocker first
+    dx = _dlObs[i].x - p.x; dy = _dlObs[i].y - p.y;
+    if (dx * dx + dy * dy <= (DL_R + 3) * (DL_R + 3)) return { kind: 'obs', idx: i };
+  }
+  dx = _dlCue.x - p.x; dy = _dlCue.y - p.y;
+  if (dx * dx + dy * dy <= (DL_R + 3) * (DL_R + 3)) return { kind: 'cue' };
+  dx = _dlObj.x - p.x; dy = _dlObj.y - p.y;
+  if (dx * dx + dy * dy <= (DL_R + 3) * (DL_R + 3)) return { kind: 'obj' };
+  return null;
+}
+
+/* Balls are solid: a new one can't be dropped on top of another. */
+function dlOverlaps(p, ignore) {
+  var all = [{ b: _dlCue, k: 'cue' }, { b: _dlObj, k: 'obj' }];
+  for (var i = 0; i < _dlObs.length; i++) all.push({ b: _dlObs[i], k: 'obs' + i });
+  for (var j = 0; j < all.length; j++) {
+    if (ignore && all[j].k === ignore) continue;
+    var dx = all[j].b.x - p.x, dy = all[j].b.y - p.y;
+    if (Math.sqrt(dx * dx + dy * dy) < DL_R * 2) return true;
+  }
+  return false;
+}
+
+function dlEvtPoint(evt) {
+  var svg = document.getElementById('dl-svg');
+  if (!svg) return null;
+  return dlToSvgPoint(svg, evt);
+}
+
+function dlPointerDown(evt) {
+  try {
+    var p = dlEvtPoint(evt); if (!p) return;
+    var hit = dlHitBall(p);
+    if (hit) {
+      _dlDrag = { kind: hit.kind, idx: hit.idx, moved: false, x: p.x, y: p.y };
+      try { evt.target.setPointerCapture && evt.target.setPointerCapture(evt.pointerId); } catch (_) {}
+    } else {
+      _dlDrag = null;
+    }
+  } catch (_) {}
+}
+
+function dlPointerMove(evt) {
+  try {
+    if (!_dlDrag) return;
+    var p = dlEvtPoint(evt); if (!p) return;
+    if (Math.abs(p.x - _dlDrag.x) > 2 || Math.abs(p.y - _dlDrag.y) > 2) _dlDrag.moved = true;
+    if (!_dlDrag.moved) return;
+    var q = dlInside(p);
+    if (_dlDrag.kind === 'cue') _dlCue = q;
+    else if (_dlDrag.kind === 'obj') _dlObj = q;
+    else _dlObs[_dlDrag.idx] = q;
+    dlRender();
+  } catch (_) {}
+}
+
+function dlPointerUp(evt) {
+  try {
+    var p = dlEvtPoint(evt);
+    if (_dlDrag) {
+      /* A tap on a blocker (no drag) removes it. */
+      if (!_dlDrag.moved && _dlDrag.kind === 'obs') _dlObs.splice(_dlDrag.idx, 1);
+      _dlDrag = null;
+      dlRender();
+      return;
+    }
+    if (!p) return;
+    var q = dlInside(p);
+    if (_dlMode === 'cue')      { if (!dlOverlaps(q, 'cue')) { _dlCue = q; _dlMode = 'obj'; } }
+    else if (_dlMode === 'obj') { if (!dlOverlaps(q, 'obj')) { _dlObj = q; _dlMode = 'obs'; } }
+    else {
+      if (_dlObs.length >= DL_MAXOBS) { _dlNote = 'max'; }
+      else if (dlOverlaps(q))         { _dlNote = 'overlap'; }
+      else                            { _dlObs.push(q); _dlNote = ''; }
+    }
+    dlRender();
+  } catch (_) {}
+}
+
+var _dlNote = '';
+
+/* ── drawing ──────────────────────────────────────────────────────── */
+
+function dlSvg() {
+  var p = [];
+  function txt(x, y, t, c, w, sz) {
+    p.push('<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="' + (sz || 10) +
+           '" font-family="Barlow Condensed,sans-serif" font-weight="' + (w || 400) +
+           '" fill="' + c + '">' + t + '</text>');
+  }
+  function dia(x, y) {
+    var s = 3.2;
+    p.push('<path d="M' + x + ',' + (y - s) + ' l' + s + ',' + s + ' l-' + s + ',' + s +
+           ' l-' + s + ',-' + s + ' z" fill="#8a7a4a"/>');
+  }
+
+  p.push('<rect x="' + DL_X0 + '" y="' + DL_Y0 + '" width="' + DL_W + '" height="' + DL_H +
+         '" rx="10" fill="#123a24" stroke="#07200f" stroke-width="7"/>');
+  p.push('<rect x="' + DL_X0 + '" y="' + DL_Y0 + '" width="' + DL_W + '" height="' + DL_H +
+         '" rx="10" fill="none" stroke="#1f6b40" stroke-width="1.4"/>');
+
+  var pk = [[DL_X0, DL_Y0, 7], [DL_X1, DL_Y0, 7], [DL_X0, DL_Y1, 7], [DL_X1, DL_Y1, 7],
+            [dlX(4), DL_Y0, 6], [dlX(4), DL_Y1, 6]];
+  for (var q = 0; q < pk.length; q++)
+    p.push('<circle cx="' + pk[q][0] + '" cy="' + pk[q][1] + '" r="' + pk[q][2] + '" fill="#05100a"/>');
+
+  var i, y;
+  for (i = 1; i <= 7; i++) { if (i === 4) continue; dia(dlX(i), DL_Y0 - 8); dia(dlX(i), DL_Y1 + 11); }
+  for (i = 1; i <= 3; i++) { y = DL_Y0 + i * (DL_H / 4); dia(DL_X0 - 8, y + 3.2); dia(DL_X1 + 8, y + 3.2); }
+  for (i = 0; i <= 8; i++) txt(dlX(i), DL_Y0 - 16, String(i), '#7f9a86');
+  for (i = 0; i <= 4; i++) {
+    y = DL_Y0 + i * (DL_H / 4);
+    txt(DL_X0 - 22, y + 3.6, String(DL_SHORT[i]), '#9fe4ff');
+    txt(DL_X1 + 22, y + 3.6, String(DL_SHORT[i]), '#9fe4ff');
+  }
+
+  var kicks = dlAllKicks();
+  var best = kicks.length ? kicks[0] : null;
+  var direct = !dlSegBlocked(_dlCue, _dlObj);
+
+  // the straight line, so you can see WHY a kick is needed
+  p.push('<line x1="' + _dlCue.x + '" y1="' + _dlCue.y + '" x2="' + _dlObj.x + '" y2="' + _dlObj.y +
+         '" stroke="' + (direct ? '#5f8f72' : '#c4543a') + '" stroke-width="1.4" ' +
+         'stroke-dasharray="2 4" opacity="' + (direct ? '.75' : '.85') + '"/>');
+
+  if (best && !best.blocked) {
+    var col = best.pocket ? '#c46a4a' : '#c8963e';
+    p.push('<polyline points="' + _dlCue.x + ',' + _dlCue.y + ' ' + best.hit.x + ',' + best.hit.y +
+           ' ' + _dlObj.x + ',' + _dlObj.y + '" fill="none" stroke="' + col +
+           '" stroke-width="2.4" stroke-linejoin="round" opacity="' + (best.pocket ? '.5' : '1') + '"/>');
+    var ac = best.pocket ? '#ff9d7a' : '#ffd76a';
+    p.push('<circle cx="' + best.hit.x + '" cy="' + best.hit.y + '" r="6.5" fill="none" stroke="' + ac +
+           '" stroke-width="2.5"' + (best.pocket ? ' stroke-dasharray="3 3"' : '') + '/>');
+    var lx = best.hit.x, ly = best.hit.y;
+    var off = (best.rail === 'top') ? -13 : (best.rail === 'bottom') ? 17 : 4;
+    if (best.rail === 'left')  lx -= 15;
+    if (best.rail === 'right') lx += 15;
+    txt(lx, ly + off, best.n.toFixed(1), ac, 700, 10.5);
+  }
+
+  // blockers, then the two balls on top
+  for (i = 0; i < _dlObs.length; i++) {
+    p.push('<circle cx="' + _dlObs[i].x + '" cy="' + _dlObs[i].y + '" r="' + DL_R +
+           '" fill="#3b2f4d" stroke="#8f7fb0" stroke-width="1.2"/>');
+    p.push('<circle cx="' + _dlObs[i].x + '" cy="' + _dlObs[i].y + '" r="' + (DL_R + 2.6) +
+           '" fill="none" stroke="#8f7fb0" stroke-width=".7" stroke-dasharray="2 2" opacity=".5"/>');
+  }
+  p.push('<circle cx="' + _dlCue.x + '" cy="' + _dlCue.y + '" r="' + DL_R +
+         '" fill="#f4efe2" stroke="#b8ad90" stroke-width="1.2"/>');
+  p.push('<circle cx="' + _dlObj.x + '" cy="' + _dlObj.y + '" r="' + DL_R +
+         '" fill="#cc2222" stroke="#7a1414" stroke-width="1.2"/>');
+
+  txt(200, 196, 'LONG RAILS &middot; 8 intervals, numbered 0&ndash;8', '#8ba394', 400, 9.5);
+  txt(200, 208, 'SHORT RAILS &middot; 4 intervals, numbered 5&middot;4&middot;3&middot;4&middot;5', '#7fa8bd', 400, 9.5);
+
+  p.push('<rect id="dl-tapzone" x="0" y="0" width="400" height="216" fill="transparent" ' +
+         'pointer-events="all" style="cursor:crosshair"/>');
+  /* touch-action:none so dragging a ball doesn't scroll the modal underneath. */
+  return '<svg id="dl-svg" viewBox="0 0 400 216" width="100%" ' +
+         'style="display:block;touch-action:none" ' +
+         'onpointerdown="dlPointerDown(event)" onpointermove="dlPointerMove(event)" ' +
+         'onpointerup="dlPointerUp(event)" onpointercancel="_dlDrag=null">' + p.join('') + '</svg>';
+}
+
+/* ── the written read-out ─────────────────────────────────────────── */
+
+function dlRender() {
+  var host = document.getElementById('dl-diagram');
+  if (!host) return;
+  host.innerHTML = dlSvg();
+
+  ['cue', 'obj', 'obs'].forEach(function (m) {
+    var b = document.getElementById('dl-mode-' + m);
+    if (b) b.classList.toggle('on', _dlMode === m);
+  });
+
+  var kicks = dlAllKicks();
+  var best = kicks.length ? kicks[0] : null;
+  var direct = !dlSegBlocked(_dlCue, _dlObj);
+
+  var cnt = document.getElementById('dl-obs-count');
+  if (cnt) cnt.textContent = _dlObs.length ? '(' + _dlObs.length + '/' + DL_MAXOBS + ')' : '';
+
+  var tip = document.getElementById('dl-try');
+  if (tip) {
+    var msg;
+    if (_dlNote === 'max')          msg = '<b>' + DL_MAXOBS + ' of ' + DL_MAXOBS + ' blockers used</b> &mdash; tap one to remove it first';
+    else if (_dlNote === 'overlap') msg = 'Balls can&rsquo;t sit on top of each other &mdash; try a bit further over';
+    else if (_dlMode === 'cue')     msg = 'Tap the table to move the <b>cue ball</b> &mdash; or drag any ball';
+    else if (_dlMode === 'obj')     msg = 'Now tap where the <b>ball you want to hit</b> sits';
+    else if (_dlObs.length >= DL_MAXOBS)
+                                    msg = '<b>All ' + DL_MAXOBS + ' blockers placed</b> &mdash; tap one to remove, or drag to move it';
+    else msg = 'Tap to drop a <b>blocker</b> (' + _dlObs.length + ' of ' + DL_MAXOBS +
+               ') &mdash; tap one to remove it, drag to move it';
+    tip.innerHTML = msg;
+    _dlNote = '';
+  }
+
+  var eq = document.getElementById('dl-eq');
+  if (eq) {
+    if (!best) {
+      eq.className = 'dl-eq bad';
+      eq.innerHTML = '<div class="warn">No one-cushion kick reaches from there. Move a ball and try again.</div>';
+    } else if (best.blocked) {
+      eq.className = 'dl-eq bad';
+      eq.innerHTML = '<div class="warn">Every one-rail kick is blocked by another ball. ' +
+                     'You&rsquo;d need two cushions, or a different route.</div>';
+    } else {
+      eq.className = 'dl-eq';
+      eq.innerHTML = '<span class="c"><b>' + (best.rail === 'top' || best.rail === 'bottom' ? 'LONG' : 'SHORT') +
+                     '</b><small>' + dlRailLabel(best.rail).replace('the ', '').toUpperCase() + '</small></span>' +
+                     '<span class="op">&rarr;</span>' +
+                     '<span class="a"><b>' + best.n.toFixed(1) + '</b><small>AIM DIAMOND</small></span>' +
+                     (best.pocket
+                       ? '<div class="dl-pocket">\u26a0 That contact point is right at a pocket mouth &mdash; ' +
+                         'there&rsquo;s no cushion there to bank off. Nudge a ball and read it again.</div>'
+                       : '') +
+                     (direct
+                       ? '<div class="dl-mirror">Nothing is blocking the direct shot &mdash; you wouldn&rsquo;t ' +
+                         'normally kick here, but the read still works.</div>'
+                       : '');
+    }
+  }
+
+  var el = document.getElementById('dl-steps');
+  if (!el) return;
+  var li = [];
+  li.push(direct
+    ? 'The straight line to the ball is <b>clear</b> (green dashes). A kick is only needed when something is in the way.'
+    : 'The straight line is <b>blocked</b> (red dashes) &mdash; so you have to go off a cushion.');
+
+  if (best && !best.blocked) {
+    li.push('Pick a rail. Here the shortest clean route is off <b>' + dlRailLabel(best.rail) + '</b>.');
+    li.push('<b>Mirror the target:</b> imagine the ball you want to hit sitting the same distance on the ' +
+            'far side of that rail. Draw a line from the cue ball to that mirror image.');
+    li.push('Where that line crosses the rail is your contact point &mdash; here <b>diamond ' +
+            best.n.toFixed(1) + '</b>. Send the cue ball there and the angle out matches the angle in.');
+    if (kicks.length > 1) {
+      var alts = kicks.slice(1).filter(function (k) { return !k.blocked && !k.pocket; })
+                      .map(function (k) { return dlRailLabel(k.rail) + ' at ' + k.n.toFixed(1); });
+      if (alts.length) li.push('Other rails that also work: <b>' + alts.join('</b>, <b>') + '</b>.');
+    }
+  } else {
+    li.push('Move the cue ball or the target until a clean rail route appears.');
+  }
+  el.innerHTML = '<li>' + li.join('</li><li>') + '</li>';
+}
+
+function showDiamondLesson() {
+  var e = document.getElementById('diamond-explainer');
+  if (e) e.style.display = 'flex';   // .dl-modal centres via flex; 'block' would break it
+  try { dlRender(); } catch (_) {}   // draw the board; a lesson must never break the app
+}
 function maybeShowDiamondExplainer() {
   var t = document.getElementById('aim-diamonds');
   if (!t || !t.checked || !window._tHf) return;      // only when diamonds truly show
   var seen = false; try { seen = localStorage.getItem('curran_diamond_explained') === '1'; } catch(_) {}
   if (seen) return;
-  var e = document.getElementById('diamond-explainer'); if (e) e.style.display = 'block';
+  showDiamondLesson();
 }
 function toggleDiamonds() {
   var t = document.getElementById('aim-diamonds');
@@ -4766,6 +5915,8 @@ function applyHomography(h, x, y) {
 // all pockets with a fresh, correct 6 — the 4 corners plus 2 perspective-
 // correct side pockets on whichever pair of rails is longer.
 function rebuildFromCorners() {
+  /* Aligning once teaches what the tip exists to teach, so retire it. */
+  _alignTipSeen = true;
   const corners = marks.filter(m => m.type === 'corner').sort((a,b)=>a.idx-b.idx);
   if (corners.length < 4 || !canvas.width) return;
   const W = canvas.width, H = canvas.height;
@@ -5429,6 +6580,7 @@ function BALL_R() {
 }
 function setTableSize(sz, el) {
   TABLE_SIZE = sz;
+  if (typeof refreshQuickSetupSummary === 'function') refreshQuickSetupSummary();
   if (el) { document.querySelectorAll('#tablesize-row .pill').forEach(p => p.classList.remove('active')); el.classList.add('active'); }
   if (typeof saveSettings === 'function') saveSettings();
   if (sourceImg) { renderCanvas(); hideSuggestion(); }
@@ -5494,6 +6646,13 @@ function computeKickShot(cueRaw, targetRaw, allBalls) {
     if (!isFinite(bx)||!isFinite(by)) continue;
     if (r.axis==='y'){ if (bx<M || bx>maxX-M) continue; }
     else            { if (by<M || by>maxY-M) continue; }
+
+    /* SIDE POCKET. The margin above keeps a kick off the corner pockets, but
+       nothing guarded the side pocket in the middle of each long rail - about
+       1 kick in 10 was being aimed straight into it. There is no cushion at a
+       pocket mouth, so that shot cannot be played: skip it and let the next
+       rail win. Half the pocket mouth plus a ball radius. */
+    if (r.axis === 'y' && Math.abs(bx - maxX/2) < (0.025 + R)) continue;
 
     // Both legs (cue→bounce, bounce→target) must be clear of other balls.
     var bounce = {fx:bx, fy:by};
@@ -5772,7 +6931,7 @@ function suggestShot() {
     _awaitingPocket = true;
     if (typeof renderCanvas === 'function') renderCanvas();
     titl.textContent = 'Which Pocket?';
-    body.textContent = 'This photo isn\u2019t an aligned full table, so I can\u2019t work out where the pockets are \u2014 and I\u2019d rather ask than guess.\n\nTap the pocket you\u2019re aiming at, right on the photo. That\u2019s all I need: cue ball, object ball, and one pocket.\n\n(For a whole-table photo instead, use \ud83d\udcd0 Align Table or \u2728 Auto in Step 2 and every pocket gets placed for you.)';
+    body.textContent = 'This photo isn\u2019t an aligned full table, so I can\u2019t work out where the pockets are \u2014 and I\u2019d rather ask than guess.\n\nTap the pocket you\u2019re aiming at, right on the photo. That\u2019s all I need: cue ball, object ball, and one pocket.\n\nSingle pocket = quick, but no diamonds. \ud83d\udcd0 Align Table = full geometry and sharper angles.\n\n(For a whole-table photo instead, use \ud83d\udcd0 Align Table or \u2728 Auto in Step 2 and every pocket gets placed for you.)';
     sug.classList.add('show'); setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60); return;
   }
   _awaitingPocket = false;
@@ -5867,7 +7026,7 @@ function suggestShot() {
       allTargets = [_mh];
       nineNote = '\n\n\u2705 9-Ball: planning your marked lowest ball (the \ud83c\udfaf ring).';
     } else {
-      nineNote = '\n\n\u26a0\ufe0f 9-Ball rule: you must hit the LOWEST-numbered ball first. The AI can\u2019t read ball numbers \u2014 this is the easiest makeable shot, so confirm it IS the lowest, or tap \ud83c\udfaf Set Lowest Ball (Step 4).';
+      nineNote = '\n\n\u26a0\ufe0f 9-Ball rule: you must hit the LOWEST-numbered ball first. The AI can\u2019t read ball numbers \u2014 this is the easiest makeable shot, so confirm it IS the lowest, or tap \ud83c\udfaf Set Lowest Ball up in Quick Setup.';
     }
   }
   var comboNote = '';
@@ -5917,6 +7076,24 @@ function suggestShot() {
         + 'A kick is an escape, not a high-percentage play: rail contact adds spin and the rebound angle '
         + 'shifts with speed, so treat the gold line as a starting aim, not a guarantee. Shoot with a rolling '
         + 'cue ball (no draw/follow) for the closest match to this line.';
+      /* SPIN CALIBRATION READOUT (Advanced only). Shows the no-spin number and
+         the corrected one side by side so the rail comparison can be logged at
+         the table. Reads the values recorded by kickDiamondLabel - it does not
+         recompute them. Remove this block once the constants are tuned. */
+      try {
+        var dc = window._diamondCalc;
+        if (dc && !simpleMode && kick.diamondLabel) {
+          kickNote += '\n\n\ud83d\udcd0 SPIN CALIBRATION \u2014 no spin: ' + dc.raw.toFixed(1)
+            + '  |  with spin: ' + dc.adj.toFixed(1)
+            + '  |  applied: ' + (dc.delta >= 0 ? '+' : '') + dc.delta.toFixed(1)
+            + ' (' + dc.kind
+            + (dc.sideShift ? ', side ' + (dc.sideShift >= 0 ? '+' : '') + dc.sideShift.toFixed(1) : '')
+            + (dc.vertShift ? ', follow/draw ' + (dc.vertShift >= 0 ? '+' : '') + dc.vertShift.toFixed(1) : '')
+            + ')'
+            + '. Shoot it and note which diamond the cue ball ACTUALLY contacts, then compare: '
+            + 'the gap between that and the "with spin" number is the correction to change.';
+        }
+      } catch (_) {}
       maybeShowKickExplainer();
     }
   }
@@ -6029,6 +7206,7 @@ function suggestShot() {
   body.textContent = plainHeadline + advice + englishAdvice + safetyNote + kickNote + comboNote + nineNote + eightNote + sampleNote;
   if (!_keepFocus) _focusRank = 0;
   updateShotSelector();
+  window._shotRead = true;          // presentation flag for the progress ribbon only
   sug.classList.add('show');
   // Don't yank the page around when the arrows regenerate the panel.
   if (!_keepFocus) setTimeout(function(){ sug.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
@@ -6218,6 +7396,18 @@ function handleTap(fx, fy) {
     return;
   }
   // 9-BALL: picking the must-hit lowest ball — the next ball tap sets it.
+  /* Tapping the align tip dismisses it rather than falling through to the
+     mark handlers - it sits low on the photo where a stray tap is likely. */
+  if (window._chipIsAlignTip && !_awaitingPocket && !_pickingLowest) {
+    var _cy = tapY / canvas.height;
+    if (_cy > 0.82) {
+      _alignTipSeen = true;
+      window._chipIsAlignTip = false;
+      renderCanvas();
+      setStatus('Tip dismissed \u2014 Align Table is still there when you want it', 'gold');
+      return;
+    }
+  }
   if (_pickingLowest) {
     _pickingLowest = false;
     for (let i = marks.length-1; i>=0; i--) {
@@ -6468,6 +7658,10 @@ function setMode(mode) {
 }
 
 var _modeChosen = false;      // must pick a game before AI Detect / Suggest
+/* Align tip: shown at most once per photo. Reset when a new frame arrives,
+   and permanently silenced the moment a table IS aligned - having aligned
+   once, the player has learned the thing the tip exists to teach. */
+var _alignTipSeen = false;
 var _pickingLowest = false;   // 9-ball: next ball tap sets the must-hit ball
 var _sampleMode = false;      // sample-shot layout loaded (drawn table, no photo)
 
@@ -6511,16 +7705,672 @@ function lowestBallAction() {
 var _runCount = 0;
 
 function renderRun() {
+  var _rc = P().score, _fs = P().fouls;
   var el = document.getElementById('run-count');
-  if (el) el.textContent = _runCount;
+  if (el) {
+    el.textContent = _rc;
+    // A negative score is legal but worth noticing, so it reads red not gold.
+    el.style.color = (_rc < 0) ? '#ff9d7a' : 'var(--gold)';
+  }
+  /* The streak has to be VISIBLE. A one-off status line scrolls away, and the
+     player is the one who needs to know they are one foul from -16. */
+  var f = document.getElementById('foul-streak');
+  if (f) {
+    f.textContent = _fs ? ('FOULS ' + _fs + '/3') : '';
+    f.style.color = (_fs >= 2) ? '#ff9d7a' : 'var(--text-muted)';
+    f.style.display = _fs ? 'block' : 'none';
+  }
 }
+/* SHOT HISTORY - rebuilt.
+   The previous attempt was abandoned because the thumbnails were blurry. That
+   was not the feature's fault: the images were stored at CSS-pixel size and
+   then displayed on a screen with 2-3 device pixels per CSS pixel, so every one
+   was stretched. Same defect class as the scanner HUD and the main canvas, both
+   already fixed. Here the thumbnail is captured at THUMB_W x dpr, so it has the
+   pixels the display actually needs.
+
+   Storage: localStorage has roughly a 5MB budget shared with every other
+   setting, so entries are capped and the image is a small JPEG. Five entries at
+   ~30KB is ~150KB - comfortable. Saving is MANUAL: the app cannot know which
+   reads mattered to you, and silently filling storage is how features get
+   removed for the wrong reason. */
+var shotHistory = [];
+var HIST_MAX = 5;
+var HIST_KEY = 'rr_history';
+var THUMB_W = 258;               // 86 css px x 3, the largest dpr worth serving
+
+function loadHistory() {
+  try {
+    var raw = localStorage.getItem(HIST_KEY);
+    shotHistory = raw ? (JSON.parse(raw) || []) : [];
+    if (!Array.isArray(shotHistory)) shotHistory = [];
+  } catch (e) { shotHistory = []; }
+}
+
+function persistHistory() {
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(shotHistory)); return true; }
+  catch (e) {
+    /* Quota exceeded. Drop the oldest and try once - better to keep the recent
+       reads than to lose the lot, and better to say so than fail silently. */
+    if (shotHistory.length > 1) {
+      shotHistory.pop();
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(shotHistory)); 
+            setStatus('Storage was full \u2014 the oldest saved read was removed', 'warn');
+            return true; } catch (e2) {}
+    }
+    setStatus('Couldn\u2019t save \u2014 your phone\u2019s storage is full', 'warn');
+    return false;
+  }
+}
+
+/* Capture at device resolution. This one line is the difference between sharp
+   and blurry, and it is why the feature is worth having back. */
+function makeThumb() {
+  if (!sourceImg || !canvas || !canvas.width) return null;
+  try {
+    var ar = canvas.height / canvas.width;
+    var t = document.createElement('canvas');
+    t.width  = THUMB_W;
+    t.height = Math.max(1, Math.round(THUMB_W * ar));
+    var g = t.getContext('2d');
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    // the MAIN canvas already holds the photo plus every line and marker
+    g.drawImage(canvas, 0, 0, t.width, t.height);
+    return t.toDataURL('image/jpeg', 0.82);
+  } catch (e) { return null; }
+}
+
+function saveCurrentShot() {
+  if (!sourceImg) { setStatus('Take or upload a photo first', 'warn'); return; }
+  var thumb = makeThumb();
+  if (!thumb) { setStatus('Nothing to save yet', 'warn'); return; }
+  var res = window._bestShotResult;
+  var top = (res && res.ranked && res.ranked.length) ? res.ranked[0] : null;
+  var title = 'Table read', detail = '';
+  if (top && top.ball) {
+    var NM = { obj:'Solid', stripe:'Stripe', eight:'8-ball' };
+    var ball = NM[top.ball.type] || 'Ball';
+    var where = top.pocket ? (getPocketType(top.pocket).label || 'pocket') : 'pocket';
+    title = top.blocked ? (ball + ' \u2014 blocked') : (ball + ' \u2192 ' + where);
+    var dl = (typeof top.difficulty === 'number')
+      ? (top.difficulty <= 3 ? 'easy' : top.difficulty <= 5 ? 'moderate'
+        : top.difficulty <= 8 ? 'tough' : 'very hard') : '';
+    detail = (typeof top.cut === 'number' ? Math.round(top.cut) + '\u00b0 cut \u00b7 ' : '') + dl;
+  } else {
+    var n = marks.filter(function(m){ return m.type !== 'corner' && m.type !== 'pocket'; }).length;
+    detail = n + ' ball' + (n === 1 ? '' : 's') + ' marked';
+  }
+  shotHistory.unshift({ t: Date.now(), title: title, detail: detail, thumb: thumb,
+                        game: gameMode, marks: JSON.parse(JSON.stringify(marks)) });
+  while (shotHistory.length > HIST_MAX) shotHistory.pop();
+  if (persistHistory()) setStatus('Saved \u2014 ' + shotHistory.length + ' of ' + HIST_MAX + ' kept', 'live');
+  renderHistory();
+}
+
+function timeAgo(ts) {
+  var m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + ' min ago';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + ' hour' + (h === 1 ? '' : 's') + ' ago';
+  var d = Math.floor(h / 24);
+  return d + ' day' + (d === 1 ? '' : 's') + ' ago';
+}
+
+function openHistory() {
+  setPageTitle('SAVED READS');
+  releaseCameraIfIdle();     // browsing saved reads, not shooting
+  loadHistory();
+  document.body.classList.add('hist-mode');
+  renderHistory();
+  var p = document.getElementById('history-panel');
+  if (p) p.scrollTop = 0;
+}
+function closeHistory() {
+  document.body.classList.remove('hist-mode');
+  setPageTitle('SCAN & READ');
+  closeHub();                // entered from Scan & Read, so return there
+}
+
+function renderHistory() {
+  var box = document.getElementById('hist-list');
+  if (!box) return;
+  box.innerHTML = '';
+
+  // Only surface the Save control when there's actually a read on screen to
+  // save. It used to render as a full-width disabled "Nothing to save yet" bar
+  // that looked like a (wrong) empty-state sitting above real saved entries.
+  if (sourceImg) {
+    var save = document.createElement('button');
+    save.id = 'hist-save-btn';
+    save.textContent = '\u2295  Save the read on screen now';
+    save.onclick = function(){ saveCurrentShot(); };
+    box.appendChild(save);
+  }
+
+  if (!shotHistory.length) {
+    var e = document.createElement('div');
+    e.className = 'hist-empty';
+    e.innerHTML = '<b>No saved reads yet</b>Read a shot first, then save it here. '
+                + 'The last ' + HIST_MAX + ' are kept on this phone \u2014 nothing is uploaded anywhere.';
+    box.appendChild(e);
+    return;
+  }
+
+  shotHistory.forEach(function(item, idx){
+    var row = document.createElement('div'); row.className = 'hist-item';
+    var cv = document.createElement('canvas');
+    row.appendChild(cv);
+    var info = document.createElement('div'); info.className = 'hist-info';
+    var gm = item.game === '9ball' ? '9-Ball' : item.game === 'straight' ? 'Straight' : '8-Ball';
+    info.innerHTML = '<b></b><span></span>';
+    info.querySelector('b').textContent = item.title;
+    info.querySelector('span').textContent = [item.detail, gm, timeAgo(item.t)]
+      .filter(Boolean).join(' \u00b7 ');
+    row.appendChild(info);
+    var act = document.createElement('div'); act.className = 'hist-act';
+    var r = document.createElement('button');
+    r.textContent = 'Restore';
+    r.style.cssText = 'background:#0d2430;color:#9fe4ff;border:1px solid #40ceff';
+    r.onclick = function(){ restoreShot(idx); };
+    var x = document.createElement('button');
+    x.textContent = 'Delete';
+    x.style.cssText = 'background:#2a1414;color:#ff9d7a;border:1px solid #7a3a2a';
+    x.onclick = function(){ deleteShot(idx); };
+    act.appendChild(r); act.appendChild(x);
+    row.appendChild(act);
+    box.appendChild(row);
+
+    /* Paint at css size x dpr. Drawing straight into an <img> would let the
+       browser scale it; sizing the backing store ourselves is what keeps it
+       sharp on a 3x screen. */
+    var im = new Image();
+    im.onload = function(){
+      var dpr = Math.min(3, window.devicePixelRatio || 1);
+      var cw = 86, ch = 56;
+      cv.width  = Math.round(cw * dpr);
+      cv.height = Math.round(ch * dpr);
+      var g = cv.getContext('2d');
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+      // cover-fit, so a portrait photo is not squashed into a landscape box
+      var s = Math.max(cv.width / im.width, cv.height / im.height);
+      var dw = im.width * s, dh = im.height * s;
+      g.drawImage(im, (cv.width - dw) / 2, (cv.height - dh) / 2, dw, dh);
+    };
+    im.src = item.thumb;
+  });
+}
+
+function restoreShot(i) {
+  var it = shotHistory[i];
+  if (!it) return;
+  var im = new Image();
+  im.onload = function(){
+    sourceImg = im;
+    marks = it.marks ? JSON.parse(JSON.stringify(it.marks)) : [];
+    /* The thumbnail is a FLATTENED picture - photo plus lines already drawn in.
+       The homography cannot be rebuilt from it, so alignment is cleared rather
+       than left pointing at geometry that no longer matches. */
+    window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null;
+    hideSuggestion();
+    if (typeof renderCanvas === 'function') renderCanvas();
+    /* The canvas starts display:none and only the capture/upload/sample paths
+       ever unhide it. Without this, restore painted the photo into a hidden
+       element and the "Captured frame appears here" placeholder stayed up, so
+       it looked like nothing happened. */
+    var ph = document.getElementById('canvas-placeholder');
+    if (ph) ph.style.display = 'none';
+    if (typeof canvas !== 'undefined' && canvas) canvas.style.display = 'block';
+    document.body.classList.remove('hist-mode');   // land on Scan & Read...
+    setPageTitle('SCAN & READ');
+    closeHub();                                     // ...not the hub (closeHistory would re-open it)
+    setStatus('Restored \u2014 a saved picture, so re-align if you need the diamonds', 'gold');
+    var c = document.getElementById('canvas-card');
+    if (c) try { c.scrollIntoView({behavior:'smooth', block:'center'}); } catch(_) {}
+  };
+  im.onerror = function(){ setStatus('That saved read couldn\u2019t be opened', 'warn'); };
+  im.src = it.thumb;
+}
+
+function deleteShot(i) {
+  if (i < 0 || i >= shotHistory.length) return;
+  shotHistory.splice(i, 1);
+  persistHistory(); renderHistory(); refreshHubState();
+  setStatus('Removed', 'gold');
+}
+
+function clearHistory() {
+  if (!shotHistory.length) return;
+  shotHistory = [];
+  try { localStorage.removeItem(HIST_KEY); } catch (e) {}
+  renderHistory(); refreshHubState();
+  setStatus('History cleared', 'gold');
+}
+
+
+/* MODES HUB - the home screen.
+   Rendered from first paint via body.hub-mode in the markup: there is no toggle
+   and no setting, because there is only one correct starting screen. Every row
+   is a destination, and every destination returns here. */
+/* The hub is the home screen: rendered from first paint by body.hub-mode in
+   the markup, so there is no toggle and no flash of another screen. */
+var hubOpen = true;
+
+function openHub() {
+  /* Leave Table Mode properly rather than covering it: otherwise body keeps
+     .table-mode and the next destination inherits a half-hidden page. */
+  if (typeof tableMode !== 'undefined' && tableMode) { try { leaveTableMode(); } catch (_) {} }
+  /* Same class of bug: any mode that hides page chrome must be cleared, not
+     covered, or the next destination inherits a half-hidden page. */
+  document.body.classList.remove('hist-mode');
+  document.body.classList.remove('score-mode');
+  hubOpen = true;
+  document.body.classList.add('hub-mode');
+  releaseCameraIfIdle();     // no live feed running behind the menu
+  refreshHubState();
+  var h = document.getElementById('modes-hub');
+  if (h) h.scrollTop = 0;
+}
+function closeHub() {
+  if (!hubOpen) return;
+  hubOpen = false;
+  document.body.classList.remove('hub-mode');
+}
+
+/* Live state on the rows. This is the argument for rows over tiles: a
+   full-width line fits a real sentence, so the hub is worth opening. */
+function refreshHubState() {
+  var a = document.getElementById('hub-s-scan');
+  if (a) {
+    var bits = [];
+    bits.push((typeof cameraOn !== 'undefined' && cameraOn) ? 'Camera on'
+             : (sourceImg ? 'Photo loaded' : 'Camera off'));
+    if (_modeChosen) bits.push(gameMode === '8ball' ? '8-Ball'
+                             : gameMode === '9ball' ? '9-Ball' : 'Straight');
+    var nb = marks.filter(function(m){ return m.type !== 'corner' && m.type !== 'pocket'; }).length;
+    if (nb) bits.push(nb + ' ball' + (nb === 1 ? '' : 's') + ' marked');
+    a.textContent = bits.join(' \u00b7 ');
+  }
+  /* The scoreboard and history rows were removed from the hub, so their
+     status lines no longer exist. Nothing else to refresh here. */
+}
+
+/* Each row closes the hub first, so no two overlays are ever stacked. */
+/* The destination bar names wherever you just went, so the section you picked
+   on the hub is confirmed at the top of the screen. */
+/* One owner for "the camera has no business running on this screen". Called
+   from the hub and from Saved Reads. Table Mode and Scan are the only two
+   places a live feed belongs. */
+function releaseCameraIfIdle() {
+  try {
+    if (typeof tableMode !== 'undefined' && tableMode) return;   // Table Mode needs it
+    if (typeof cameraOn !== 'undefined' && cameraOn && typeof stopCamera === 'function') stopCamera();
+  } catch (_) {}
+}
+
+/* ITEM 9 - the sticky bar is fixed, and #app reserved a hard-coded 158px for
+   it. The bar's height changes with Simple/Advanced (the confidence row comes
+   and goes), so the guess could leave the last card sitting under the bar.
+   Measure the bar and reserve exactly what it occupies. */
+function syncStickyReserve() {
+  try {
+    var bar = document.getElementById('sticky-action-bar');
+    var app = document.getElementById('app');
+    if (!bar || !app) return;
+    if (document.body.classList.contains('table-mode')) { app.style.paddingBottom = ''; return; }
+    var h = bar.offsetHeight || 0;
+    if (h > 0) app.style.paddingBottom = (h + 26) + 'px';
+  } catch (_) {}
+}
+
+function setPageTitle(t) {
+  var el = document.getElementById('page-title');
+  if (el) el.textContent = t;
+}
+
+function hubGo(where) {
+  /* The diamond lesson is a modal that sits ABOVE the hub (z-index 10050 vs 95),
+     so the hub deliberately stays open underneath it: closing the lesson then
+     returns you to the menu, like every other destination. */
+  if (where === 'diamonds') { openDiamondLesson(); return; }
+  closeHub();
+  setTimeout(function(){
+    if (where === 'scan') {
+      setPageTitle('SCAN & READ');
+      /* The camera is NOT started here on purpose. It turns on only when the
+         person taps Start Camera, or when Table Mode needs it. Anything else
+         reads as the camera launching by itself. */
+      var el = document.getElementById('step1-anchor');
+      if (el) try { el.scrollIntoView({behavior:'smooth', block:'center'}); } catch(_) {}
+    }
+    else if (where === 'table')    { setPageTitle('TABLE MODE'); try { enterTableMode(); } catch(_) {} }
+  }, 200);
+}
+
+/* The worked example already existed - buried behind a "?" inside a collapsed
+   drawer, where almost nobody would find it. Surface it rather than write a
+   second copy that could drift out of step with the first. */
+function openDiamondLesson() {
+  showDiamondLesson();   // full-screen modal now: no scrollIntoView needed
+}
+
+
+/* ═══ SCOREBOARD MODE ══════════════════════════════════════════════
+   Full screen, entered and left exactly like Table Mode - including the wake
+   lock, because a scoreboard turned to face someone is no use if it dims.
+
+   The layout is IDENTICAL across all three games: header, turn bar, two
+   stacked panels, PASS TURN, tap strip. Only the middle block inside a panel
+   changes, because only that differs between the games:
+
+     Straight pool - points, plus two foul pips. Two, not three: the third foul
+       is the one that costs 16, so what you need to see is how many you have
+       BEFORE the penalty lands.
+     9-ball - racks won, and NO pips. A 9-ball foul is not a countdown, it is
+       an instant loss of game, so a pip row would imply a tolerance that does
+       not exist. Showing one would be actively misleading.
+     8-ball - the assigned group, large. That is the thing a spectator needs
+       confirmed at a glance, and 8-ball fouls carry no running penalty. */
+var scoreMode = false;
+
+function enterScoreboard() {
+  if (scoreMode) return;
+  scoreMode = true;
+  document.body.classList.add('score-mode');
+  acquireWakeLock();          // a scoreboard that dims is useless
+  renderScoreboard();
+}
+
+function exitScoreboard() {
+  if (!scoreMode) return;
+  scoreMode = false;
+  document.body.classList.remove('score-mode');
+  if (!tableMode) releaseWakeLock();   // Table Mode may still want it
+  syncPlayersUI();
+  openHub();                 // every destination returns to the menu
+}
+
+function renderScoreboard() {
+  if (!scoreMode) return;
+  var ctx = document.getElementById('sb-context');
+  var turn = document.getElementById('sb-turn-name');
+  var box = document.getElementById('sb-panels');
+  var warn = document.getElementById('sb-warn');
+  var taps = document.getElementById('sb-taps');
+  if (!box) return;
+
+  var GAME = { straight:'STRAIGHT POOL', '9ball':'9-BALL', '8ball':'8-BALL' };
+  if (ctx) ctx.textContent = (GAME[gameMode] || 'POOL')
+    + (gameMode === 'straight' ? '   \u00b7   RACE TO 100' : '');
+  if (turn) turn.innerHTML = playerName(activePlayer) + '&rsquo;s shot';
+
+  var html = '';
+  for (var i = 0; i < 2; i++) {
+    var pl = players[i], on = (i === activePlayer);
+    var mid = '';
+    if (gameMode === 'straight') {
+      var pips = '';
+      for (var k = 0; k < 2; k++)
+        pips += '<div class="sb-pip' + (k < Math.min(pl.fouls,2) ? ' on' : '') + '"></div>';
+      mid = '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px">'
+          + '<div class="sb-big" style="color:' + (on ? '#5df0a5' : 'var(--cream)') + '">' + pl.score + '</div>'
+          + '<div style="text-align:right"><div class="sb-unit">POINTS</div>'
+          + '<div style="display:flex;gap:6px;margin-top:8px">' + pips + '</div>'
+          + '<div class="sb-unit" style="margin-top:4px;color:' + (pl.fouls >= 2 ? '#ff9d7a' : 'var(--text-muted)') + '">FOULS</div></div></div>';
+    } else if (gameMode === '9ball') {
+      mid = '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px">'
+          + '<div class="sb-big" style="color:' + (on ? '#5df0a5' : 'var(--cream)') + '">' + pl.racks + '</div>'
+          + '<div class="sb-unit" style="padding-bottom:8px">RACK' + (pl.racks === 1 ? '' : 'S') + ' WON</div></div>';
+    } else {
+      var g = pl.group === 'solids' ? 'SOLIDS' : pl.group === 'stripes' ? 'STRIPES' : 'OPEN TABLE';
+      var gc = pl.group === 'all' ? 'var(--text-dim)' : (on ? '#5df0a5' : 'var(--cream)');
+      mid = '<div><div class="sb-group" style="color:' + gc + '">' + g + '</div>'
+          + '<div class="sb-unit" style="margin-top:4px">' + (pl.group === 'all' ? 'GROUPS NOT SET YET' : 'YOUR GROUP') + '</div></div>';
+    }
+    var named = !!(players[i].name && players[i].name.trim());
+    html += '<div class="sb-panel" style="background:' + (on ? '#12271a' : 'var(--surface)')
+         +  ';border:' + (on ? '3px solid var(--green-soft)' : '1px solid var(--border)') + '">'
+         +  '<div>'
+         +    '<div class="sb-name" id="sb-name-' + i + '" onclick="editScoreboardName(' + i + ')" '
+         +       'style="color:' + (on ? 'var(--green-soft)' : 'var(--text-dim)') + '">'
+         +      '<span class="sb-name-chip"><span class="pen">\u270e</span>'
+         +      '<span class="nm">' + (on ? '\u25b6 ' : '') + playerName(i).toUpperCase() + '</span></span>'
+         +    '</div>'
+         +    (named ? '' : '<div class="sb-rename-tag">Tap to rename</div>')
+         +  '</div>' + mid + '</div>';
+  }
+  box.innerHTML = html;
+
+  // the two-foul warning is a WPA requirement, so it gets a banner of its own
+  if (warn) {
+    var p2 = players[activePlayer];
+    var show = (gameMode === 'straight' && p2.fouls >= 2);
+    warn.style.display = show ? 'block' : 'none';
+    if (show) warn.textContent = '\u26a0  ' + playerName(activePlayer).toUpperCase()
+      + ' \u2014 2 FOULS. A THIRD COSTS 16.';
+  }
+
+  /* Tap strip. Below PASS TURN deliberately: everything above is sized to be
+     read across a table, and controls up there would crowd it. */
+  if (taps) {
+    if (gameMode === 'straight') {
+      taps.innerHTML =
+        '<button onclick="bumpRun(-1);renderScoreboard()" style="background:#2a1414;color:#ff9d7a;border:1px solid #7a3a2a">&minus;1 FOUL</button>' +
+        '<button onclick="bumpRun(1);renderScoreboard()" style="background:#0d2e1c;color:#5df0a5;border:1px solid #34c96a">+1 BALL</button>';
+    } else if (gameMode === '9ball') {
+      taps.innerHTML =
+        '<button onclick="addRack(0);renderScoreboard()" style="background:#0d2e1c;color:#5df0a5;border:1px solid #34c96a">+1 ' + playerName(0).toUpperCase() + '</button>' +
+        '<button onclick="addRack(1);renderScoreboard()" style="background:#0d2e1c;color:#5df0a5;border:1px solid #34c96a">+1 ' + playerName(1).toUpperCase() + '</button>';
+    } else {
+      taps.innerHTML =
+        '<button onclick="setGroupFilter(\'solids\',null);renderScoreboard()" style="background:#0b1811;color:var(--cream);border:1px solid var(--border)">' + playerName(activePlayer).toUpperCase() + ' = SOLIDS</button>' +
+        '<button onclick="setGroupFilter(\'stripes\',null);renderScoreboard()" style="background:#0b1811;color:var(--cream);border:1px solid var(--border)">' + playerName(activePlayer).toUpperCase() + ' = STRIPES</button>';
+    }
+  }
+}
+
+/* Tap a scoreboard name to rename it in place. Presentation only: it writes
+   through setPlayerName, the same path the setup inputs use, so nothing about
+   scoring logic changes. */
+/* Rename a player from the big scoreboard. A real dialog rather than an inline
+   swap: the board is meant to be read from across the room, and an inline field
+   was too easy to miss and fiddly to hit. Presentation only — it writes through
+   setPlayerName, exactly like the setup inputs, so scoring is untouched. */
+function editScoreboardName(i) {
+  var old = document.getElementById('sb-rename');
+  if (old) old.remove();
+
+  var cur = (players[i] && players[i].name) ? players[i].name : '';
+  var wrap = document.createElement('div');
+  wrap.id = 'sb-rename';
+  wrap.className = 'sb-rn';
+  wrap.innerHTML =
+    '<div class="sb-rn-card">' +
+      '<h4>\u270e Rename player ' + (i + 1) + '</h4>' +
+      '<input id="sb-rn-input" type="text" maxlength="14" placeholder="Player ' + (i + 1) + '">' +
+      '<div class="sb-rn-btns">' +
+        '<button id="sb-rn-cancel" style="background:#1a2a1f;color:#b9cabd;border:1px solid var(--border)">CANCEL</button>' +
+        '<button id="sb-rn-save" style="background:#0d2e1c;color:#5df0a5;border:1px solid #34c96a">SAVE</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(wrap);
+
+  var inp = document.getElementById('sb-rn-input');
+  inp.value = cur;
+  var close = function(){ var w = document.getElementById('sb-rename'); if (w) w.remove(); };
+  var save  = function(){ setPlayerName(i, inp.value.trim()); close(); renderScoreboard(); };
+
+  document.getElementById('sb-rn-save').onclick = save;
+  document.getElementById('sb-rn-cancel').onclick = close;
+  wrap.onclick = function(e){ if (e.target === wrap) close(); };
+  inp.onkeydown = function(e){ if (e.key === 'Enter') { e.preventDefault(); save(); } };
+
+  setTimeout(function(){ try { inp.focus(); inp.select(); } catch(_) {} }, 60);
+}
+
+/* ═══ TWO-PLAYER MODE ═══════════════════════════════════════════════
+   Optional, off by default: in 1-player mode activePlayer is always 0, so
+   players[0] IS the old single counter and solo behaviour is unchanged.
+
+   Deliberately manual, following the run counter's precedent - the app cannot
+   see a ball drop or a miss, so anything it inferred would drift and then lie.
+   You pass the turn; it never guesses.
+
+   THE ONE REAL CONFLICT, and how it is handled: groupFilter is a single global
+   that suggestShot reads to decide which balls are legal targets. Turn-linking
+   it is the whole point in 8-ball, but it means the filter has to follow the
+   active player rather than be set once. So each player owns a group, and
+   passing the turn swaps groupFilter to theirs. Tapping Solids/Stripes now sets
+   the ACTIVE player's group, which is what you would expect it to mean.
+   AI Detect is unaffected - it detects every ball regardless of the filter. */
+var twoPlayer = false;
+var activePlayer = 0;
+var players = [
+  { name:'Player 1', score:0, fouls:0, racks:0, group:'all' },
+  { name:'Player 2', score:0, fouls:0, racks:0, group:'all' }
+];
+function P() { return players[activePlayer]; }
+function playerName(i) {
+  var n = (players[i].name || '').trim();
+  return n || ('Player ' + (i+1));
+}
+
+function setTwoPlayer(on, el) {
+  twoPlayer = !!on;
+  if (!twoPlayer) activePlayer = 0;          // solo always uses slot 0
+  ['pl-1p','pl-2p'].forEach(function(id){
+    var b = document.getElementById(id); if (b) b.classList.remove('active');
+  });
+  if (el) el.classList.add('active');
+  syncPlayersUI(); saveSettings();
+}
+
+function setPlayerName(i, v) {
+  players[i].name = v || '';
+  syncPlayersUI(); saveSettings();
+}
+
+/* Pass the turn. In 8-ball this also swaps the legal-target filter to the
+   incoming player's group, which is the point of linking them. */
+function passTurn() {
+  if (!twoPlayer) return;
+  activePlayer = activePlayer === 0 ? 1 : 0;
+  if (gameMode === '8ball') {
+    groupFilter = P().group || 'all';
+    ['grp-all','grp-solids','grp-stripes'].forEach(function(id){
+      var b = document.getElementById(id);
+      if (b) b.classList.toggle('active', id === 'grp-' + groupFilter);
+    });
+    if (typeof updateGroupFilterDesc === 'function') updateGroupFilterDesc();
+  }
+  hideSuggestion();
+  syncPlayersUI(); saveSettings();
+  setStatus('\u25b6 ' + playerName(activePlayer) + '\u2019s shot', 'gold');
+}
+
+/* One place that redraws every player-dependent element. Called from every
+   mutation so nothing can drift out of step. */
+function syncPlayersUI() {
+  var names = document.getElementById('players-names');
+  if (names) names.style.display = twoPlayer ? 'block' : 'none';
+
+  var w = document.getElementById('turn-who');
+  if (w) w.innerHTML = playerName(activePlayer) + '&rsquo;s shot';
+
+  ['pl-1p','pl-2p'].forEach(function(id,i){
+    var b=document.getElementById(id);
+    if (b) b.classList.toggle('active', (i===1)===twoPlayer);
+  });
+  for (var i=0;i<2;i++) {
+    var inp=document.getElementById('pl-name-'+i);
+    if (inp && inp.value !== players[i].name) inp.value = players[i].name;
+  }
+
+  /* The score strip shows whatever the current game actually tracks: points
+     and fouls in straight pool, racks in 9-ball, the ball group in 8-ball. */
+  var box = document.getElementById('player-scores');
+  if (box) {
+    var html = '';
+    for (var j=0;j<2;j++) {
+      var pl = players[j], on = (j===activePlayer);
+      var detail;
+      /* MEASURED at 360px with the BOLD fallback font: a three-digit score plus
+         the foul badge at a matched 17px came to 137-144px against 133px of
+         usable cell - so "100 . 2/3 fouls" overflowed in ordinary play, since
+         straight pool goes to 100. Two fixes, both also better typography:
+         the badge drops to a real badge size, and the score uses clamp() so it
+         shrinks on narrow screens instead of pushing out. */
+      var SUB = 'font-size:clamp(9px,2.9vw,11px);color:#ff9d7a;white-space:nowrap';
+      if (gameMode === 'straight')   detail = pl.score + (pl.fouls ? ' <span style="' + SUB + '">\u00b7 ' + pl.fouls + '/3</span>' : '');
+      else if (gameMode === '9ball') detail = pl.racks + ' rack' + (pl.racks===1?'':'s') + ' <span onclick="addRack(' + j + ')" style="cursor:pointer;color:#5df0a5;font-size:clamp(11px,3.4vw,13px)">+1</span>';
+      else                           detail = (pl.group === 'all' ? 'open table' : pl.group);
+      html += '<div style="flex:1;min-width:0;background:' + (on?'#12271a':'#0b1811') + ';border:1px solid ' + (on?'#34c96a':'var(--border)') + ';border-radius:9px;padding:7px 9px">'
+           +  '<div style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (on?'\u25b6 ':'') + playerName(j) + '</div>'
+           +  '<div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:700;'
+           +  'font-size:clamp(14px,4.4vw,17px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+           +  'color:' + (on?'#5df0a5':'var(--cream)') + '">' + detail + '</div></div>';
+    }
+    box.innerHTML = html;
+  }
+  renderRun();
+  if (scoreMode) renderScoreboard();
+}
+
+function addRack(i) {
+  players[i].racks++;
+  syncPlayersUI(); saveSettings();
+  setStatus(playerName(i) + ' wins the rack \u2014 ' + players[i].racks + ' total', 'live');
+}
+
+function resetPlayers() {
+  players.forEach(function(pl){ pl.score=0; pl.fouls=0; pl.racks=0; });
+  syncPlayersUI(); saveSettings();
+  setStatus('Scores reset', 'gold');
+}
+
+/* FOUL STREAK. WPA 14.1: three CONSECUTIVE fouls cost the third foul's point
+   plus a 15-point penalty (16 total), then the count resets and the offender
+   re-breaks a full rack.
+
+   The app can work out "consecutive" honestly, without guessing: the player
+   taps only for their own shots, so tap order IS their own sequence. A foul
+   after an opponent's inning is still consecutive for them, and the app sees
+   two -1 taps with nothing between - correct. Potting a ball ends the
+   sequence, so any +1 resets the streak - also correct.
+
+   The warning at two fouls is part of the rule, not a courtesy: under WPA a
+   player must be notified before the third one can carry the penalty. */
+var _foulStreak = 0;
+
 function bumpRun(n) {
-  _runCount = Math.max(0, _runCount + n);
+  /* Routes through the active player. In 1-player mode that is always slot 0,
+     so this is byte-for-byte the old behaviour. */
+  var pl = P();
+  /* NO clamp at zero. In 14.1 a foul deducts a point from your SCORE, and a
+     score genuinely can go negative - foul on your first shot and you are on
+     minus one. Clamping would quietly refuse to record a legal state. */
+  if (n > 0) {
+    pl.fouls = 0;                       // a potted ball ends any foul sequence
+    pl.score += n;
+    setStatus((twoPlayer ? playerName(activePlayer) + ' \u2014 ' : '') + 'Score: ' + pl.score, 'live');
+  } else {
+    pl.fouls++;
+    if (pl.fouls >= 3) {
+      pl.score -= 16;                   // the foul's own point + the 15 penalty
+      pl.fouls = 0;
+      setStatus((twoPlayer ? playerName(activePlayer) + ': ' : '') + 'third consecutive foul \u2014 16 off (1 + 15) and a full re-rack. Score: ' + pl.score, 'warn');
+    } else {
+      pl.score -= 1;
+      var _who = twoPlayer ? (playerName(activePlayer) + ' \u2014 ') : '';
+      setStatus(pl.fouls === 2
+        ? '\u26a0\ufe0f ' + _who + 'second foul in a row \u2014 one more costs 16 and a re-rack. Score: ' + pl.score
+        : _who + 'Foul \u2014 score: ' + pl.score, 'warn');
+    }
+  }
   renderRun(); saveSettings();
-  setStatus('Run: ' + _runCount, 'live');
 }
 function resetRun() {
-  _runCount = 0; renderRun(); saveSettings();
+  P().score = 0; P().fouls = 0; renderRun(); saveSettings();
   setStatus('Run counter reset', 'gold');
 }
 
@@ -6629,6 +8479,7 @@ function updateQuickModeRow() {
   if (r) r.style.display = (sourceImg && !_modeChosen) ? 'flex' : 'none';
   var sr = document.getElementById('straight-run-row');
   if (sr) sr.style.display = (gameMode === 'straight') ? 'block' : 'none';
+  if (typeof syncPlayersUI === 'function') syncPlayersUI();
 }
 function setGame(mode,el) {
   _modeChosen = true;
@@ -6639,6 +8490,7 @@ function setGame(mode,el) {
   if (nr) nr.style.display = (mode === '9ball') ? 'block' : 'none';
   gameMode=mode;
   if (typeof updateQuickModeRow === 'function') updateQuickModeRow();
+  if (typeof refreshQuickSetupSummary === 'function') refreshQuickSetupSummary();
   // Only clear the game-mode pills, not the group-filter pills
   document.querySelectorAll('.pills .pill').forEach(p=>{
     if (p.id==='grp-all'||p.id==='grp-solids'||p.id==='grp-stripes') return;
@@ -6654,6 +8506,15 @@ var groupFilter = 'all'; // 'all' | 'solids' | 'stripes'
 
 function setGroupFilter(val, el) {
   groupFilter = val;
+  /* In 2-player mode the pills set the ACTIVE player's group, and the other
+     player is given the opposite one - that is what assigning groups means
+     once the table opens. */
+  if (twoPlayer && gameMode === '8ball') {
+    P().group = val;
+    var other = players[activePlayer === 0 ? 1 : 0];
+    other.group = (val === 'solids') ? 'stripes' : (val === 'stripes' ? 'solids' : 'all');
+    syncPlayersUI();
+  }
   ['grp-all','grp-solids','grp-stripes'].forEach(function(id){
     var b = document.getElementById(id);
     if (b) b.classList.remove('active');
@@ -6669,7 +8530,7 @@ function updateGroupFilterDesc() {
   if (!desc) return;
   var autoEval = document.getElementById('bestshot-toggle');
   if (autoEval && !autoEval.checked) {
-    desc.textContent = 'Turn on Auto-Evaluate Best Shot (in Settings) to see the crown.';
+    desc.textContent = 'Turn on Auto-Evaluate Best Shot (in Advanced Tuning) to see the crown.';
     return;
   }
   if (groupFilter === 'solids') {
@@ -6711,15 +8572,13 @@ function toggleSimpleMode() {
   saveSettings();
 }
 function syncViewPills() {
-  var ps = document.getElementById('viewpill-simple'), pa = document.getElementById('viewpill-adv');
-  if (!ps || !pa) return;
-  if (simpleMode) {
-    ps.style.background = '#40ceff'; ps.style.color = '#06171f';
-    pa.style.background = 'transparent'; pa.style.color = '#9fe4ff';
-  } else {
-    pa.style.background = '#40ceff'; pa.style.color = '#06171f';
-    ps.style.background = 'transparent'; ps.style.color = '#9fe4ff';
-  }
+  /* One control, one source of truth: the compact Simple/ADV toggle in the
+     destination bar. The larger duplicate pill row was removed - two copies of
+     the same switch on one screen read as two different settings. */
+  var ms = document.getElementById('mini-simple'), ma = document.getElementById('mini-adv');
+  if (!ms || !ma) return;
+  ms.classList.toggle('on', !!simpleMode);
+  ma.classList.toggle('on', !simpleMode);
 }
 // Top Simple/Advanced pill → drives the same state as the settings toggle.
 function setSimpleView(simple) {
@@ -6743,7 +8602,9 @@ function toggleManualMark() {
   if (!b) return;
   var open = b.style.display !== 'none';
   b.style.display = open ? 'none' : 'block';
-  if (c) c.textContent = open ? '▸' : '▾';
+  /* Was swapping the glyph text, which does nothing now that .disc-caret
+     draws the chevron in CSS. Rotate like every other caret. */
+  if (c) c.classList.toggle('open', !open);
 }
 
 // Show/hide the advanced-only rows. In Simple mode the rows are hidden;
@@ -6751,6 +8612,7 @@ function toggleManualMark() {
 // drawAimingAids), NOT by unchecking toggles — so nothing gets saved as off
 // and switching back to Advanced restores everything automatically.
 function applyAdvancedVisibility() {
+  setTimeout(syncStickyReserve, 40);   // rows appear/disappear -> bar height changes
   document.querySelectorAll('.adv-only').forEach(function(el){
     el.classList.toggle('adv-hidden', simpleMode);
   });
@@ -6800,7 +8662,7 @@ function discardFrame() {
   lastScanTime = 0; stillCounter = 0; // resume auto-scan
 }
 
-function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); window._kickShot = null;
+function hideSuggestion() { document.getElementById('suggestion').classList.remove('show'); window._kickShot = null; window._shotRead = false;
   /* Don't wipe the shot selection when suggestShot() is REGENERATING the
      panel for an arrow press — suggestShot calls hideSuggestion on entry,
      which zeroed _focusRank before the new shot could be drawn, so the
@@ -6851,7 +8713,7 @@ function showInstallBanner() {
   const banner = document.createElement('div');
   banner.id = 'install-banner';
   banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--rail);border:1.5px solid var(--gold);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:999;box-shadow:0 4px 24px rgba(0,0,0,.7);max-width:320px;width:90%;font-family:Barlow,sans-serif';
-  banner.innerHTML = '<div style="font-size:28px">🎱</div><div style="flex:1"><div style="font-weight:700;font-size:13px;color:var(--ivory)">Add to Home Screen</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">Use like a real app — no browser needed</div></div><button onclick="installApp()" style="background:var(--gold);color:var(--felt);border:none;border-radius:7px;padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">Add</button><button onclick="dismissInstall()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px">✕</button>';
+  banner.innerHTML = '<div style="font-size:28px">🎱</div><div style="flex:1"><div style="font-weight:700;font-size:13px;color:var(--ivory)">Add to Home Screen</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">Use like a real app — no browser needed</div></div><button onclick="installApp()" style="background:var(--gold);color:var(--felt);border:none;border-radius:7px;padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">Add</button><button class="x-btn" onclick="dismissInstall()" aria-label="Dismiss">✕</button>';
   document.body.appendChild(banner);
 }
 
@@ -7108,7 +8970,9 @@ function saveSettings() {
       autoscan:  document.getElementById('autoscan-toggle').checked,
       personCheck: (document.getElementById('personcheck-toggle')||{checked:true}).checked,
       tableSize: TABLE_SIZE,
-      runCount:  _runCount,
+      twoPlayer: twoPlayer,
+      activePlayer: activePlayer,
+      players: players,
       diamonds: (document.getElementById('aim-diamonds')||{checked:false}).checked,
       sens:      document.getElementById('sens-slider').value,
       delay:     document.getElementById('delay-slider').value,
@@ -7145,7 +9009,22 @@ function loadSettings() {
     if (s.coaching !== undefined) document.getElementById('coaching-toggle').checked = s.coaching;
     if (s.personCheck !== undefined) { var _pc = document.getElementById('personcheck-toggle'); if (_pc) _pc.checked = s.personCheck; }
     if (s.diamonds !== undefined) { var _dm = document.getElementById('aim-diamonds'); if (_dm) _dm.checked = s.diamonds; }
-    if (typeof s.runCount === 'number') { _runCount = s.runCount; renderRun(); }
+    if (typeof s.twoPlayer === 'boolean') twoPlayer = s.twoPlayer;
+    if (typeof s.activePlayer === 'number') activePlayer = s.activePlayer ? 1 : 0;
+    if (Array.isArray(s.players) && s.players.length === 2) {
+      for (var pi=0; pi<2; pi++) {
+        var src=s.players[pi]||{};
+        players[pi].name  = typeof src.name==='string' ? src.name : players[pi].name;
+        players[pi].score = typeof src.score==='number' ? src.score : 0;
+        players[pi].fouls = typeof src.fouls==='number' ? src.fouls : 0;
+        players[pi].racks = typeof src.racks==='number' ? src.racks : 0;
+        players[pi].group = src.group || 'all';
+      }
+    } else if (typeof s.runCount === 'number') {
+      players[0].score = s.runCount;                 // migrate the old single counter
+      players[0].fouls = (typeof s.foulStreak === 'number') ? s.foulStreak : 0;
+    }
+    if (typeof syncPlayersUI === 'function') syncPlayersUI();
     if (s.tableSize && TABLE_LEN_IN[s.tableSize]) {
       TABLE_SIZE = s.tableSize;
       document.querySelectorAll('#tablesize-row .pill').forEach(function(p){ p.classList.toggle('active', p.textContent.indexOf(s.tableSize + '-ft') === 0); });
@@ -7164,6 +9043,9 @@ function loadSettings() {
     if (s.lsFlip) document.body.classList.add('ls-flip');
     if (s.lsNoSplit) document.body.classList.add('ls-nosplit');
   } catch(e) {}
+
+  try { loadHistory(); } catch (e) {}
+  if (typeof refreshHubState === 'function') refreshHubState();
 }
 
 /* ── LANDSCAPE SIDE SWAP ──────────────────────────────────────────────
@@ -7223,8 +9105,10 @@ function renderRecovery(kind) {
   var c = document.getElementById('tm-conf');
   var fix = document.getElementById('tm-fix');
   if (!b || !t || !a || !fix) return;
-  if (!kind) { b.classList.remove('recover'); fix.style.display = 'none'; return; }
+  if (!kind) { b.classList.remove('recover'); fix.style.display = 'none';
+               try { refreshTableMuteChip(); } catch (_) {} return; }   // mute chip may return
   b.classList.add('recover');
+  try { refreshTableMuteChip(); } catch (_) {}                          // ...and must yield now
   if (c) c.textContent = '\u2013';
   fix.style.display = 'block';
   if (kind === 'camera') {
@@ -7384,7 +9268,15 @@ function enterTableMode() {
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0,0); }
 }
 
-function exitTableMode() {
+/* THE TEARDOWN, separated from the navigation.
+   ‹ MENU is visible in Table Mode and called openHub() directly, which drew
+   the menu OVER Table Mode without ever leaving it: tableMode stayed true and
+   body kept .table-mode. Picking "Scan & Read" from there closed the hub onto
+   a half-Table-Mode page - #table-stage and #step1-anchor still hidden by the
+   Table Mode rules - so the camera button was gone and an uploaded photo
+   painted into a hidden canvas. Both read as "camera and upload don't work".
+   Anything that leaves Table Mode must run this first. */
+function leaveTableMode() {
   if (!tableMode) return;
   tableMode = false;
   document.body.classList.remove('table-mode');
@@ -7396,12 +9288,53 @@ function exitTableMode() {
   }
   releaseWakeLock();
   resetSpokenShot();
+  /* Release the camera on the way out. Without this the stream kept running
+     behind the hub and every other screen, which read as the camera "launching
+     by itself" later on. */
+  if (typeof cameraOn !== 'undefined' && cameraOn && typeof stopCamera === 'function') stopCamera();
+  if (typeof syncStickyReserve === 'function') setTimeout(syncStickyReserve, 40);
+}
+
+function exitTableMode() {
+  if (!tableMode) return;
+  leaveTableMode();
+  openHub();                 // every destination returns to the menu
+}
+
+/* Table Mode speech is gated by the chime toggle, which lives in Advanced
+   Tuning and is hidden in Simple mode. A Simple-mode user who has chimes off
+   gets a silent table with no way to see why. Rather than force a rarely-used
+   control into Simple mode permanently, the state is surfaced only where it
+   matters - and the chip IS the fix, so nobody has to go hunting. */
+function refreshTableMuteChip() {
+  var chip = document.getElementById('tm-mute');
+  if (!chip) return;
+  var chime = document.getElementById('chime-toggle');
+  var muted = !chime || !chime.checked;
+  /* Recovery wins. If the table can't be seen there is no shot to speak, so
+     "Look again" is the only action that matters - two stacked recovery
+     prompts mid-shot is worse than a silent one. */
+  var banner = document.getElementById('tm-banner');
+  var recovering = !!(banner && banner.classList.contains('recover'));
+  chip.style.display = (tableMode && muted && !recovering) ? 'block' : 'none';
+}
+
+function tableModeUnmute() {
+  var chime = document.getElementById('chime-toggle');
+  if (chime) {
+    chime.checked = true;
+    try { if (typeof saveSettings === 'function') saveSettings(); } catch (_) {}
+  }
+  try { unlockSpeech(); } catch (_) {}   // still inside a real tap gesture
+  try { resetSpokenShot(); } catch (_) {} // let the current call be spoken
+  refreshTableMuteChip();
 }
 
 /* Fill the banner from the crowned shot. Called at the end of suggestShot;
    returns immediately when Table Mode is off, so it costs nothing normally. */
 function updateTableBanner() {
   if (!tableMode) return;
+  refreshTableMuteChip();
   var elT = document.getElementById('tm-title');
   var elA = document.getElementById('tm-advice');
   var elC = document.getElementById('tm-conf');
@@ -7577,6 +9510,33 @@ document.addEventListener('visibilitychange', function () {
 
 /* Tier-2 drawer. Visibility only — no setting is changed by opening or
    closing it, and every control inside keeps its original handler. */
+/* Quick Setup is "set once", so it starts closed and the camera is the first
+   thing you see. Visibility only - every value inside keeps its state and its
+   original handler, exactly like the Advanced Tuning drawer. */
+function toggleQuickSetup() {
+  var d = document.getElementById('qs-drawer');
+  var c = document.getElementById('qs-caret');
+  if (!d) return;
+  var open = d.style.display !== 'none';
+  d.style.display = open ? 'none' : 'block';
+  if (c) c.classList.toggle('open', !open);
+  refreshQuickSetupSummary();
+}
+
+/* When collapsed, the header still reports what's set, so nothing is hidden -
+   only tucked away. */
+function refreshQuickSetupSummary() {
+  var el = document.getElementById('qs-summary');
+  if (!el) return;
+  var d = document.getElementById('qs-drawer');
+  if (d && d.style.display !== 'none') { el.textContent = '\u2014 set once'; return; }
+  try {
+    var game = (gameMode === '9ball') ? '9-Ball' : (gameMode === 'straight' ? 'Straight' : '8-Ball');
+    var size = (typeof TABLE_SIZE !== 'undefined' && TABLE_SIZE) ? TABLE_SIZE + '-ft' : '';
+    el.textContent = '\u2014 ' + game + (size ? ' \u00b7 ' + size : '') + ' \u00b7 tap to change';
+  } catch (_) { el.textContent = '\u2014 tap to change'; }
+}
+
 function toggleAdvTuning() {
   var d = document.getElementById('adv-tune-drawer');
   var c = document.getElementById('adv-tune-caret');
@@ -7676,12 +9636,12 @@ window.addEventListener('appinstalled', function () {
 });
 
 var TOUR_STEPS = [
-  { sel:'#viewmode-anchor', n:'Simple vs Advanced', d:'Simple keeps it to one clear shot. Advanced adds your top 3 options with arrows to step through them, spin control, coaching notes, table size, the Diamond System and more \u2014 each one explains itself when you turn it on.' },
+  { sel:'#dest-bar', n:'Where you are, and the way back', d:'This bar names the section you\u2019re in and takes you home. The app opens on the main menu: Scan & Read the Shot, Table Mode and the diamond lesson. Tap \u2039 MENU any time to go back.' },
+  { sel:'#mini-view', n:'Simple vs Advanced', d:'Right in the top bar, on every screen. SIMPLE keeps it to the essentials: the crown, the ghost ball and the line. ADV adds the diamond system, spin, aiming aids and tuning.' },
   { sel:'#view-mode-card', n:'Perspective Mode', d:'Tell it how you\u2019re holding the phone: Player View for a normal standing angle, Overhead if it is above the table. This decides how cut angles and diamond numbers are worked out, so set it before you start marking balls. Advanced only \u2014 skipped in Simple.' },
-  { sel:'#quick-setup', n:'Quick Setup — set once', d:'Game mode and table size live up here, above the camera, so you can set them before you start and then leave them alone. Advanced Tuning holds everything you rarely touch.' },
-  { sel:'#tm-start', n:'Table Mode \u2014 hands-free', d:'That green button runs the whole thing hands-free. Set the phone on a tripod, tap Start Table Mode, and it runs itself: it reads the table each time the balls settle, keeps the screen awake, and shows the call in a bar at the bottom. Tap the video any time to read it again. Tap EXIT to come back.' },
-  { sel:'#step1-anchor', n:'1 · Take a picture', d:'Start here. Snap a photo of your table, or upload one you already have. Overhead shots work best.' },
-  { sel:'#step2-anchor', n:'2 · Line up the table', d:'Tap the four corners of the table and we place every pocket for you \u2014 no fiddly manual marking.' },
+  { sel:'#quick-setup', n:'Quick Setup — set once', d:'Game mode and table size live here. It stays folded away so the camera is the first thing you see — tap the header to open it, and the closed row still shows what is set. Advanced Tuning now sits in its own card just below.' },
+  { sel:'#step1-anchor', n:'1 · Take a picture', d:'Start here. The camera never switches itself on — tap Start Camera when you are ready, or upload a photo you already have. Overhead shots work best.' },
+  { sel:'#auto-align-btn', n:'2 · Line up the table', d:'Tap ✨ AUTO and the app finds the table for you — that is the normal path. Only use “📐 Align Table by hand” underneath if Auto cannot see the corners.' },
   { sel:'#step3-anchor', n:'3 · Check the balls', d:'The AI finds the balls automatically. If one is labeled wrong, just tap it until it\u2019s right.' },
   { sel:'#step4-anchor', n:'4 · Game & shot', d:'The checklist before you tap Suggest Best Shot: cue ball marked, at least one object ball, and a pocket.' },
   { sel:'.sticky-action-bar', n:'Then: Suggest Best Shot', d:'With a cue ball, an object ball and a pocket set, tap Suggest Best Shot in this bar. The AI Confidence slider lives here too \u2014 slide left if balls were missed, right if it marked things that aren\u2019t balls.' }
@@ -7933,6 +9893,11 @@ try {
   updateGroupFilterDesc();
   applyAdvancedVisibility();
   syncViewPills();
+  initScanTips();
+  refreshQuickSetupSummary();
+  syncStickyReserve();
+  window.addEventListener('resize', syncStickyReserve);
+  window.addEventListener('orientationchange', function(){ setTimeout(syncStickyReserve, 350); });
   maybeAutoWelcome();
   
 } catch(e) {
@@ -7973,11 +9938,11 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">2️⃣</div>
-          <div><div class="help-item-title">Pick your game, then AI Detect</div><div class="help-item-desc">Choose <strong>8-Ball, 9-Ball, or Straight</strong> in Step 4 (the rules change which ball you should shoot), then tap <strong>🤖 AI Detect</strong> in the bottom bar. The AI finds and marks the balls — tap any it gets wrong to fix it.</div></div>
+          <div><div class="help-item-title">Pick your game, then AI Detect</div><div class="help-item-desc">Choose <strong>8-Ball, 9-Ball, or Straight</strong> in Quick Setup (the rules change which ball you should shoot), then tap <strong>🤖 AI Detect</strong> in the bottom bar. The AI finds and marks the balls — tap any it gets wrong to fix it.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">3️⃣</div>
-          <div><div class="help-item-title">Align the table</div><div class="help-item-desc">Tap <strong>📐 Align Table</strong>, then tap the table's 4 corners. Every pocket gets placed for you automatically.</div></div>
+          <div><div class="help-item-title">Align the table</div><div class="help-item-desc"><strong>Try ✨ Auto first</strong> — it finds the table on its own and is the normal path. If it can&rsquo;t, tap <strong>📐 Align Table by hand</strong>, then tap the table's 4 corners. Every pocket gets placed for you automatically.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">4️⃣</div>
@@ -8033,7 +9998,7 @@ try {
         <div class="help-section-title">📐 Align Table</div>
         <div class="help-item">
           <div class="help-icon">🔲</div>
-          <div><div class="help-item-title">Tap the 4 corners</div><div class="help-item-desc">Tap <strong>📐 Align Table</strong>, then tap the table's corners in order: top-left, top-right, bottom-right, bottom-left. The app maps the whole playing surface and places every visible pocket automatically — no manual pocket marking needed.</div></div>
+          <div><div class="help-item-title">Tap the 4 corners <span style="opacity:.7;font-weight:400">(fallback)</span></div><div class="help-item-desc">Only needed when <strong>✨ Auto</strong> can&rsquo;t find the table. Tap <strong>📐 Align Table by hand</strong>, then tap the table's corners in order: top-left, top-right, bottom-right, bottom-left. The app maps the whole playing surface and places every visible pocket automatically — no manual pocket marking needed.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🤏</div>
@@ -8124,7 +10089,7 @@ try {
         <div class="help-section-title">⭐ Best Shot Finder</div>
         <div class="help-item">
           <div class="help-icon">⭐</div>
-          <div><div class="help-item-title">Auto-Evaluate Best Shot</div><div class="help-item-desc">Turn this on (in Settings) and the app scores every ball on the table, then crowns your easiest shot.</div></div>
+          <div><div class="help-item-title">Auto-Evaluate Best Shot</div><div class="help-item-desc">Turn this on (in Advanced Tuning) and the app scores every ball on the table, then crowns your easiest shot.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">👑</div>
@@ -8183,7 +10148,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">💠</div>
-          <div><div class="help-item-title">Diamond System (Advanced)</div><div class="help-item-desc">Turns on the classic <strong>Corner-5 rail numbers</strong> — a learning overlay for kick and bank shots. Numbers follow Dr. Dave&rsquo;s standard: the corner pocket is <strong>5</strong>, and the long rail runs 0–8. The rule of thumb is <strong>cue-ball number − target number = the diamond to aim through</strong>. Honest caveat straight from the pros: it&rsquo;s a <strong>starting estimate</strong> that assumes a rolling cue ball with running English, and every table plays a little differently — feel the table and adjust. <strong>Needs a fully aligned table</strong> (all four rails in the photo); it won&rsquo;t show on a partial view.</div></div>
+          <div><div class="help-item-title">Diamond System (Advanced)</div><div class="help-item-desc">Turns on the classic <strong>Corner-5 rail numbers</strong> — a learning overlay for kick and bank shots. Numbers follow Dr. Dave&rsquo;s standard: the corner pocket is <strong>5</strong>. The <strong>long rails</strong> (the length) run <strong>0–8</strong>; the <strong>short rails</strong> (the width, at each end) run <strong>5·4·3·4·5</strong>. All four rails are marked on an aligned table. The rule of thumb is <strong>cue-ball number − target number = the diamond to aim through</strong>. Honest caveat straight from the pros: it&rsquo;s a <strong>starting estimate</strong> that assumes a rolling cue ball with running English, and every table plays a little differently — feel the table and adjust. <strong>Needs a fully aligned table</strong> (all four rails in the photo); it won&rsquo;t show on a partial view.</div></div>
         </div>
 
         <div class="help-item">
@@ -8239,7 +10204,10 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🎓</div>
-          <div><div class="help-item-title">Try a Sample Shot</div><div class="help-item-desc">No table around? Tap <strong>🎓 Try a Sample Shot</strong> on the empty frame — a practice layout loads on a drawn table and the full analysis runs on it: crown, ghost ring, contact key, difficulty. Great for showing a friend what the app does. Load any real photo to leave sample mode.</div></div>
+          <div><div class="help-item-title">When the camera is on</div><div class="help-item-desc">The camera <strong>never switches itself on</strong>. In <strong>Scan &amp; Read the Shot</strong> it waits for you to tap <strong>Start Camera</strong>, every session. <strong>Table Mode</strong> turns it on when you choose that mode, because it needs a live view. It <strong>switches itself off</strong> when you go back to the menu, open your saved reads, or leave Table Mode &mdash; so it is never quietly running in the background using your battery.</div></div>
+          <div><div class="help-item-title">Saved Reads (Shot History)</div><div class="help-item-desc">In <strong>Scan &amp; Read the Shot</strong>, tap <strong>Saved reads</strong> under the picture area. Save the read on screen, then restore it later to bring the photo and your marks back. The last few are kept <strong>on this phone only</strong> — nothing is uploaded anywhere.</div></div>
+          <div><div class="help-item-title">What Table Mode hides</div><div class="help-item-desc">Table Mode is built to be read from across the room, so it puts away everything you don&rsquo;t need mid-rack — the setup panel, the picture area and the buttons at the bottom. <strong>Tour</strong> and <strong>Guide</strong> step away too, since they describe the setup flow. <strong>📜 Rules</strong> stays, because the game&rsquo;s rules matter whatever screen you are on.</div></div>
+          <div><div class="help-item-title">Try a Sample Shot</div><div class="help-item-desc">No table around? In <strong>Scan &amp; Read the Shot</strong>, tap <strong>&#127891; Try a sample shot</strong> &mdash; a practice layout loads on a drawn table and the full analysis runs on it: crown, ghost ring, contact key, difficulty. Great for showing a friend what the app does. Load any real photo to leave sample mode.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🚶</div>
@@ -8251,7 +10219,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🥇</div>
-          <div><div class="help-item-title">9-Ball: set your lowest ball</div><div class="help-item-desc">In 9-Ball you must hit the <strong>lowest-numbered ball</strong> first — and the AI can&rsquo;t read numbers yet. Tap <strong>🎯 Set Lowest Ball</strong> (Step 4), then tap that ball; it gets a cyan LOWEST ring and the suggestion plans it. Skip this and the app shows the easiest shot with a reminder to confirm it&rsquo;s legal.</div></div>
+          <div><div class="help-item-title">9-Ball: set your lowest ball</div><div class="help-item-desc">In 9-Ball you must hit the <strong>lowest-numbered ball</strong> first — and the AI can&rsquo;t read numbers yet. Tap <strong>🎯 Set Lowest Ball</strong> (in Quick Setup), then tap that ball; it gets a cyan LOWEST ring and the suggestion plans it. Skip this and the app shows the easiest shot with a reminder to confirm it&rsquo;s legal.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🔟</div>
@@ -8291,7 +10259,7 @@ try {
         <div class="help-section-title">👓 About Curran's Shot Reader</div>
         <div class="help-item">
           <div class="help-icon">👨‍👦</div>
-          <div><div class="help-item-title">A father-and-son project</div><div class="help-item-desc">Built by Adam &amp; Bill Curran, third generation of William J. Curran &amp; Son Opticians in Drexel Hill, PA — serving since 1952.</div></div>
+          <div><div class="help-item-title">A father-and-son project</div><div class="help-item-desc">Built by Adam &amp; Bill Curran, Third Generation Family Business — William J. Curran &amp; Son Opticians of Drexel Hill, PA. Since 1952.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">👓</div>
@@ -8311,7 +10279,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">&#9654;&#65039;</div>
-          <div><div class="help-item-title">Table Mode &mdash; hands-free on a tripod</div><div class="help-item-desc">Tap <strong>&#9654; Start Table Mode</strong> above the camera. The setup controls disappear and you get just the camera, plus one bar along the bottom with the call: which ball, which pocket, and how sure it is. It reads the table by itself every time the balls move and settle &mdash; <strong>you never touch the phone between shots</strong>. <strong>Tap the video</strong> any time to make it read again straight away. <strong>&#10005; EXIT</strong> puts everything back exactly as it was.</div></div>
+          <div><div class="help-item-title">Table Mode &mdash; hands-free on a tripod</div><div class="help-item-desc">From the main menu, tap <strong>Table Mode</strong>. The setup controls disappear and you get just the camera, plus one bar along the bottom with the call: which ball, which pocket, and how sure it is. It reads the table by itself every time the balls move and settle &mdash; <strong>you never touch the phone between shots</strong>. <strong>Tap the video</strong> any time to make it read again straight away. <strong>&#10005; EXIT</strong> puts everything back exactly as it was.</div></div>
         </div>
 
         <div class="help-item">
@@ -8367,10 +10335,124 @@ try {
     </div>
   </div>
 
-  </div>
+  
+      </div>
 
 
 <!-- RULES OVERLAY -->
+
+<!-- SCOREBOARD MODE - full screen, own mode, read across a table -->
+<div id="scoreboard">
+  <div id="sb-head">
+    <div id="sb-title">SCOREBOARD</div>
+    <div id="sb-context">&nbsp;</div>
+    <div id="sb-hint">&#9998; Tap a player name to rename &middot; use the buttons at the bottom to score</div>
+  </div>
+  <div id="sb-turn">
+    <span style="color:var(--green-soft);font-size:clamp(16px,5vw,22px)">&#9654;</span>
+    <div id="sb-turn-name" style="flex:1;min-width:0">Player 1&rsquo;s shot</div>
+  </div>
+  <div id="sb-panels"></div>
+  <div id="sb-warn"></div>
+  <!-- One wrapper so landscape can lay these out on a single line; in portrait
+       it stays a column and nothing about the look changes. -->
+  <div id="sb-controls">
+    <div style="display:flex;gap:8px;margin-top:10px;flex-shrink:0">
+      <button id="sb-pass" onclick="passTurn()">PASS TURN</button>
+    </div>
+    <div id="sb-taps"></div>
+    <button id="sb-exit" onclick="exitScoreboard()">&#10005;&nbsp; EXIT SCOREBOARD</button>
+  </div>
+</div>
+
+<!-- ═══ MODES HUB ═══ full-screen overlay; never a step in the workflow -->
+<div id="modes-hub" role="dialog" aria-label="Modes">
+  <div id="hub-rail">
+    <div class="hub-crest">
+      <div class="hub-8"><span>8</span></div>
+      <div><h2>Shot Reader</h2><p>CURRAN OPTICIANS &middot; EST. 1952</p></div>
+    </div>
+  </div>
+
+  <div class="hub-eyebrow">WHERE TO?</div>
+
+  <div class="hub-rack">
+    <button class="hub-row home" onclick="hubGo('scan')">
+      <span class="hub-tag">THE USUAL</span>
+      <span class="hub-badge"><svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <radialGradient id="hbCue" cx="35%" cy="30%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#f2ece0"/><stop offset="1" stop-color="#b9b0a0"/></radialGradient>
+          <radialGradient id="hbRed" cx="35%" cy="30%"><stop offset="0" stop-color="#ff8a8a"/><stop offset=".5" stop-color="#cc2222"/><stop offset="1" stop-color="#6d1010"/></radialGradient>
+        </defs>
+        <g stroke="#39b273" stroke-width="2.6" fill="none" stroke-linecap="round"><path d="M6 20V9h11M58 20V9H47M6 44v11h11M58 44v11H47"/></g>
+        <path d="M22 40 L42 25" stroke="#e8c766" stroke-width="2.2" stroke-dasharray="3.5 3.5" stroke-linecap="round"/>
+        <circle cx="20" cy="42" r="7.5" fill="url(#hbCue)"/><circle cx="44" cy="23" r="7.5" fill="url(#hbRed)"/>
+      </svg></span>
+      <span class="hub-txt"><b>SCAN &amp; READ THE SHOT</b><span id="hub-s-scan">Camera off</span></span>
+      <span class="hub-go">&rsaquo;</span>
+    </button>
+
+    <button class="hub-row" onclick="hubGo('table')">
+      <span class="hub-badge"><svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="hbCone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39b273" stop-opacity=".55"/><stop offset="1" stop-color="#39b273" stop-opacity=".04"/></linearGradient>
+          <linearGradient id="hbCloth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a8c5a"/><stop offset="1" stop-color="#14522f"/></linearGradient>
+        </defs>
+        <path d="M32 22 L57 52 H7 Z" fill="url(#hbCone)"/>
+        <path d="M15 41 H49 L57 57 H7 Z" fill="url(#hbCloth)" stroke="#3f2a17" stroke-width="2.6" stroke-linejoin="round"/>
+        <circle cx="16.5" cy="42.5" r="2" fill="#0a0a0a"/><circle cx="47.5" cy="42.5" r="2" fill="#0a0a0a"/>
+        <circle cx="9.5" cy="55.5" r="2.3" fill="#0a0a0a"/><circle cx="54.5" cy="55.5" r="2.3" fill="#0a0a0a"/>
+        <circle cx="27" cy="49" r="2.6" fill="#f2ece0"/><circle cx="38" cy="47" r="2.6" fill="#cc2222"/>
+        <g stroke="#8a6a2c" stroke-width="2.2" stroke-linecap="round"><path d="M32 21v5M32 26l-7 9M32 26l7 9"/></g>
+        <rect x="25" y="4" width="14" height="19" rx="3.2" fill="#141009" stroke="#e8c766" stroke-width="2.2"/>
+        <rect x="27.6" y="7" width="8.8" height="11" rx="1.6" fill="#1d6b42"/>
+      </svg></span>
+      <span class="hub-txt"><b>TABLE MODE</b><span>Hands-free &middot; reads each time the balls settle</span></span>
+      <span class="hub-go">&rsaquo;</span>
+    </button>
+
+    <button class="hub-row" onclick="hubGo('diamonds')">
+      <span class="hub-badge"><svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="4" y="12" width="56" height="11" rx="2" fill="#3f2a17" stroke="#6e5a1c" stroke-width="1.4"/>
+        <g fill="#f2ece0"><path d="M15 14.5l3 3-3 3-3-3z"/><path d="M27 14.5l3 3-3 3-3-3z"/><path d="M39 14.5l3 3-3 3-3-3z"/><path d="M51 14.5l3 3-3 3-3-3z"/></g>
+        <path d="M12 50 L30 24 L52 48" fill="none" stroke="#e8c766" stroke-width="2.4" stroke-dasharray="4 3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="24" r="3.4" fill="#e8c766"/><circle cx="12" cy="52" r="6" fill="#f2ece0" stroke="#b9b0a0" stroke-width="1"/>
+      </svg></span>
+      <span class="hub-txt"><b>LEARN THE DIAMONDS</b><span>Corner-5, worked through with real numbers</span></span>
+      <span class="hub-go">&rsaquo;</span>
+    </button>
+
+  </div>
+
+  <div class="hub-util">
+    <button onclick="closeHub(); setTimeout(startTour,220)">TOUR</button>
+    <button onclick="closeHub(); setTimeout(toggleRules,220)">RULES</button>
+    <button onclick="closeHub(); setTimeout(toggleHelp,220)">GUIDE</button>
+  </div>
+
+
+  <div class="hub-mark">
+    <div class="lg">Curran Opticians</div>
+    <div class="sm">Third Generation Family Business. Since 1952.</div>
+    <a class="site" href="https://www.billiardglasses.com" target="_blank" rel="noopener">www.billiardglasses.com &nbsp;&rarr;</a>
+    <div class="hub-soc">
+      <a href="https://www.facebook.com/share/1E9sQKpL2g/" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.2-1.4 1.5-1.4h1.6V4.1C16.3 4 15.4 4 14.4 4c-2.6 0-4.3 1.6-4.3 4.5V10H7.4v3h2.7v8h3.4z"/></svg></a>
+      <a href="https://www.instagram.com/billiardglasses/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1.2" fill="currentColor" stroke="none"/></svg></a>
+      <a href="https://www.youtube.com/channel/UCAfefPaqc4y8AJ0eO922Lcg" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8zM10 15.5v-7l6 3.5-6 3.5z"/></svg></a>
+    </div>
+  </div>
+  <div class="hub-foot">Where To Next? Every Screen Finds Its Way Back Here.</div>
+</div>
+
+<!-- ═══ SHOT HISTORY ═══ -->
+<div id="history-panel" role="dialog" aria-label="Shot history">
+  <div id="hist-rail">
+    <h2>SHOT HISTORY</h2>
+    <button class="x-btn" onclick="clearHistory()" aria-label="Clear all" title="Clear all">&#128465;</button>
+    <button class="x-btn" onclick="closeHistory()" aria-label="Close">&#10005;</button>
+  </div>
+  <div class="hist-list" id="hist-list"></div>
+</div>
 <div id="rules-overlay" onclick="if(event.target===this)toggleRules()" style="display:none;position:fixed;inset:0;z-index:9970;background:rgba(4,10,7,.96);align-items:flex-start;justify-content:center;padding:18px;overflow-y:auto">
   <div style="width:100%;max-width:560px;background:linear-gradient(180deg,#13271b,#0a1710);border:1px solid #9c7a34;border-radius:18px;padding:20px 18px;margin:10px 0 40px;font-family:'Barlow Condensed',sans-serif">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -8380,46 +10462,57 @@ try {
     <div style="font-size:12px;color:#8ba394;margin-bottom:14px">Quick summaries based on WPA World Standardized Rules — house rules vary, so agree before you break.</div>
 
     <div style="font-family:'Playfair Display',serif;font-weight:700;color:#eadfc8;font-size:16px;margin:12px 0 5px">🎱 8-Ball</div>
-    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Fifteen balls: one player pockets the <strong style="color:#eadfc8">solids (1–7)</strong>, the other the <strong style="color:#eadfc8">stripes (9–15)</strong>. Groups are decided by the first legally pocketed ball after the break (the table is "open" until then). Pocket your whole group, then legally pocket the <strong style="color:#eadfc8">8-ball in a called pocket</strong> to win. Pocketing the 8 early, or scratching while shooting the 8, loses the game. On each shot you must hit one of your own balls first and then drive any ball to a rail or pocket one — otherwise it's a foul (cue ball in hand for your opponent in most rule sets).</div>
+    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Fifteen balls: one player pockets the <strong style="color:#eadfc8">solids (1&ndash;7)</strong>, the other the <strong style="color:#eadfc8">stripes (9&ndash;15)</strong>. After the break the <strong style="color:#eadfc8">table is &ldquo;open&rdquo;</strong> &mdash; groups are not yours until someone legally pockets a called ball, and while it is open you may hit <strong style="color:#eadfc8">any ball first except the 8</strong>. Pocket your whole group, then legally pocket the <strong style="color:#eadfc8">8-ball in a called pocket</strong> to win. Pocketing the 8 early, sinking it in the wrong pocket, or fouling on the 8 loses the game &mdash; but the <strong style="color:#eadfc8">8 on the break is not a loss</strong>: the breaker may re-rack or have it spotted. On each shot you must hit a legal ball first, then drive any ball to a rail or pocket one; otherwise it is a foul and your opponent gets <strong style="color:#eadfc8">ball in hand anywhere on the table</strong>.</div>
 
     <div style="font-family:'Playfair Display',serif;font-weight:700;color:#eadfc8;font-size:16px;margin:14px 0 5px">🔢 9-Ball</div>
-    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Played with balls <strong style="color:#eadfc8">1–9</strong>. On every shot the cue ball must contact the <strong style="color:#eadfc8">lowest-numbered ball on the table first</strong> — that's the whole game. Balls don't have to drop in order: a combo off the lowest ball counts, and <strong style="color:#eadfc8">pocketing the 9 legally at any time wins</strong>. Fouls (wrong ball first, no rail after contact, scratch) give your opponent ball-in-hand anywhere. Three consecutive fouls loses the rack in most rule sets.</div>
+    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Played with balls <strong style="color:#eadfc8">1&ndash;9</strong>. On every shot the cue ball must contact the <strong style="color:#eadfc8">lowest-numbered ball on the table first</strong> &mdash; that is the whole game. Balls need not drop in order: a combo off the lowest ball counts, and <strong style="color:#eadfc8">pocketing the 9 legally at any time wins</strong>. Fouls (wrong ball first, no rail after contact, scratch) give your opponent <strong style="color:#eadfc8">ball in hand anywhere</strong>. <strong style="color:#eadfc8">Three consecutive fouls loses the game</strong> &mdash; and you must be warned after the second, or the third does not count. Straight after the break the incoming player may also <strong style="color:#eadfc8">push out</strong>: roll the cue ball anywhere without having to hit a ball, and the opponent then chooses who shoots.</div>
 
     <div style="font-family:'Playfair Display',serif;font-weight:700;color:#eadfc8;font-size:16px;margin:14px 0 5px">1️⃣4️⃣.1️⃣ Straight Pool (14.1 Continuous)</div>
-    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Every ball counts <strong style="color:#eadfc8">one point</strong>; first to the agreed score (often 100) wins. You must <strong style="color:#eadfc8">call ball and pocket</strong> on every shot. When 14 balls are pocketed, they're re-racked with the 15th left in place and the run continues — big runs are the whole art. Fouls cost a point; three consecutive fouls costs 15 plus a re-rack break.</div>
+    <div style="font-size:13.5px;color:#b6c8b8;line-height:1.55">Every ball counts <strong style="color:#eadfc8">one point</strong>; first to the agreed score (often 100) wins. You must <strong style="color:#eadfc8">call ball and pocket</strong> on every shot. After 14 balls are pocketed, those 14 are re-racked while <strong style="color:#eadfc8">the cue ball and the 15th ball stay exactly where they are</strong>, so the shooter can pot it and break open the new rack to continue the run. Standard fouls cost 1 point; <strong style="color:#eadfc8">three consecutive fouls</strong> cost that foul&rsquo;s point plus a 15-point penalty (<strong style="color:#eadfc8">16 total</strong>), reset the foul count, and force a full re-rack with the offending player breaking again.</div>
 
-    <div style="font-size:11.5px;color:#8ba394;margin-top:16px;border-top:1px solid #1f3a2a;padding-top:10px">Shot Reader tip: pick your game in Step 4 first — the rules change which ball you should be shooting at.</div>
+    <div style="font-size:11.5px;color:#8ba394;margin-top:16px;border-top:1px solid #1f3a2a;padding-top:10px">Shot Reader tip: pick your game up in Quick Setup first — the rules change which ball you should be shooting at.</div>
   </div>
 </div>
 <!-- SW UPDATE TOAST -->
-<div id="diamond-explainer" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9962;background:linear-gradient(180deg,#14271b,#0a1710);border:1px solid var(--gold-dim);border-radius:14px;padding:13px 15px;box-shadow:0 12px 38px rgba(0,0,0,.65);font-family:'Barlow Condensed',sans-serif;max-width:340px;width:92vw">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-    <span style="font-family:'Playfair Display',serif;font-weight:700;color:var(--gold-lt);font-size:15px">💠 How to use the Diamond System</span>
-    <button onclick="dismissDiamondExplainer()" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px;line-height:1">✕</button>
-  
-      <div style="margin-top:12px;border-top:1px solid #2a3f63;padding-top:10px">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:#9fe4ff;letter-spacing:.4px;margin-bottom:6px">A WORKED EXAMPLE</div>
-        <div style="font-size:12.5px;line-height:1.55;color:#cfe0f5">
-          Your cue ball is blocked, so you kick off a rail. Corner-5 is just subtraction:<br><br>
-          <strong>1.</strong> Read where your <strong>cue ball</strong> sits &mdash; say <strong>5</strong> on the long rail.<br>
-          <strong>2.</strong> Read where the <strong>ball you want to hit</strong> sits &mdash; say <strong>2</strong>.<br>
-          <strong>3.</strong> Subtract: 5 &minus; 2 = <strong>3</strong>. That&rsquo;s your <strong>aim diamond</strong> on the far rail.<br>
-          <strong>4.</strong> Send the cue ball at diamond <strong>3</strong>. It comes off the cushion and meets the object ball.<br><br>
-          Shot Reader does the reading and the subtraction for you &mdash; the gold dot on the rail is the answer, and the number beside it is the diamond. Turn spin on and you&rsquo;ll see a second number marked <em>est.</em>: running english opens the angle and sends it longer, reverse shortens it.<br><br>
-          <span style="color:#8ba394">Every pool table &mdash; bar box or 9-footer &mdash; has the same eight intervals along the long rail, so these numbers read the same on any table you play.</span>
-        </div>
-      </div></div>
-  <div style="font-size:13px;color:#cdddd0;line-height:1.55">
-    The rails are numbered. For a <b style="color:var(--cream)">kick or bank shot</b>, use the rule:<br>
-    <div style="text-align:center;margin:8px 0;padding:7px;background:#0b1811;border-radius:9px;border:1px solid var(--border);color:#ffe08a;font-weight:700;font-size:14px">cue-ball # − target # = aim diamond</div>
-    Find the diamond number nearest your <b style="color:var(--cream)">cue ball</b>, subtract the number where you want the ball to <b style="color:var(--cream)">arrive</b>, and aim through the diamond that equals the difference.
+<div id="diamond-explainer" class="dl-modal" style="display:none" onclick="if(event.target===this)dismissDiamondExplainer()">
+  <div class="dl-card">
+    <div class="dl-head">
+      <span class="dl-title">&#128160; The Diamond System</span>
+      <button class="dl-x x-btn" onclick="dismissDiamondExplainer()" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="dl-scroll">
+      <div class="dl-rule">mirror the ball &middot; aim where the line crosses</div>
+      <p class="dl-lead">The rails are numbered <b>Corner&#8209;5</b>: the <b>long rails</b> carry <b>8 intervals, 0&ndash;8</b> (4 is the side pocket) and the <b>short rails</b> carry <b>4 intervals, 5&middot;4&middot;3&middot;4&middot;5</b>. Those numbers are how you name a spot on a cushion.<br><br><b>Put the balls where yours are.</b> Tap the table to move the cue ball, the ball you want to hit, and any blockers in the way &mdash; it finds the kick off whichever rail gives the cleanest route and reads the contact point back as a diamond number.</p>
+      <div class="dl-diagram" id="dl-diagram"></div>
+      <div class="dl-key">
+        <span><i style="background:#f4efe2"></i>cue ball</span>
+        <span><i style="background:#cc2222"></i>ball to hit</span>
+        <span><i style="background:#3b2f4d;border:1px solid #8f7fb0"></i>blocker</span>
+        <span><i style="background:none;border:2px solid #ffd76a"></i>contact point</span>
+      </div>
+      <div class="dl-modes">
+        <button type="button" id="dl-mode-cue" class="on" onclick="dlSetMode('cue')"><i class="dl-dot" style="background:#f4efe2"></i> Cue ball</button>
+        <button type="button" id="dl-mode-obj" onclick="dlSetMode('obj')"><i class="dl-dot" style="background:#cc2222"></i> Ball to hit</button>
+        <button type="button" id="dl-mode-obs" onclick="dlSetMode('obs')"><i class="dl-dot" style="background:#3b2f4d;border:1px solid #8f7fb0"></i> Blocker <span id="dl-obs-count"></span></button>
+      </div>
+      <div class="dl-try" id="dl-try">Tap the table to move the <b>cue ball</b></div>
+      <div class="dl-eq" id="dl-eq"></div>
+      <div class="dl-eq-actions">
+        <button type="button" onclick="dlClearBlockers()">&#10005; Clear blockers</button>
+        <button type="button" onclick="dlReset()">&#8635; Start over</button>
+      </div>
+      <div class="dl-ex-head">A worked example</div>
+      <ol class="dl-steps" id="dl-steps"></ol>
+      <p class="dl-note">This is the <em>mirror method</em>, and it is what every diamond system approximates: reflect the ball you want to hit across the rail, draw a line from the cue ball to that reflection, and where it crosses the cushion is your contact point &mdash; angle in equals angle out.</p>
+      <p class="dl-fine">Real cushions are not perfect mirrors. Speed, english and cloth all shift the rebound &mdash; running english opens the angle and sends it longer, reverse shortens it. Treat the number as your starting line and adjust to what the table actually does. Every pool table has the same eight intervals along the long rail and four across the short, so these numbers read the same wherever you play.</p>
+    </div>
   </div>
 </div>
 
 <div id="kick-explainer" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9962;background:linear-gradient(180deg,#14271b,#0a1710);border:1px solid var(--gold-dim);border-radius:14px;padding:13px 15px;box-shadow:0 12px 38px rgba(0,0,0,.65);font-family:'Barlow Condensed',sans-serif;max-width:340px;width:92vw">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
     <span style="font-family:'Playfair Display',serif;font-weight:700;color:var(--gold-lt);font-size:15px">🎱 Reading the kick line</span>
-    <button onclick="dismissKickExplainer()" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px;line-height:1">✕</button>
+    <button class="x-btn" onclick="dismissKickExplainer()" aria-label="Close">✕</button>
   </div>
   <div style="font-size:13px;color:#cdddd0;line-height:1.55">
     Your direct shot is blocked, so here's a <b style="color:var(--cream)">one-rail escape</b>. Aim the cue ball at the <b style="color:#ffe08a">gold dot</b> on the rail — it banks off there and follows the gold line to your ball.
@@ -8429,7 +10522,7 @@ try {
 <div id="update-toast" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9960;background:linear-gradient(180deg,#13271b,#0a1710);border:1px solid #9c7a34;border-radius:14px;padding:10px 14px;align-items:center;gap:12px;box-shadow:0 10px 34px rgba(0,0,0,.6);font-family:'Barlow Condensed',sans-serif;max-width:92vw">
   <span style="font-size:13.5px;color:#eadfc8">🔄 A new version of Shot Reader is ready</span>
   <button onclick="location.reload()" style="background:#c8963e;color:#0b1811;font-weight:700;border:none;border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:'Barlow Condensed'">Refresh</button>
-  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#8ba394;font-size:15px;cursor:pointer;padding:2px 4px">✕</button>
+  <button class="x-btn" onclick="this.parentElement.style.display='none'" aria-label="Close">✕</button>
 </div>
 <!-- WELCOME + TOUR OVERLAYS -->
 <div class="welcome-overlay" id="welcome-overlay">
@@ -8440,7 +10533,7 @@ try {
       <h2>Welcome to Shot Reader</h2>
       <div class="welcome-by">Brought to you by <strong>Curran Opticians</strong></div>
       <div class="welcome-body">Three generations of crafting custom billiard glasses — now a <strong>free tool</strong> that reads your table. <strong>Snap it live with your camera</strong> or <strong>upload a photo</strong>, and we’ll help you find the shot. Want a quick tour?</div>
-      <button class="welcome-go" onclick="startTour()">Take the quick tour &rarr;</button>
+      <button class="welcome-go" onclick="closeHub(); setTimeout(startTour,220)">Take the quick tour &rarr;</button>
       <button class="welcome-skip" onclick="dismissWelcome()">Skip &mdash; I'll explore on my own</button>
     </div>
   </div>
