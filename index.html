@@ -1236,9 +1236,34 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   border-radius:9px; font-family:'Barlow',sans-serif; font-weight:400; font-size:12px;
   line-height:1.5; color:#ffc0a8; letter-spacing:0; }
 .dl-pocket b{ color:#ffd7c4; }
+.dl-made{ flex-basis:100%; text-align:center; margin:9px 0 0; padding:9px 11px;
+  background:rgba(45,255,138,.10); border:1px solid #2f7a4f; border-left:4px solid #2dff8a;
+  border-radius:9px; font-family:'Barlow',sans-serif; font-weight:400; font-size:12.5px;
+  line-height:1.5; color:#a8ffd0; letter-spacing:0; }
+.dl-made b{ color:#dcffe9; }
 .dl-eq .warn{ font-family:'Barlow Condensed',sans-serif; font-weight:400; font-size:13px;
   color:#ffb0b0; letter-spacing:.3px; text-align:center; }
 .dl-eq-actions{ display:flex; justify-content:center; margin:9px 0 0; }
+/* ── FOCUS MODE: bigger table, prose out of the way, still interactive ── */
+.dl-modal.zoomed{ padding:0; }
+.dl-modal.zoomed .dl-card{ width:100vw; max-width:none; height:100vh; height:100dvh;
+  max-height:none; border-radius:0; border-left:0; border-right:0; }
+.dl-modal.zoomed .dl-scroll{ padding:10px 12px 16px; display:flex; flex-direction:column; }
+/* everything that is reading material stands down */
+.dl-modal.zoomed .dl-rule,
+.dl-modal.zoomed .dl-lead,
+.dl-modal.zoomed .dl-ex-head,
+.dl-modal.zoomed .dl-steps,
+.dl-modal.zoomed .dl-note,
+.dl-modal.zoomed .dl-fine,
+.dl-modal.zoomed .dl-key{ display:none; }
+/* the table takes the room that frees up */
+.dl-modal.zoomed .dl-diagram{ margin:0; flex:1 1 auto; display:flex; align-items:center; }
+.dl-modal.zoomed .dl-diagram svg{ width:100%; height:auto; max-height:100%; }
+.dl-modal.zoomed .dl-try{ padding-top:4px; min-height:0; }
+.dl-modal.zoomed .dl-eq{ margin-top:8px; }
+.dl-modal.zoomed .dl-eq-actions{ margin-top:7px; }
+
 .dl-modes{ display:flex; gap:6px; margin:11px 0 2px; }
 .dl-modes button{ flex:1; min-height:42px; border-radius:10px; cursor:pointer;
   background:#0b1811; border:1px solid var(--border); color:var(--text-muted);
@@ -1383,6 +1408,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   transition:background .18s ease, border-color .18s ease, color .18s ease;
 }
 .x-btn:active{ background:rgba(200,151,46,.22); border-color:var(--gold); }
+.x-btn.on{ background:rgba(200,151,46,.3); border-color:var(--gold); color:var(--gold-bright); }
 
 /* Existing round icon buttons already had 44px targets but flat grey rims.
    Same geometry, brass material - overrides colour only. */
@@ -1571,6 +1597,76 @@ body.table-mode #gamemode-card,
 body.table-mode #english-panel,
 /* ITEM 6: Tour and Guide describe the setup flow, which Table Mode hides.
    Rules stays - official game rules are useful mid-game on any screen. */
+/* Shown only in Table Mode, only in portrait. It lives INSIDE the banner, so
+   it can never be covered by it however tall the banner grows (it grows when
+   "Look again" appears). Pure CSS on the orientation, so it cannot disagree
+   with the actual orientation of the phone. */
+#tm-rotate { display: none; }
+@media (orientation: portrait) {
+  body.table-mode #tm-rotate {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 9px; padding: 9px 11px; border-radius: 10px;
+    background: linear-gradient(180deg,#2a2008,#1b1505);
+    border: 1px solid var(--gold-dim); border-left: 4px solid var(--gold);
+    color: var(--gold-lt); font-family: 'Barlow', sans-serif;
+    font-size: clamp(11px, 3vw, 12.5px); line-height: 1.4;
+  }
+  body.table-mode #tm-rotate b { color: var(--cream); }
+  .tm-rot-ico { font-size: 20px; line-height: 1; flex-shrink: 0; color: var(--gold-bright); }
+}
+
+/* ══ TABLE MODE IN LANDSCAPE ═══════════════════════════════════════════
+   A phone on a stand is almost always sideways, so this is the layout that
+   matters most - and it was the worst one. The full app header (logo, brand
+   block, model banner) sat above the video and pushed the table off the
+   bottom of a short landscape viewport, so you had to scroll to see your own
+   table. In Table Mode none of that chrome is doing any work: the destination
+   bar alone tells you where you are and gets you back.
+   The video now fills the viewport and the banner floats over it. */
+@media (orientation: landscape) {
+  /* The side-by-side landscape layout reserves the right 52vw for the table
+     rail. That rail lives inside #table-stage, which Table Mode hides - so in
+     Table Mode the reservation is just dead space squeezing the video into the
+     left half. !important because the split rule sits in a later media query. */
+  body.table-mode { padding-right: 0 !important; padding-left: 0 !important; }
+
+  /* Hide the BRAND, not the whole header row - Rules lives in there and is
+     deliberately kept available in Table Mode. */
+  body.table-mode #hdr-logo,
+  body.table-mode .hdr-emblem,
+  body.table-mode .hdr-name,
+  body.table-mode .hdr-sub,
+  body.table-mode #model-banner { display: none !important; }
+  body.table-mode .hdr-inner > div:last-child { margin-top: 0 !important; }
+  body.table-mode .help-btn { min-height: 32px; padding: 4px 10px; font-size: 12px; }
+
+  body.table-mode .hdr { padding: 2px 10px; border-bottom-width: 1px; }
+  body.table-mode #dest-bar { min-height: 38px; margin: 0; padding: 0; }
+  body.table-mode #page-title { font-size: 13px; }
+  body.table-mode #back-to-menu { min-height: 36px; font-size: 13px; padding: 4px 10px; }
+  body.table-mode #mini-view div { padding: 4px 8px; font-size: 10px; }
+
+  /* the camera takes everything that is left, and never gets cropped */
+  body.table-mode .live-section,
+  body.table-mode #live-video {
+    max-height: none;
+    height: calc(100vh - 46px);
+    height: calc(100dvh - 46px);
+  }
+  body.table-mode #live-video { width: 100%; object-fit: contain; background: #05100a; }
+  body.table-mode .body { gap: 0; padding: 0; }
+
+  /* readouts float over the video instead of stacking under it */
+  body.table-mode #motion-bar-wrap,
+  body.table-mode #pos-bar {
+    position: fixed; left: 0; right: 0; z-index: 12;
+    background: rgba(5,16,10,.72); backdrop-filter: blur(2px);
+  }
+  body.table-mode #motion-bar-wrap { top: 46px; }
+  body.table-mode #pos-bar { top: 74px; font-size: 12px !important; padding: 4px 12px !important; }
+  body.table-mode #tm-banner { padding-top: 6px; padding-bottom: 6px; }
+}
+
 body.table-mode #hdr-tour-btn,
 body.table-mode #hdr-guide-btn,
 body.table-mode #app-footer,
@@ -1751,6 +1847,24 @@ body.hub-mode { overflow:hidden; }
    scroll it could flash over the hub before the hub's own paint caught up.
    The hub is a destination picker - the bar has no business there at all. */
 body.hub-mode #sticky-action-bar { display: none !important; }
+
+/* HUB BLEED-THROUGH. The hub is position:fixed inset:0 with a solid background,
+   which should cover everything - but on Android the address bar collapses as
+   you scroll, the visual viewport grows, and for a frame the fixed overlay does
+   not cover the newly exposed strip. Page content underneath showed through at
+   the top and bottom edges.
+   Hiding the whole app while the hub is open removes the problem at the source:
+   there is nothing left underneath to show. visibility (not display) keeps the
+   layout intact, so returning to a page costs no reflow and the tour can still
+   measure its targets. The two overlays that live inside #app and are reachable
+   FROM the hub are opted back in. */
+body.hub-mode #app { visibility: hidden; }
+body.hub-mode #help-overlay,
+body.hub-mode #spin-popup-overlay { visibility: visible; }
+
+/* Belt and braces: dvh tracks the collapsing toolbar where it is supported. */
+body.hub-mode #modes-hub { min-height: 100vh; min-height: 100dvh; }
+body.hub-mode { background: #14100c; }
 body.hub-mode #modes-hub {
   display:block; position:fixed; inset:0; z-index:95; overflow-y:auto;
   background:#14100c; -webkit-overflow-scrolling:touch;
@@ -1801,6 +1915,7 @@ body.hub-mode #modes-hub {
 .hub-tag { position:absolute; top:-9px; left:76px; background:#0f2318; border:1px solid #39b273;
   color:#39b273; border-radius:7px; font-size:8.5px; letter-spacing:1.2px; padding:2px 8px;
   font-family:'Barlow Condensed',sans-serif; font-weight:700; }
+.hub-tag.gold { background:#2a2008; border-color:var(--gold); color:var(--gold-lt); }
 .hub-util { display:flex; gap:8px; padding:16px 12px 0; }
 .hub-util button { flex:1; min-height:44px; background:none; border:1px solid #3a2c18;
   border-radius:10px; color:#c9a227; font-family:'Barlow Condensed',sans-serif; font-weight:700;
@@ -1865,7 +1980,7 @@ body.hist-mode #history-panel {
 <div id="app">
 
  <header class="hdr">
-    <div style="display:flex;align-items:center;justify-content:center;padding:10px 0 12px">
+    <div id="hdr-logo" style="display:flex;align-items:center;justify-content:center;padding:10px 0 12px">
       <div style="background:#f4f1e8;border-radius:12px;padding:12px 22px;box-shadow:0 2px 12px rgba(0,0,0,.4)">
         <img src="curran-logo.png" alt="Curran Opticians" style="max-width:100%;max-height:60px;height:auto;display:block">
       </div>
@@ -1886,7 +2001,7 @@ body.hist-mode #history-panel {
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.5.0631</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.5.1012</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" id="hdr-tour-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -2167,6 +2282,13 @@ body.hist-mode #history-panel {
           <div class="toggle-track"></div>
         </label>
       </div>
+      <div class="autoscan-row" style="border-top:1px solid var(--border);margin-top:8px;padding-top:10px">
+        <div style="flex:1;min-width:0">
+          <div class="autoscan-label">&#128207; Tilt self-check</div>
+          <div class="autoscan-desc">Lay the phone flat, screen up &mdash; it should read <strong>0&deg;</strong>. Stand it upright &mdash; <strong>90&deg;</strong>. Works in portrait or landscape.</div>
+          <div id="tilt-selfcheck" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--gold-lt);margin-top:6px;letter-spacing:.4px">start the camera to read the sensor</div>
+        </div>
+      </div>
       </div>
       </div><!-- /quick-setup -->
 
@@ -2187,6 +2309,10 @@ body.hist-mode #history-panel {
 
   <!-- TABLE MODE BANNER (Stage 4) - fixed bottom, safe-area aware -->
   <div id="tm-banner" role="status" aria-live="polite">
+    <div id="tm-rotate">
+      <span class="tm-rot-ico">&#8635;</span>
+      <span><b>Turn your phone sideways.</b> Table Mode is built for landscape &mdash; the whole table fits, nothing to scroll.</span>
+    </div>
     <div id="tm-row">
       <div id="tm-text">
         <div id="tm-title">Getting ready…</div>
@@ -3876,11 +4002,23 @@ var _tiltDeg = null;
 function _initTilt() {
   if (window._tiltInit) return; window._tiltInit = true;
   function onOri(e) {
-    if (e.beta === null || e.beta === undefined) return;
-    // beta: front-back tilt. Fold to 0-90 so upside-down reads the same.
-    var b = Math.abs(e.beta) % 180;
-    if (b > 90) b = 180 - b;
-    _tiltDeg = b;
+    if ((e.beta === null || e.beta === undefined) &&
+        (e.gamma === null || e.gamma === undefined)) return;
+    /* TILT FROM STRAIGHT DOWN, using BOTH axes.
+       This used to read beta only - front-back tilt - which is right in
+       portrait and badly wrong in landscape, where front-back tilt lands on
+       gamma instead. A phone held vertically in landscape reported 0 degrees,
+       i.e. "overhead - best", exactly backwards, and that is the orientation a
+       tripod is most likely to be in.
+       The screen's tilt from horizontal satisfies cos(tilt) = cos(beta)*cos(gamma),
+       which is orientation-agnostic and correct for any combination of the two.
+       abs() folds upside-down to the same reading, as before. */
+    var B = (e.beta  || 0) * Math.PI / 180;
+    var G = (e.gamma || 0) * Math.PI / 180;
+    var c = Math.cos(B) * Math.cos(G);
+    if (c < -1) c = -1; else if (c > 1) c = 1;
+    _tiltDeg = Math.acos(Math.abs(c)) * 180 / Math.PI;
+    window._tiltRaw = { beta: e.beta, gamma: e.gamma };   // for the self-check
   }
   try {
     if (typeof DeviceOrientationEvent !== 'undefined' &&
@@ -3909,6 +4047,14 @@ function updatePosBar() {
   } else {
     var d = Math.round(_tiltDeg);
     if (tv) tv.textContent = d + '\u00b0';
+    /* Self-check: show the raw sensor axes next to the computed angle, so the
+       reading can be verified against a known position rather than trusted. */
+    var sc = document.getElementById('tilt-selfcheck');
+    if (sc) {
+      var rw = window._tiltRaw || {};
+      sc.textContent = 'tilt ' + d + '\u00b0   (front-back ' + Math.round(rw.beta || 0) +
+                       '\u00b0, side ' + Math.round(rw.gamma || 0) + '\u00b0)';
+    }
     if (tn) {
       if (d <= 25)      { tn.textContent = '\u2713 overhead \u2014 best';   tn.style.color = '#5df0a5'; }
       else if (d <= 55) { tn.textContent = 'angled \u2014 fine';             tn.style.color = '#ffe08a'; }
@@ -5252,6 +5398,22 @@ function dlInside(p) {
 
 function dlSetMode(m) { _dlMode = m; dlRender(); }
 
+/* FOCUS MODE. The existing Enlarge on the scan page snapshots the canvas to an
+   image, which would freeze this diagram - the whole point here is that it
+   stays tappable. So instead of a picture, the card itself goes full-screen and
+   the prose steps out of the way, leaving a much bigger table you can still
+   place and drag balls on. */
+function toggleDlZoom() {
+  var m = document.getElementById('diamond-explainer');
+  var b = document.getElementById('dl-zoom-btn');
+  if (!m) return;
+  var on = m.classList.toggle('zoomed');
+  if (b) { b.classList.toggle('on', on); b.title = on ? 'Back to the lesson' : 'Enlarge the table'; }
+  var sc = m.querySelector('.dl-scroll');
+  if (sc) sc.scrollTop = 0;
+  dlRender();
+}
+
 function dlReset() {
   _dlCue = { x: DL_X0 + DL_STEP * 1.2, y: DL_Y1 - 26 };
   _dlObj = { x: DL_X0 + DL_STEP * 6.2, y: DL_Y0 + 30 };
@@ -5292,6 +5454,56 @@ function dlRailNumber(rail, p) {
     pocket = (Math.abs(p.y - DL_Y0) < DL_POCKET) || (Math.abs(p.y - DL_Y1) < DL_POCKET);
   }
   return { n: n, pocket: pocket };
+}
+
+/* ── WHERE DOES THE OBJECT BALL GO? ───────────────────────────────
+   The kick aims at the object ball's centre, so it is a full hit and the
+   object ball leaves along the same line the cue ball arrived on. March that
+   ray to the first cushion and see whether it passes through a pocket mouth
+   on the way - that is the difference between a safety and a made ball. */
+
+function dlPockets() {
+  return [
+    { x: DL_X0,   y: DL_Y0, name: 'the top-left corner' },
+    { x: DL_X1,   y: DL_Y0, name: 'the top-right corner' },
+    { x: DL_X0,   y: DL_Y1, name: 'the bottom-left corner' },
+    { x: DL_X1,   y: DL_Y1, name: 'the bottom-right corner' },
+    { x: dlX(4),  y: DL_Y0, name: 'the top side pocket' },
+    { x: dlX(4),  y: DL_Y1, name: 'the bottom side pocket' }
+  ];
+}
+
+function dlObjectPath(fromHit) {
+  var dx = _dlObj.x - fromHit.x, dy = _dlObj.y - fromHit.y;
+  var L = Math.hypot(dx, dy);
+  if (L < 1e-6) return null;
+  dx /= L; dy /= L;
+
+  // distance to the first cushion along that ray
+  var tBest = Infinity;
+  var cands = [];
+  if (dx > 1e-9) cands.push((DL_X1 - _dlObj.x) / dx);
+  if (dx < -1e-9) cands.push((DL_X0 - _dlObj.x) / dx);
+  if (dy > 1e-9) cands.push((DL_Y1 - _dlObj.y) / dy);
+  if (dy < -1e-9) cands.push((DL_Y0 - _dlObj.y) / dy);
+  for (var i = 0; i < cands.length; i++) if (cands[i] > 0 && cands[i] < tBest) tBest = cands[i];
+  if (!isFinite(tBest)) return null;
+  var end = { x: _dlObj.x + dx * tBest, y: _dlObj.y + dy * tBest };
+
+  // does it drop on the way? nearest pocket whose mouth the ball passes through
+  var pk = dlPockets(), potted = null, pottedT = Infinity;
+  for (i = 0; i < pk.length; i++) {
+    var t = (pk[i].x - _dlObj.x) * dx + (pk[i].y - _dlObj.y) * dy;   // along the ray
+    if (t <= 0 || t > tBest + DL_POCKET) continue;
+    var px = _dlObj.x + dx * t, py = _dlObj.y + dy * t;
+    var miss = Math.hypot(pk[i].x - px, pk[i].y - py);               // perpendicular miss
+    if (miss < DL_POCKET && t < pottedT) { potted = pk[i]; pottedT = t; }
+  }
+  if (potted) end = { x: potted.x, y: potted.y };
+
+  // another ball in the way first?
+  var blocked = dlSegBlocked(_dlObj, end);
+  return { dir: { x: dx, y: dy }, end: end, potted: potted, blocked: blocked };
 }
 
 /* One-cushion kick off a named rail, by mirroring the target across it. */
@@ -5372,17 +5584,36 @@ function dlToSvgPoint(svg, evt) {
 var DL_MAXOBS = 6;
 var _dlDrag = null;
 
+/* How close counts as "on a ball", measured in SCREEN pixels and converted to
+   diagram units. The old radius was a fixed 9.3 units, which on a 360px phone
+   is about 7 CSS px - smaller than the accuracy of a fingertip. Miss by a few
+   pixels and the press fell through to "place", which in blocker mode dropped
+   a purple ball where you were trying to grab the cue ball. */
+function dlGrabRadius() {
+  var perPx = 400 / 302;                            // fallback: a 360px phone
+  try {
+    var svg = document.getElementById('dl-svg');
+    if (svg) {
+      var w = svg.getBoundingClientRect().width;
+      if (w > 20) perPx = 400 / w;
+    }
+  } catch (_) {}
+  return Math.max(DL_R + 3, 20 * perPx);            // ~20 CSS px, finger-sized
+}
+
+/* Nearest ball wins, not the first one tested - with a finger-sized radius the
+   old first-match order could grab a blocker when the cue ball was closer. */
 function dlHitBall(p) {
-  var i, dx, dy;
-  for (i = _dlObs.length - 1; i >= 0; i--) {          // topmost blocker first
-    dx = _dlObs[i].x - p.x; dy = _dlObs[i].y - p.y;
-    if (dx * dx + dy * dy <= (DL_R + 3) * (DL_R + 3)) return { kind: 'obs', idx: i };
+  var R = dlGrabRadius(), best = null, bestD = R * R, dx, dy, d;
+  for (var i = 0; i < _dlObs.length; i++) {
+    dx = _dlObs[i].x - p.x; dy = _dlObs[i].y - p.y; d = dx * dx + dy * dy;
+    if (d <= bestD) { bestD = d; best = { kind: 'obs', idx: i }; }
   }
-  dx = _dlCue.x - p.x; dy = _dlCue.y - p.y;
-  if (dx * dx + dy * dy <= (DL_R + 3) * (DL_R + 3)) return { kind: 'cue' };
-  dx = _dlObj.x - p.x; dy = _dlObj.y - p.y;
-  if (dx * dx + dy * dy <= (DL_R + 3) * (DL_R + 3)) return { kind: 'obj' };
-  return null;
+  dx = _dlCue.x - p.x; dy = _dlCue.y - p.y; d = dx * dx + dy * dy;
+  if (d <= bestD) { bestD = d; best = { kind: 'cue' }; }
+  dx = _dlObj.x - p.x; dy = _dlObj.y - p.y; d = dx * dx + dy * dy;
+  if (d <= bestD) { bestD = d; best = { kind: 'obj' }; }
+  return best;
 }
 
 /* Balls are solid: a new one can't be dropped on top of another. */
@@ -5443,7 +5674,11 @@ function dlPointerUp(evt) {
     if (!p) return;
     var q = dlInside(p);
     if (_dlMode === 'cue')      { if (!dlOverlaps(q, 'cue')) { _dlCue = q; _dlMode = 'obj'; } }
-    else if (_dlMode === 'obj') { if (!dlOverlaps(q, 'obj')) { _dlObj = q; _dlMode = 'obs'; } }
+    /* Placing the object ball used to auto-advance into BLOCKER mode. People
+       then went back to nudge the cue ball, missed it slightly, and got a
+       purple ball they never asked for. Blockers are now only ever added when
+       that mode is chosen deliberately. */
+    else if (_dlMode === 'obj') { if (!dlOverlaps(q, 'obj')) { _dlObj = q; } }
     else {
       if (_dlObs.length >= DL_MAXOBS) { _dlNote = 'max'; }
       else if (dlOverlaps(q))         { _dlNote = 'overlap'; }
@@ -5514,6 +5749,40 @@ function dlSvg() {
     txt(lx, ly + off, best.n.toFixed(1), ac, 700, 10.5);
   }
 
+  /* Where the object ball ends up - dotted, so it reads as a projection
+     rather than the aiming line. */
+  if (best && !best.blocked) {
+    var op = dlObjectPath(best.hit);
+    if (op) {
+      var oc = op.blocked ? '#c46a4a' : (op.potted ? '#2dff8a' : '#e7ddc7');
+      p.push('<line x1="' + _dlObj.x + '" y1="' + _dlObj.y + '" x2="' + op.end.x + '" y2="' + op.end.y +
+             '" stroke="' + oc + '" stroke-width="1.8" stroke-dasharray="3 4" opacity="' +
+             (op.blocked ? '.5' : '.95') + '" stroke-linecap="round"/>');
+      if (op.potted && !op.blocked) {
+        p.push('<circle cx="' + op.end.x + '" cy="' + op.end.y + '" r="10" fill="none" stroke="#2dff8a" ' +
+               'stroke-width="2.2" opacity=".95"/>');
+        txt(op.end.x, op.end.y - 14, 'IN', '#2dff8a', 700, 10);
+      } else if (!op.blocked) {
+        p.push('<circle cx="' + op.end.x + '" cy="' + op.end.y + '" r="3.2" fill="' + oc + '" opacity=".8"/>');
+      }
+    }
+  }
+
+  /* While a ball is being dragged, run thin guides out to all four rails and
+     ring the ball. You can see exactly where it sits against the diamonds
+     without needing to zoom in on your own finger. */
+  if (_dlDrag && _dlDrag.moved) {
+    var db = _dlDrag.kind === 'cue' ? _dlCue : _dlDrag.kind === 'obj' ? _dlObj : _dlObs[_dlDrag.idx];
+    if (db) {
+      p.push('<line x1="' + DL_X0 + '" y1="' + db.y + '" x2="' + DL_X1 + '" y2="' + db.y +
+             '" stroke="#9fe4ff" stroke-width=".8" stroke-dasharray="3 4" opacity=".55"/>');
+      p.push('<line x1="' + db.x + '" y1="' + DL_Y0 + '" x2="' + db.x + '" y2="' + DL_Y1 +
+             '" stroke="#9fe4ff" stroke-width=".8" stroke-dasharray="3 4" opacity=".55"/>');
+      p.push('<circle cx="' + db.x + '" cy="' + db.y + '" r="' + (DL_R + 5) +
+             '" fill="none" stroke="#9fe4ff" stroke-width="1.4" opacity=".8"/>');
+    }
+  }
+
   // blockers, then the two balls on top
   for (i = 0; i < _dlObs.length; i++) {
     p.push('<circle cx="' + _dlObs[i].x + '" cy="' + _dlObs[i].y + '" r="' + DL_R +
@@ -5560,14 +5829,13 @@ function dlRender() {
   var tip = document.getElementById('dl-try');
   if (tip) {
     var msg;
-    if (_dlNote === 'max')          msg = '<b>' + DL_MAXOBS + ' of ' + DL_MAXOBS + ' blockers used</b> &mdash; tap one to remove it first';
-    else if (_dlNote === 'overlap') msg = 'Balls can&rsquo;t sit on top of each other &mdash; try a bit further over';
-    else if (_dlMode === 'cue')     msg = 'Tap the table to move the <b>cue ball</b> &mdash; or drag any ball';
-    else if (_dlMode === 'obj')     msg = 'Now tap where the <b>ball you want to hit</b> sits';
+    if (_dlNote === 'max')          msg = '<b>Blockers full</b> \u00b7 tap one to remove';
+    else if (_dlNote === 'overlap') msg = '<b>Too close</b> \u00b7 balls can&rsquo;t overlap';
+    else if (_dlMode === 'cue')     msg = 'Tap to place the <b>cue ball</b> \u00b7 drag to adjust';
+    else if (_dlMode === 'obj')     msg = 'Tap to place the <b>ball to hit</b> \u00b7 drag to adjust';
     else if (_dlObs.length >= DL_MAXOBS)
-                                    msg = '<b>All ' + DL_MAXOBS + ' blockers placed</b> &mdash; tap one to remove, or drag to move it';
-    else msg = 'Tap to drop a <b>blocker</b> (' + _dlObs.length + ' of ' + DL_MAXOBS +
-               ') &mdash; tap one to remove it, drag to move it';
+                                    msg = '<b>Blockers full</b> \u00b7 tap one to remove \u00b7 drag to move';
+    else msg = '<b>Tap to add</b> \u00b7 tap one to remove \u00b7 drag to move';
     tip.innerHTML = msg;
     _dlNote = '';
   }
@@ -5591,6 +5859,13 @@ function dlRender() {
                        ? '<div class="dl-pocket">\u26a0 That contact point is right at a pocket mouth &mdash; ' +
                          'there&rsquo;s no cushion there to bank off. Nudge a ball and read it again.</div>'
                        : '') +
+                     (function () {
+                        var o = dlObjectPath(best.hit);
+                        if (!o) return '';
+                        if (o.blocked) return '<div class="dl-pocket">The object ball would hit another ball on its way out.</div>';
+                        if (o.potted)  return '<div class="dl-made">\u2713 The object ball runs to <b>' + o.potted.name + '</b>.</div>';
+                        return '<div class="dl-mirror">No pocket on the object ball&rsquo;s line \u2014 this is a hit, not a pot.</div>';
+                      })() +
                      (direct
                        ? '<div class="dl-mirror">Nothing is blocking the direct shot &mdash; you wouldn&rsquo;t ' +
                          'normally kick here, but the read still works.</div>'
@@ -5602,15 +5877,22 @@ function dlRender() {
   if (!el) return;
   var li = [];
   li.push(direct
-    ? 'The straight line to the ball is <b>clear</b> (green dashes). A kick is only needed when something is in the way.'
-    : 'The straight line is <b>blocked</b> (red dashes) &mdash; so you have to go off a cushion.');
+    ? 'The direct line is <b>clear</b> (green dashes) &mdash; you&rsquo;d only kick if you had to.'
+    : 'The direct line is <b>blocked</b> (red dashes) &mdash; so you go off a cushion.');
 
   if (best && !best.blocked) {
     li.push('Pick a rail. Here the shortest clean route is off <b>' + dlRailLabel(best.rail) + '</b>.');
-    li.push('<b>Mirror the target:</b> imagine the ball you want to hit sitting the same distance on the ' +
-            'far side of that rail. Draw a line from the cue ball to that mirror image.');
-    li.push('Where that line crosses the rail is your contact point &mdash; here <b>diamond ' +
-            best.n.toFixed(1) + '</b>. Send the cue ball there and the angle out matches the angle in.');
+    li.push('<b>Mirror the target</b> across that rail, then draw a line from the cue ball to the mirror image.');
+    li.push('Where it crosses is your contact point &mdash; <b>diamond ' + best.n.toFixed(1) +
+            '</b>. Angle out matches angle in.');
+    var op2 = dlObjectPath(best.hit);
+    if (op2) {
+      li.push(op2.blocked
+        ? 'The object ball then runs into another ball \u2014 worth knowing before you commit.'
+        : (op2.potted
+            ? '<b>It goes.</b> The object ball runs to ' + op2.potted.name + ' \u2014 the green dotted line.'
+            : 'The object ball runs to a cushion, not a pocket \u2014 a hit, not a pot.'));
+    }
     if (kicks.length > 1) {
       var alts = kicks.slice(1).filter(function (k) { return !k.blocked && !k.pocket; })
                       .map(function (k) { return dlRailLabel(k.rail) + ' at ' + k.n.toFixed(1); });
@@ -5625,6 +5907,8 @@ function dlRender() {
 function showDiamondLesson() {
   var e = document.getElementById('diamond-explainer');
   if (e) e.style.display = 'flex';   // .dl-modal centres via flex; 'block' would break it
+  var zb = document.getElementById('dl-zoom-btn');
+  if (zb && e) zb.classList.toggle('on', e.classList.contains('zoomed'));
   try { dlRender(); } catch (_) {}   // draw the board; a lesson must never break the app
 }
 function maybeShowDiamondExplainer() {
@@ -6016,12 +6300,25 @@ function _detectTableCorners(el, natW, natH) {
      That is a fact about the game, not a threshold I am guessing at, so we
      only consider hues in the green-through-blue band and let the background
      lose by definition. Bin index = hue/10, so 7..25 is 70°-250°. */
-  const CLOTH_LO = 7, CLOTH_HI = 25;
+  /* TWO PASSES, STRICT FIRST.
+     70-250 is green-through-blue and is the right prior for pool cloth. But a
+     yellow-green cloth under warm tungsten light lands well below it: measured
+     on a real mini table, the cloth read a median hue of 55 degrees and 0% of
+     its pixels fell inside the band, so the table was rejected outright.
+     Widening the band permanently would let wood and carpet (20-40 degrees)
+     compete with felt, which is the failure this prior was written to stop.
+     So the strict band runs first and wins whenever it finds anything; the
+     wider band is only ever reached when the strict pass has already failed -
+     a case that currently produces no table at all, so nothing that works
+     today can be made worse by it. */
+  const BANDS = [[7, 25], [4, 25]];
+  let pts = [], seen = null, _bandUsed = 0;
+  for (let bandIx = 0; bandIx < BANDS.length; bandIx++) {
+  const CLOTH_LO = BANDS[bandIx][0], CLOTH_HI = BANDS[bandIx][1];
   const order = [];
   for (let i2 = CLOTH_LO; i2 <= CLOTH_HI; i2++) order.push({ i: i2, w: bins[i2] });
   order.sort(function(a2,b2){ return b2.w - a2.w; });
 
-  let pts = [], seen = null;
   for (let cand = 0; cand < Math.min(4, order.length); cand++) {
     if (order[cand].w <= 0) break;
     const bi = order[cand].i;
@@ -6074,6 +6371,9 @@ function _detectTableCorners(el, natW, natH) {
       pts = myBest; seen = mySeen;
     }
   }
+  if (pts.length) { _bandUsed = bandIx; break; }   // strict pass found cloth: done
+  }
+  window._feltWarmLight = (_bandUsed === 1);
   /* Cut thin leaks, then keep only the biggest surviving piece. Neither step
      is a colour threshold, so neither can mis-tune — they are connectivity
      repairs on whatever the colour match produced. */
@@ -6085,7 +6385,13 @@ function _detectTableCorners(el, natW, natH) {
   pts = _largestComponent(pts, SW, SH);
 
   window._feltFill = pts.length / (SW*SH);
-  if (!pts.length) { window._scanWhy = 'no green or blue cloth in view'; return null; }
+  if (!pts.length) {
+    /* Saying "no green or blue cloth" is confusing when a table IS in frame -
+       it reads as though the app is blind. The usual cause is warm room light
+       dragging the cloth's colour toward orange, so name that instead. */
+    window._scanWhy = 'can\u2019t pick the cloth out \u2014 warm light is washing its colour out';
+    return null;
+  }
   if (pts.length < SW*SH*0.030) { window._scanWhy = 'move closer \u2014 table too small in frame'; return null; }
 
   var hullPts = _cvHull(pts);
@@ -9228,6 +9534,7 @@ function plainSay(msg) {
   if (/too small in frame|fills too little/i.test(m)) return 'Move a little closer';
   if (/not fully in frame|move back/i.test(m))        return 'Move back a little';
   // Cloth not found at all - the camera simply isn't pointed at a table.
+  if (/warm light|washing its colour/i.test(m))       return 'Try brighter, whiter light';
   if (/cloth|green or blue/i.test(m))                 return 'Point the camera at the table';
   // Every geometry rejection means the same thing to a player: bad angle.
   if (/outline not clear|rails?|shape|corners|sides too uneven|folds over/i.test(m))
@@ -9636,7 +9943,7 @@ window.addEventListener('appinstalled', function () {
 });
 
 var TOUR_STEPS = [
-  { sel:'#dest-bar', n:'Where you are, and the way back', d:'This bar names the section you\u2019re in and takes you home. The app opens on the main menu: Scan & Read the Shot, Table Mode and the diamond lesson. Tap \u2039 MENU any time to go back.' },
+  { sel:'#dest-bar', n:'Where you are, and the way back', d:'This bar names the section you’re in and takes you home. The app opens on the main menu: Scan & Read the Shot, Table Mode and the diamond lesson. ⭐ If you are at the table with a cue in your hand, use Table Mode — it reads every shot on its own. Tap ‹ MENU any time to go back.' },
   { sel:'#mini-view', n:'Simple vs Advanced', d:'Right in the top bar, on every screen. SIMPLE keeps it to the essentials: the crown, the ghost ball and the line. ADV adds the diamond system, spin, aiming aids and tuning.' },
   { sel:'#view-mode-card', n:'Perspective Mode', d:'Tell it how you\u2019re holding the phone: Player View for a normal standing angle, Overhead if it is above the table. This decides how cut angles and diamond numbers are worked out, so set it before you start marking balls. Advanced only \u2014 skipped in Simple.' },
   { sel:'#quick-setup', n:'Quick Setup — set once', d:'Game mode and table size live here. It stays folded away so the camera is the first thing you see — tap the header to open it, and the closed row still shows what is set. Advanced Tuning now sits in its own card just below.' },
@@ -10206,6 +10513,7 @@ try {
           <div class="help-icon">🎓</div>
           <div><div class="help-item-title">When the camera is on</div><div class="help-item-desc">The camera <strong>never switches itself on</strong>. In <strong>Scan &amp; Read the Shot</strong> it waits for you to tap <strong>Start Camera</strong>, every session. <strong>Table Mode</strong> turns it on when you choose that mode, because it needs a live view. It <strong>switches itself off</strong> when you go back to the menu, open your saved reads, or leave Table Mode &mdash; so it is never quietly running in the background using your battery.</div></div>
           <div><div class="help-item-title">Saved Reads (Shot History)</div><div class="help-item-desc">In <strong>Scan &amp; Read the Shot</strong>, tap <strong>Saved reads</strong> under the picture area. Save the read on screen, then restore it later to bring the photo and your marks back. The last few are kept <strong>on this phone only</strong> — nothing is uploaded anywhere.</div></div>
+          <div><div class="help-item-title">Which one should I use?</div><div class="help-item-desc"><strong>Table Mode is the one to use while you are actually playing.</strong> Stand the phone up <strong>sideways (landscape)</strong> where it can see the whole table — that is the shape of a pool table, so it fills the screen with nothing cropped and nothing to scroll. Then leave it alone — it watches, waits for the balls to stop rolling, reads the shot and says it out loud. You never touch the phone between shots, which matters when it is your turn and you are holding a cue.<br><br><strong>Scan &amp; Read the Shot</strong> is the one-at-a-time version: take a photo, line the table up, check the balls, get an answer. Better for studying a layout after the fact, showing someone a shot, or reading a photo you already took — but you have to drive it by hand each time.</div></div>
           <div><div class="help-item-title">What Table Mode hides</div><div class="help-item-desc">Table Mode is built to be read from across the room, so it puts away everything you don&rsquo;t need mid-rack — the setup panel, the picture area and the buttons at the bottom. <strong>Tour</strong> and <strong>Guide</strong> step away too, since they describe the setup flow. <strong>📜 Rules</strong> stays, because the game&rsquo;s rules matter whatever screen you are on.</div></div>
           <div><div class="help-item-title">Try a Sample Shot</div><div class="help-item-desc">No table around? In <strong>Scan &amp; Read the Shot</strong>, tap <strong>&#127891; Try a sample shot</strong> &mdash; a practice layout loads on a drawn table and the full analysis runs on it: crown, ghost ring, contact key, difficulty. Great for showing a friend what the app does. Load any real photo to leave sample mode.</div></div>
         </div>
@@ -10378,7 +10686,6 @@ try {
 
   <div class="hub-rack">
     <button class="hub-row home" onclick="hubGo('scan')">
-      <span class="hub-tag">THE USUAL</span>
       <span class="hub-badge"><svg viewBox="0 0 64 64" aria-hidden="true">
         <defs>
           <radialGradient id="hbCue" cx="35%" cy="30%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#f2ece0"/><stop offset="1" stop-color="#b9b0a0"/></radialGradient>
@@ -10393,6 +10700,7 @@ try {
     </button>
 
     <button class="hub-row" onclick="hubGo('table')">
+      <span class="hub-tag gold">BEST WHILE YOU PLAY</span>
       <span class="hub-badge"><svg viewBox="0 0 64 64" aria-hidden="true">
         <defs>
           <linearGradient id="hbCone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#39b273" stop-opacity=".55"/><stop offset="1" stop-color="#39b273" stop-opacity=".04"/></linearGradient>
@@ -10407,7 +10715,7 @@ try {
         <rect x="25" y="4" width="14" height="19" rx="3.2" fill="#141009" stroke="#e8c766" stroke-width="2.2"/>
         <rect x="27.6" y="7" width="8.8" height="11" rx="1.6" fill="#1d6b42"/>
       </svg></span>
-      <span class="hub-txt"><b>TABLE MODE</b><span>Hands-free &middot; reads each time the balls settle</span></span>
+      <span class="hub-txt"><b>TABLE MODE</b><span id="hub-s-table">Stand the phone sideways and play &mdash; it reads every shot on its own</span></span>
       <span class="hub-go">&rsaquo;</span>
     </button>
 
@@ -10478,11 +10786,12 @@ try {
   <div class="dl-card">
     <div class="dl-head">
       <span class="dl-title">&#128160; The Diamond System</span>
+      <button class="dl-x x-btn" id="dl-zoom-btn" onclick="toggleDlZoom()" aria-label="Enlarge the table" title="Enlarge the table">&#9974;</button>
       <button class="dl-x x-btn" onclick="dismissDiamondExplainer()" aria-label="Close">&#10005;</button>
     </div>
     <div class="dl-scroll">
       <div class="dl-rule">mirror the ball &middot; aim where the line crosses</div>
-      <p class="dl-lead">The rails are numbered <b>Corner&#8209;5</b>: the <b>long rails</b> carry <b>8 intervals, 0&ndash;8</b> (4 is the side pocket) and the <b>short rails</b> carry <b>4 intervals, 5&middot;4&middot;3&middot;4&middot;5</b>. Those numbers are how you name a spot on a cushion.<br><br><b>Put the balls where yours are.</b> Tap the table to move the cue ball, the ball you want to hit, and any blockers in the way &mdash; it finds the kick off whichever rail gives the cleanest route and reads the contact point back as a diamond number.</p>
+      <p class="dl-lead"><b>Long rails</b> run <b>0&ndash;8</b> (4 is the side pocket). <b>Short rails</b> run <b>5&middot;4&middot;3&middot;4&middot;5</b>. That&rsquo;s how you name a spot on a cushion.<br><br><b>Put the balls where yours are.</b> Tap to move them, drag to fine&#8209;tune. It finds the kick off whichever rail is cleanest, reads the contact point as a diamond number, and shows where the object ball ends up.</p>
       <div class="dl-diagram" id="dl-diagram"></div>
       <div class="dl-key">
         <span><i style="background:#f4efe2"></i>cue ball</span>
