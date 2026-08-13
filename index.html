@@ -327,8 +327,8 @@ body::before {
 .btn-green:hover:not(:disabled) { background:#3de07a; }
 .btn-gold  { background:var(--gold); color:var(--felt); box-shadow:0 2px 12px rgba(200,151,46,.3); }
 .btn-gold:hover:not(:disabled)  { background:var(--gold-bright); }
-.btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border-mid); }
-.btn-ghost:hover:not(:disabled) { border-color:var(--ivory-dim); color:var(--ivory); }
+
+
 .btn-red   { background:var(--red-ball); color:#fff; }
 .btn-scan {
   background:linear-gradient(135deg, var(--felt-bright) 0%, var(--green-dim) 100%);
@@ -598,49 +598,16 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   margin-top: 8px;
 }
 
-.english-ball-wrap {
-  position: relative;
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffffff, #e0d8c0 50%, #c0b080);
-  border: 2px solid rgba(200,180,100,.4);
-  box-shadow: 0 4px 16px rgba(0,0,0,.5), inset 0 -3px 8px rgba(0,0,0,.3);
-  flex-shrink: 0;
-}
 
-.english-grid {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
-  border-radius: 50%;
-  overflow: hidden;
-  z-index: 2;
-}
 
-.english-zone {
-  cursor: pointer;
-  background: transparent;
-  transition: background .15s;
-  -webkit-tap-highlight-color: transparent;
-}
 
-.english-zone:hover { background: rgba(255,255,255,.2); }
+
+
+
+
 .english-zone.active { background: rgba(45,255,138,.45); }
 
-.english-dot {
-  position: absolute;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: var(--green-neon);
-  box-shadow: 0 0 10px var(--green-neon), 0 0 20px rgba(45,255,138,.5);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  transition: left .2s, top .2s;
-  top: 50%; left: 50%;
-  z-index: 3;
-}
+
 
 .english-info { flex: 1; }
 
@@ -735,13 +702,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   border-bottom: 1px solid var(--border);
 }
 
-.help-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  font-weight: 900;
-  color: var(--ivory);
-}
-.help-title span { color: var(--gold); }
+
+
 
 .help-close {
   width: 32px; height: 32px;
@@ -757,8 +719,21 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   display: inline-flex; align-items: center; justify-content: center;}
 
 .help-section {
-  padding: 16px 18px 0;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(200,151,46,.16);
 }
+/* The guide ran to 79 entries in one scroll. Each section is now a drawer, so
+   you land on a short list of headings and open only what you need. */
+.help-sec-head {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  min-height: 52px; padding: 6px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.help-sec-head .help-section-title { margin: 0; flex: 1; min-width: 0; }
+.help-sec-body { display: none; padding: 2px 0 14px; }
+.help-section.open .help-sec-body { display: block; }
+.help-section.open .help-sec-head .disc-caret { transform: rotate(90deg); }
+.help-section.open { background: rgba(200,151,46,.045); }
 
 .help-section-title {
   font-family: 'Barlow Condensed', sans-serif;
@@ -823,11 +798,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 
 .help-tip strong { color: var(--gold-bright); }
 
-.help-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 16px 18px 0;
-}
+
 
 ::-webkit-scrollbar { width:3px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -881,89 +852,25 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   min-height: 16px;
   transition: opacity .2s;
 }
-.history-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px; border-radius: var(--r-sm);
-  background: var(--surface2); border: 1px solid var(--border);
-  cursor: pointer; transition: border-color .15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.history-item:hover { border-color: var(--gold-dim); }
-.history-thumb {
-  width: 52px; height: 38px; border-radius: 5px;
-  object-fit: cover; flex-shrink: 0;
-  border: 1px solid var(--border-mid);
-}
-.history-info { flex: 1; min-width: 0; }
-.history-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 12px; font-weight: 700; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.history-meta {
-  font-size: 11px; color: var(--text-muted);
-  font-family: 'Barlow Condensed', sans-serif;
-  letter-spacing: .5px; margin-top: 2px;
-}
-.history-diff {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px; font-weight: 700; flex-shrink: 0;
-}
 
-/* ── HISTORY RESTORE POPUP ── */
-.history-restore-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.75);
-  z-index: 300;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
+
+
+
+
+
+
+
+
 .history-restore-overlay.show { display: flex; }
-.history-restore-popup {
-  background: var(--felt);
-  border: 1.5px solid var(--gold-dim);
-  border-radius: 16px;
-  width: 300px; max-width: 92vw;
-  padding: 18px 18px 16px;
-  box-shadow: 0 8px 48px rgba(0,0,0,.9);
-  animation: popIn .2s cubic-bezier(.34,1.56,.64,1);
-}
-.history-restore-thumb {
-  width: 100%; height: 120px;
-  object-fit: cover; border-radius: 8px;
-  border: 1px solid var(--border-mid);
-  margin-bottom: 12px; display: block;
-}
-.history-restore-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 16px; font-weight: 700;
-  color: var(--gold-bright); margin-bottom: 3px;
-}
-.history-restore-meta {
-  font-size: 12px; color: var(--text-dim);
-  font-family: 'Barlow Condensed', sans-serif;
-  letter-spacing: .4px; margin-bottom: 12px;
-}
-.history-restore-question {
-  font-size: 14px; color: var(--text);
-  margin-bottom: 14px; line-height: 1.5;
-}
-.history-restore-btns { display: flex; gap: 8px; }
-.history-restore-btns button {
-  flex: 1; padding: 10px; border-radius: 8px; border: none;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 14px; font-weight: 700; letter-spacing: .5px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  min-height: 44px;
-  display: inline-flex; align-items: center; justify-content: center;}
-.history-restore-yes { background: var(--gold); color: #1a1200; }
-.history-restore-no {
-  background: var(--surface2);
-  border: 1px solid var(--border-mid) !important;
-  color: var(--text-dim);
-}
+
+
+
+
+
+
+
+
+
 
 /* ── COACHING MODE ── */
 .coaching-box {
@@ -1087,14 +994,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   -webkit-tap-highlight-color: transparent;
 }
 
-.spin-cue-hint {
-  text-align: center;
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-top: 12px;
-  font-family: 'Barlow Condensed', sans-serif;
-  letter-spacing: .5px;
-}
+
 
 /* ── WELCOME + GUIDED TOUR ── */
 .welcome-overlay{ position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center;
@@ -1156,8 +1056,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   letter-spacing:.6px; color:#9fe4ff; }
 #mini-view div.on{ background:#40ceff; color:#06171f; }
 
-/* ── Scoreboard: tap-to-rename affordance + hint ── */
-.sb-name-edit-ico{ font-size:.72em; opacity:.55; margin-left:6px; vertical-align:baseline; }
+
 .sb-name-chip{ display:inline-flex; align-items:center; gap:7px; cursor:pointer;
   background:rgba(255,255,255,.05); border:1.5px dashed rgba(159,228,255,.5); border-radius:9px;
   padding:4px 10px; max-width:100%; min-height:34px; }
@@ -1179,10 +1078,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .sb-rn-btns{ display:flex; gap:8px; margin-top:14px; }
 .sb-rn-btns button{ flex:1; min-height:46px; border-radius:10px; cursor:pointer;
   font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; letter-spacing:.5px; }
-.sb-name-edit{ font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.5px;
-  font-size: clamp(13px,3.8vw,16px); background:#0b1811; border:1.5px solid var(--green-soft);
-  border-radius:8px; color:var(--cream); padding:4px 9px; width:100%; max-width:220px;
-  min-height:36px; outline:none; }
+
 #sb-hint{ text-align:center; font-family:'Barlow Condensed',sans-serif; letter-spacing:.5px;
   font-size: clamp(11px,3.1vw,13px); color:var(--gold-lt); opacity:.92; margin-top:7px; flex-shrink:0;
   background:rgba(200,151,46,.10); border:1px solid rgba(200,151,46,.28); border-radius:8px;
@@ -1273,7 +1169,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .dl-eq-actions button{ background:none; border:1px solid var(--border); color:var(--text-muted);
   border-radius:9px; padding:7px 14px; font-size:12px; cursor:pointer;
   font-family:'Barlow Condensed',sans-serif; letter-spacing:.5px; }
-.dl-hit{ cursor:pointer; }
+
 
 /* ═══ ITEM 9 - SCAN & READ HIERARCHY ═══════════════════════════════
    Auto is the path almost everyone should take, so it reads as the primary
@@ -1916,6 +1812,20 @@ body.hub-mode #modes-hub {
   color:#39b273; border-radius:7px; font-size:8.5px; letter-spacing:1.2px; padding:2px 8px;
   font-family:'Barlow Condensed',sans-serif; font-weight:700; }
 .hub-tag.gold { background:#2a2008; border-color:var(--gold); color:var(--gold-lt); }
+/* Install lives on the hub only. It is a once-ever action, not something you
+   need on every screen while reading a shot. */
+#install-btn {
+  /* The reveal clears the inline display, so the value here is what applies.
+     flex is required: the rule below relies on align-items and gap. */
+  display: flex;
+  width: calc(100% - 44px); margin: 4px 22px 0; align-items: center; gap: 11px;
+  min-height: 56px; padding: 11px 15px; border-radius: 13px; cursor: pointer;
+  background: linear-gradient(180deg, rgba(64,206,255,.14), rgba(64,206,255,.05));
+  border: 1px solid #33507e; color: #bcd4ff; text-align: left;
+  font-family: 'Barlow', sans-serif; font-size: 12px; line-height: 1.45;
+}
+#install-btn b { color: #dff0ff; font-size: 13.5px; }
+#install-btn:active { background: rgba(64,206,255,.24); border-color: #40ceff; }
 .hub-util { display:flex; gap:8px; padding:16px 12px 0; }
 .hub-util button { flex:1; min-height:44px; background:none; border:1px solid #3a2c18;
   border-radius:10px; color:#c9a227; font-family:'Barlow Condensed',sans-serif; font-weight:700;
@@ -2001,13 +1911,12 @@ body.hist-mode #history-panel {
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.5.1012</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.7.0716</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" id="hdr-tour-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
         <button class="help-btn" onclick="toggleRules()" title="Official game rules"><span style="font-size:14px">📜</span> Rules</button>
         <button class="help-btn" id="hdr-guide-btn" onclick="toggleHelp()" title="How to use Shot Reader"><span style="font-size:14px">📖</span> Guide</button>
-        <button class="help-btn" id="install-btn" onclick="promptInstall()" title="Install Shot Reader" style="display:none;border-color:#40ceff;color:#9fe4ff"><span style="font-size:14px">📲</span> Install</button>
       </div>
     </div>
   </header>
@@ -2264,7 +2173,7 @@ body.hist-mode #history-panel {
     <div class="autoscan-row adv-only">
         <div>
           <div class="autoscan-label">💠 Diamond System <span class="info-chip" role="button" aria-label="What is the diamond system?" onclick="event.stopPropagation();showDiamondLesson();">?</span></div>
-          <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap 📐 Align Table or ✨ Auto, then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
+          <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap ✨ Auto (or 📐 Align Table by hand), then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="aim-diamonds" onchange="toggleDiamonds()">
@@ -2562,7 +2471,7 @@ body.hist-mode #history-panel {
           <span style="flex-shrink:0">🎱</span><div><strong>Mark one or more object balls</strong> — the balls you want to pot.</div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;font-size:13.5px;color:var(--cream);line-height:1.4">
-          <span style="flex-shrink:0">🕳️</span><div><strong>Add at least one pocket</strong> — tap <strong>📐 Align Table</strong> for all of them, or <strong>＋ Pocket</strong> above the table for one.</div>
+          <span style="flex-shrink:0">🕳️</span><div><strong>Add at least one pocket</strong> — tap <strong>✨ Auto</strong> for all of them, or <strong>＋ Pocket</strong> above the table for one.</div>
         </div>
         </div></div>
         <div style="font-size:12.5px;color:#9fe4ff;line-height:1.4;border-top:1px solid var(--border);padding-top:8px">
@@ -3558,10 +3467,7 @@ function _drawMiniSpinBall(wrapId, pos) {
   wrap.innerHTML = svg;
 }
 
-function handleEnglishClick(event) {
-  // Legacy — now handled by popup. Open popup instead.
-  openSpinPopup();
-}
+
 
 function getEnglishAdvice(cutAngle) {
   var toggle = document.getElementById('english-toggle');
@@ -5921,7 +5827,7 @@ function maybeShowDiamondExplainer() {
 function toggleDiamonds() {
   var t = document.getElementById('aim-diamonds');
   if (t && t.checked && !window._tHf) {
-    setStatus('💠 Diamonds need the whole table aligned — capture all four rails, then tap 📐 Align Table (or ✨ Auto)', 'warn');
+    setStatus('💠 Diamonds need the whole table aligned — capture all four rails, then tap ✨ Auto (or 📐 Align Table by hand)', 'warn');
     // Bring the Align buttons to the user — the warning is only useful if seen.
     try { var a = document.getElementById('step2-anchor'); if (a && sourceImg) a.scrollIntoView({ behavior:'smooth', block:'center' }); } catch (_) {}
   } else if (t && t.checked) {
@@ -6851,15 +6757,7 @@ function quickAddPocket() {
   var n = marks.filter(function(m){ return m.type === 'pocket'; }).length;
   setStatus('Pocket ' + n + ' of 6 added (flashing) — drag it onto the pocket you\'re aiming for','gold');
 }
-function clearAlign() {
-  _awaitingPocket = false;
-  marks = marks.filter(m => m.type !== 'corner');
-  aligning = false;
-  window._tableH = null; window._tHf = null; window._tHinv = null; window._tCanonLong = null;
-  updateAlignChrome();
-  renderCanvas();
-  setStatus('Alignment cleared','gold');
-}
+
 
 
 // ── Geometry: distance from a ball to the target→pocket line ──
@@ -8379,13 +8277,7 @@ function openDiamondLesson() {
        confirmed at a glance, and 8-ball fouls carry no running penalty. */
 var scoreMode = false;
 
-function enterScoreboard() {
-  if (scoreMode) return;
-  scoreMode = true;
-  document.body.classList.add('score-mode');
-  acquireWakeLock();          // a scoreboard that dims is useless
-  renderScoreboard();
-}
+
 
 function exitScoreboard() {
   if (!scoreMode) return;
@@ -8628,11 +8520,7 @@ function addRack(i) {
   setStatus(playerName(i) + ' wins the rack \u2014 ' + players[i].racks + ' total', 'live');
 }
 
-function resetPlayers() {
-  players.forEach(function(pl){ pl.score=0; pl.fouls=0; pl.racks=0; });
-  syncPlayersUI(); saveSettings();
-  setStatus('Scores reset', 'gold');
-}
+
 
 /* FOUL STREAK. WPA 14.1: three CONSECUTIVE fouls cost the third foul's point
    plus a 15-point penalty (16 total), then the count resets and the offender
@@ -9246,6 +9134,23 @@ function updateSpinPopupInfo(posId) {
   document.getElementById('spin-popup-desc').textContent = data.desc;
 }
 
+/* Guide drawers. Open one at a time is tempting, but people compare sections,
+   so any number can be open; they all start closed except Quick Start. */
+function toggleHelpSection(head) {
+  try {
+    var sec = head && head.parentElement;
+    if (sec) sec.classList.toggle('open');
+  } catch (_) {}
+}
+
+/* Every drawer shut, back to the list of headings. */
+function collapseHelpSections() {
+  try {
+    var secs = document.querySelectorAll('#help-overlay .help-section');
+    for (var i = 0; i < secs.length; i++) secs[i].classList.toggle('open', i === 0);
+  } catch (_) {}
+}
+
 function toggleHelp() {
   var el = document.getElementById('help-overlay');
   if (!el) { alert('Help not found'); return; }
@@ -9257,6 +9162,7 @@ function toggleHelp() {
     el.style.alignItems = 'flex-end';
     el.style.justifyContent = 'center';
     document.body.style.overflow = 'hidden';
+    collapseHelpSections();          // always reopen as a short list of headings
     document.getElementById('help-modal').scrollTop = 0;
   }
 }
@@ -10237,8 +10143,12 @@ try {
         <button class="help-close" onclick="toggleHelp()">✕</button>
       </div>
 
-      <div class="help-section">
-        <div class="help-section-title">🚀 Quick Start</div>
+      <div class="help-section open">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">🚀 Quick Start</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">1️⃣</div>
           <div><div class="help-item-title">Take a picture of your table</div><div class="help-item-desc">Tap <strong>Start Camera</strong> and point at the table, or tap <strong>📁 Upload Photo</strong> to pick one from your phone.</div></div>
@@ -10255,13 +10165,102 @@ try {
           <div class="help-icon">4️⃣</div>
           <div><div class="help-item-title">Tap Suggest Best Shot</div><div class="help-item-desc">It's in the bar at the bottom of your screen. The app reads the shot, rates how hard it is, and coaches you through it.</div></div>
         </div>
+          <div class="help-tip">💡 <strong>That's it!</strong> Everything below explains each feature in more detail.
+        </div>
+        </div>
+      
       </div>
-      <div class="help-tip">💡 <strong>That's it!</strong> Everything below explains each feature in more detail.</div>
 
-      <div class="help-divider"></div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">👓 About Curran's Shot Reader</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
+        <div class="help-item">
+          <div class="help-icon">👨‍👦</div>
+          <div><div class="help-item-title">A father-and-son project</div><div class="help-item-desc">Built by Adam &amp; Bill Curran, Third Generation Family Business — William J. Curran &amp; Son Opticians of Drexel Hill, PA. Since 1952.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">👓</div>
+          <div><div class="help-item-title">Why an optical shop built this</div><div class="help-item-desc">We make custom prescription <strong>billiard glasses</strong> for players who look up at a table all night. Helping you see the table clearly and read your next shot is the same mission — just taken one step further.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🏆</div>
+          <div><div class="help-item-title">Trusted at every level</div><div class="help-item-desc">From weekend league players to touring professionals like <strong>Karen Corr</strong>, <strong>Robin Dobson</strong>, and <strong>Brian &lsquo;Superman&rsquo; Pauley</strong>, our custom billiard eyewear is worn on tables across the country and around the world.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🔒</div>
+          <div><div class="help-item-title">Private and free</div><div class="help-item-desc">Everything runs right on your phone — your photos are never uploaded to a server. No account, no sign-up, and it's free to use.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🛠️</div>
+          <div><div class="help-item-title">A work in progress</div><div class="help-item-desc">This is a passion project we keep improving. It won't be perfect on every table or angle yet — overhead photos in good light work best. Your feedback makes it better.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">&#9654;&#65039;</div>
+          <div><div class="help-item-title">Table Mode &mdash; hands-free on a tripod</div><div class="help-item-desc">From the main menu, tap <strong>Table Mode</strong>. The setup controls disappear and you get just the camera, plus one bar along the bottom with the call: which ball, which pocket, and how sure it is. It reads the table by itself every time the balls move and settle &mdash; <strong>you never touch the phone between shots</strong>. <strong>Tap the video</strong> any time to make it read again straight away. <strong>&#10005; EXIT</strong> puts everything back exactly as it was.</div></div>
+        </div>
 
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">✨ Simple vs Advanced</div>
+        <div class="help-item">
+          <div class="help-icon">&#128266;</div>
+          <div><div class="help-item-title">Hearing the shot called out</div><div class="help-item-desc">In Table Mode the app can <strong>say the shot out loud</strong> &mdash; &ldquo;Take the solid to the corner pocket. This one is easy.&rdquo; &mdash; so you don&rsquo;t have to look at the screen at all. It&rsquo;s tied to the <strong>&#128276; Sound &amp; spoken shot calls</strong> switch in Advanced Tuning: chimes on means it speaks, chimes off means it stays quiet. It only speaks when the call actually changes, so it won&rsquo;t repeat itself at you.</div>
+          <div class="help-item-desc" style="margin-top:8px"><strong>What it actually says.</strong> Three parts, every time &mdash; which ball, which pocket, and how hard it reckons the shot is:<br>
+          &ldquo;<em>Take the <strong>solid</strong> to the <strong>corner pocket</strong>. <strong>This one is easy.</strong></em>&rdquo;<br>
+          The ball is <em>solid</em>, <em>stripe</em> or <em>eight ball</em>. The pocket is <em>corner pocket</em> or <em>side pocket</em>. The last part is one of four, depending on the difficulty score: <em>This one is easy</em> (1&ndash;3), <em>Moderate shot</em> (4&ndash;5), <em>Tough shot</em> (6&ndash;8), or <em>Very low percentage. A safety may be smarter</em> (9&ndash;10). If the path is blocked it says so instead: &ldquo;<em>The stripe is blocked. Check the kick or combo option.</em>&rdquo;<br>
+          <strong>It only talks &mdash; it doesn&rsquo;t listen.</strong> There are no voice commands and the microphone is never used. On an older iPhone, or an Android without Google Text-to-Speech installed, there may be no voice available &mdash; everything else still works.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#128161;</div>
+          <div><div class="help-item-title">The screen stays on in Table Mode</div><div class="help-item-desc">While Table Mode is running the app asks your phone to <strong>keep the screen awake</strong>, so it doesn&rsquo;t dim halfway through a rack. If you switch apps and come back, it asks again automatically. Leaving Table Mode hands control straight back to your phone&rsquo;s normal timeout. On iPhones older than iOS 16.4 this isn&rsquo;t available and the screen dims as usual &mdash; nothing else is affected.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#9881;&#65039;</div>
+          <div><div class="help-item-title">Quick Setup &amp; Advanced Tuning</div><div class="help-item-desc">The top of the page now runs in the order you actually need it: the <strong>Simple / Advanced</strong> switch first, then <strong>&#128208; Perspective Mode</strong> (Advanced only), then <strong>Quick Setup</strong> with game mode and table size. Set them once at the start and leave them. Everything you rarely touch &mdash; auto-scan, person check, sensitivity, still delay, chimes, coaching, spin and the aiming aids &mdash; is tucked behind <strong>&#9881; Advanced Tuning</strong> just below it. Tap anywhere on that row to open or close it.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#127919;</div>
+          <div><div class="help-item-title">Change pocket</div><div class="help-item-desc">Changed your mind about the target? Tap <strong>&#127919; Change pocket</strong> in the toolbar above the photo, then tap the pocket you want. <strong>Your detected balls stay exactly where they are</strong> &mdash; no need to run AI Detect again. You can also just <strong>drag a pocket marker</strong>; dragging a <strong>corner</strong> instead moves the whole table box and re-places all six pockets.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#128273;</div>
+          <div><div class="help-item-title">ANGLE &amp; TABLE FILLS readout</div><div class="help-item-desc">While the camera is live, two numbers sit under the motion bar. <strong>ANGLE</strong> is your phone's tilt &mdash; 0&deg; is flat overhead, 90&deg; is upright; under 25&deg; reads best because the geometry is exact. <strong>TABLE FILLS</strong> is how much of the frame the table covers &mdash; aim for roughly 15&ndash;80%. Both are measured independently of the table finder, so they keep telling you the truth even when it's struggling. (Phone height can't be measured &mdash; there's no sensor for it &mdash; and frame fill is what actually matters anyway.)</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#9201;&#65039;</div>
+          <div><div class="help-item-title">Auto-scan fires once per shot</div><div class="help-item-desc">With the camera running, the app waits for the table to be still, takes <strong>one</strong> photo, and then holds it. It won't take another until the <strong>balls actually move and come to rest again</strong> &mdash; i.e. until someone plays a shot. That's deliberate: without it the screen would re-read every fraction of a second and you'd never get to look at the shot you asked for. Set the phone on a tripod, break, and it reads each new layout as the table settles.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#9707;</div>
+          <div><div class="help-item-title">Landscape split &mdash; and turning it off</div><div class="help-item-desc">Turn the phone sideways and the table pins to one side with the advice beside it. Two round buttons sit on the divider: <strong>&#8646;</strong> swaps which side the table is on, and <strong>&#9707;</strong> turns the split off entirely if you'd rather have the normal scrolling page. Both choices are remembered.</div></div>
+        </div>
+
+        <div class="help-item">
+          <div class="help-icon">&#8505;&#65039;</div>
+          <div><div class="help-item-title">Fair use &amp; league play</div><div class="help-item-desc">A free tool built <strong>for fun and for learning</strong> the game. Its advice is a <strong>starting point, not a guarantee</strong> &mdash; it reads a photo, so angles, lighting and your own table always have the final say. <strong>Playing competitively?</strong> Many leagues and tournaments restrict electronic assistance during a match and the rules differ between organizations, so <strong>check your league or tournament rules first</strong>. Provided as-is with no warranty &mdash; Curran Opticians isn&rsquo;t responsible for missed shots or lost games.</div></div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🌐</div>
+          <div><div class="help-item-title">Get your own billiard glasses</div><div class="help-item-desc">Custom prescription billiard eyewear, shipped to every U.S. state and just about every country, <strong>FSA/HSA eligible</strong>, and backed by a 2-year protection plan and satisfaction guarantee. See the collection at <strong>www.billiardglasses.com</strong>.</div></div>
+        </div>
+      </div>
+
+      <div style="height:20px">
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">✨ Simple vs Advanced</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">✨</div>
           <div><div class="help-item-title">Simple View — just the essentials</div><div class="help-item-desc">The app always opens in <strong>Simple View</strong>. It shows only what you need to make the ball: the crowned best shot, the ghost-ball aim ring, and your cue line — a clean read with nothing extra to sort through.</div></div>
@@ -10274,12 +10273,15 @@ try {
           <div class="help-icon">🧹</div>
           <div><div class="help-item-title">Resets to Simple each visit</div><div class="help-item-desc">The app returns to Simple View every time you open it, so you always start with a clean, uncluttered read. Advanced is a choice you opt into per session.</div></div>
         </div>
+        </div>
       </div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">📷 Getting a Picture</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">📷 Getting a Picture</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">📷</div>
           <div><div class="help-item-title">Start Camera</div><div class="help-item-desc">Turns on your camera. Point at the pool table from above (best) or from your playing angle.</div></div>
@@ -10296,13 +10298,18 @@ try {
           <div class="help-icon">⚡</div>
           <div><div class="help-item-title">Scan Now</div><div class="help-item-desc">Grabs the current camera picture right away, without waiting.</div></div>
         </div>
+          <div class="help-tip">💡 <strong>Tripod tip:</strong> Mount the phone overhead, turn on Auto-Scan, and the app reads the table every time the balls stop.
+        </div>
+        </div>
+      
       </div>
-      <div class="help-tip">💡 <strong>Tripod tip:</strong> Mount the phone overhead, turn on Auto-Scan, and the app reads the table every time the balls stop.</div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">📐 Align Table</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">📐 Align Table</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🔲</div>
           <div><div class="help-item-title">Tap the 4 corners <span style="opacity:.7;font-weight:400">(fallback)</span></div><div class="help-item-desc">Only needed when <strong>✨ Auto</strong> can&rsquo;t find the table. Tap <strong>📐 Align Table by hand</strong>, then tap the table's corners in order: top-left, top-right, bottom-right, bottom-left. The app maps the whole playing surface and places every visible pocket automatically — no manual pocket marking needed.</div></div>
@@ -10319,12 +10326,15 @@ try {
           <div class="help-icon">↔️</div>
           <div><div class="help-item-title">Works from any angle</div><div class="help-item-desc">Overhead shots and natural playing-angle shots both work — the box fits whatever shape the table makes in your photo.</div></div>
         </div>
+        </div>
       </div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">🤖 AI Detection</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">🤖 AI Detection</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🤖</div>
           <div><div class="help-item-title">AI Detect Button</div><div class="help-item-desc">After you have a picture, tap this to automatically find and mark the balls. Check them over and <strong>tap any that look wrong</strong> — the status line tells you how many were found.</div></div>
@@ -10341,13 +10351,18 @@ try {
           <div class="help-icon">✋</div>
           <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — or even the cue ball — especially at an angle or in tricky lighting. No problem: just <strong>tap the ball</strong> and it cycles Solid → Stripe → 8-ball → Cue until it's right. No re-scan needed. (The cue slot is skipped if you already have a cue on the table.)</div></div>
         </div>
+          <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good light. If the AI misses balls, lower the confidence slider or mark them by hand.
+        </div>
+        </div>
+      
       </div>
-      <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good light. If the AI misses balls, lower the confidence slider or mark them by hand.</div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">🎱 Marking Balls by Hand</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">🎱 Marking Balls by Hand</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">⚪</div>
           <div><div class="help-item-title">Cue Ball</div><div class="help-item-desc">Mark the white ball. The app draws its aim lines starting FROM the cue ball.</div></div>
@@ -10366,7 +10381,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🕳️</div>
-          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc"><strong>📐 Align Table places all the pockets for you</strong> — but in Advanced you can also place one by hand: open "Mark balls or pockets manually" and tap the felt. Pockets unlock the cut angle, aim lines, and ghost ball. To remove a pocket, <strong>tap it twice</strong>; to move it, drag it.</div></div>
+          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc"><strong>✨ Auto places all the pockets for you</strong> — but in Advanced you can also place one by hand: open "Mark balls or pockets manually" and tap the felt. Pockets unlock the cut angle, aim lines, and ghost ball. To remove a pocket, <strong>tap it twice</strong>; to move it, drag it.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">⛶</div>
@@ -10388,12 +10403,15 @@ try {
           <div class="help-icon">↩</div>
           <div><div class="help-item-title">Undo, Clear &amp; Discard</div><div class="help-item-desc">Undo removes the last marker. ⊘ Clear removes all markers. ✕ throws away the picture so you can start over.</div></div>
         </div>
+        </div>
       </div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">⭐ Best Shot Finder</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">⭐ Best Shot Finder</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">⭐</div>
           <div><div class="help-item-title">Auto-Evaluate Best Shot</div><div class="help-item-desc">Turn this on (in Advanced Tuning) and the app scores every ball on the table, then crowns your easiest shot.</div></div>
@@ -10406,12 +10424,15 @@ try {
           <div class="help-icon">📌</div>
           <div><div class="help-item-title">Sharper with pockets</div><div class="help-item-desc">Without pockets the app assumes standard positions. Run <strong>📐 Align Table</strong> (or place pockets by hand in Advanced) for far more accurate picks.</div></div>
         </div>
+        </div>
       </div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">📐 Player vs Overhead View</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">📐 Player vs Overhead View</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🧍</div>
           <div><div class="help-item-title">Player View</div><div class="help-item-desc">For pictures taken from where you stand. Angles are approximate — the camera angle bends the geometry — so advice is a helpful guide, not exact.</div></div>
@@ -10420,13 +10441,18 @@ try {
           <div class="help-icon">🗺️</div>
           <div><div class="help-item-title">Overhead View</div><div class="help-item-desc">For pictures taken straight down over the table (phone on a stand above it). This gives precise cut angles and the most accurate geometry.</div></div>
         </div>
+          <div class="help-tip">💡 <strong>Want exact angles?</strong> Hold the phone above the table and switch to Overhead View.
+        </div>
+        </div>
+      
       </div>
-      <div class="help-tip">💡 <strong>Want exact angles?</strong> Hold the phone above the table and switch to Overhead View.</div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">🎱 English / Spin Control</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">🎱 English / Spin Control</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🔘</div>
           <div><div class="help-item-title">Turn it on</div><div class="help-item-desc">Toggle English/Spin Control in settings. A cue ball diagram pops up so you can choose where you'll strike the ball.</div></div>
@@ -10439,12 +10465,15 @@ try {
           <div class="help-icon">➡️</div>
           <div><div class="help-item-title">See the path</div><div class="help-item-desc">A colored line on the picture shows where the cue ball travels after it hits, based on your spin choice (shown in Overhead View).</div></div>
         </div>
+        </div>
       </div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">🎯 Aiming Aids</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">🎯 Aiming Aids</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🟡</div>
           <div><div class="help-item-title">Target Line</div><div class="help-item-desc">Draws the aim line from your cue, through the contact point, to the pocket.</div></div>
@@ -10482,13 +10511,18 @@ try {
           <div class="help-icon">⇆</div>
           <div><div class="help-item-title">Landscape — swap sides</div><div class="help-item-desc">Turn the phone sideways and the table pins to one side with the advice beside it. The round <strong>⇆ button on the divider</strong> swaps which side the table sits on — handy for left-handers or whichever way you hold the phone. Your choice is remembered.</div></div>
         </div>
+          <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they're the easiest to read.
+        </div>
+        </div>
+      
       </div>
-      <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they're the easiest to read.</div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">🔍 Shot Suggestions</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">🔍 Shot Suggestions</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">📐</div>
           <div><div class="help-item-title">Cut Angle</div><div class="help-item-desc">0° = straight in (easiest). 90° = maximum cut (hardest). Color coded green / amber / red.</div></div>
@@ -10549,102 +10583,24 @@ try {
           <div class="help-icon">📣</div>
           <div><div class="help-item-title">Coaching Mode</div><div class="help-item-desc">Turn on to get a plain-English explanation of WHY a shot has its difficulty rating.</div></div>
         </div>
+        </div>
       </div>
 
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">🔔 Sound Chimes</div>
+      <div class="help-section">
+        <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
+          <div class="help-section-title">🔔 Sound Chimes</div>
+          <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
+        </div>
+        <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🔔</div>
           <div><div class="help-item-title">Two-Chime System</div><div class="help-item-desc">A soft click means the table was scanned. A louder two-tone means your suggestion is ready — so you know when to look up.</div></div>
         </div>
-      </div>
-
-      <div class="help-divider"></div>
-
-      <div class="help-section" style="margin-top:16px">
-        <div class="help-section-title">👓 About Curran's Shot Reader</div>
-        <div class="help-item">
-          <div class="help-icon">👨‍👦</div>
-          <div><div class="help-item-title">A father-and-son project</div><div class="help-item-desc">Built by Adam &amp; Bill Curran, Third Generation Family Business — William J. Curran &amp; Son Opticians of Drexel Hill, PA. Since 1952.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">👓</div>
-          <div><div class="help-item-title">Why an optical shop built this</div><div class="help-item-desc">We make custom prescription <strong>billiard glasses</strong> for players who look up at a table all night. Helping you see the table clearly and read your next shot is the same mission — just taken one step further.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">🏆</div>
-          <div><div class="help-item-title">Trusted at every level</div><div class="help-item-desc">From weekend league players to touring professionals like <strong>Karen Corr</strong>, <strong>Robin Dobson</strong>, and <strong>Brian &lsquo;Superman&rsquo; Pauley</strong>, our custom billiard eyewear is worn on tables across the country and around the world.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">🔒</div>
-          <div><div class="help-item-title">Private and free</div><div class="help-item-desc">Everything runs right on your phone — your photos are never uploaded to a server. No account, no sign-up, and it's free to use.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">🛠️</div>
-          <div><div class="help-item-title">A work in progress</div><div class="help-item-desc">This is a passion project we keep improving. It won't be perfect on every table or angle yet — overhead photos in good light work best. Your feedback makes it better.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">&#9654;&#65039;</div>
-          <div><div class="help-item-title">Table Mode &mdash; hands-free on a tripod</div><div class="help-item-desc">From the main menu, tap <strong>Table Mode</strong>. The setup controls disappear and you get just the camera, plus one bar along the bottom with the call: which ball, which pocket, and how sure it is. It reads the table by itself every time the balls move and settle &mdash; <strong>you never touch the phone between shots</strong>. <strong>Tap the video</strong> any time to make it read again straight away. <strong>&#10005; EXIT</strong> puts everything back exactly as it was.</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#128266;</div>
-          <div><div class="help-item-title">Hearing the shot called out</div><div class="help-item-desc">In Table Mode the app can <strong>say the shot out loud</strong> &mdash; &ldquo;Take the solid to the corner pocket. This one is easy.&rdquo; &mdash; so you don&rsquo;t have to look at the screen at all. It&rsquo;s tied to the <strong>&#128276; Sound chime alerts</strong> switch in Advanced Tuning: chimes on means it speaks, chimes off means it stays quiet. It only speaks when the call actually changes, so it won&rsquo;t repeat itself at you.</div>
-          <div class="help-item-desc" style="margin-top:8px"><strong>What it actually says.</strong> Three parts, every time &mdash; which ball, which pocket, and how hard it reckons the shot is:<br>
-          &ldquo;<em>Take the <strong>solid</strong> to the <strong>corner pocket</strong>. <strong>This one is easy.</strong></em>&rdquo;<br>
-          The ball is <em>solid</em>, <em>stripe</em> or <em>eight ball</em>. The pocket is <em>corner pocket</em> or <em>side pocket</em>. The last part is one of four, depending on the difficulty score: <em>This one is easy</em> (1&ndash;3), <em>Moderate shot</em> (4&ndash;5), <em>Tough shot</em> (6&ndash;8), or <em>Very low percentage. A safety may be smarter</em> (9&ndash;10). If the path is blocked it says so instead: &ldquo;<em>The stripe is blocked. Check the kick or combo option.</em>&rdquo;<br>
-          <strong>It only talks &mdash; it doesn&rsquo;t listen.</strong> There are no voice commands and the microphone is never used. On an older iPhone, or an Android without Google Text-to-Speech installed, there may be no voice available &mdash; everything else still works.</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#128161;</div>
-          <div><div class="help-item-title">The screen stays on in Table Mode</div><div class="help-item-desc">While Table Mode is running the app asks your phone to <strong>keep the screen awake</strong>, so it doesn&rsquo;t dim halfway through a rack. If you switch apps and come back, it asks again automatically. Leaving Table Mode hands control straight back to your phone&rsquo;s normal timeout. On iPhones older than iOS 16.4 this isn&rsquo;t available and the screen dims as usual &mdash; nothing else is affected.</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#9881;&#65039;</div>
-          <div><div class="help-item-title">Quick Setup &amp; Advanced Tuning</div><div class="help-item-desc">The top of the page now runs in the order you actually need it: the <strong>Simple / Advanced</strong> switch first, then <strong>&#128208; Perspective Mode</strong> (Advanced only), then <strong>Quick Setup</strong> with game mode and table size. Set them once at the start and leave them. Everything you rarely touch &mdash; auto-scan, person check, sensitivity, still delay, chimes, coaching, spin and the aiming aids &mdash; is tucked behind <strong>&#9881; Advanced Tuning</strong> just below it. Tap anywhere on that row to open or close it.</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#127919;</div>
-          <div><div class="help-item-title">Change pocket</div><div class="help-item-desc">Changed your mind about the target? Tap <strong>&#127919; Change pocket</strong> in the toolbar above the photo, then tap the pocket you want. <strong>Your detected balls stay exactly where they are</strong> &mdash; no need to run AI Detect again. You can also just <strong>drag a pocket marker</strong>; dragging a <strong>corner</strong> instead moves the whole table box and re-places all six pockets.</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#128273;</div>
-          <div><div class="help-item-title">ANGLE &amp; TABLE FILLS readout</div><div class="help-item-desc">While the camera is live, two numbers sit under the motion bar. <strong>ANGLE</strong> is your phone's tilt &mdash; 0&deg; is flat overhead, 90&deg; is upright; under 25&deg; reads best because the geometry is exact. <strong>TABLE FILLS</strong> is how much of the frame the table covers &mdash; aim for roughly 15&ndash;80%. Both are measured independently of the table finder, so they keep telling you the truth even when it's struggling. (Phone height can't be measured &mdash; there's no sensor for it &mdash; and frame fill is what actually matters anyway.)</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#9201;&#65039;</div>
-          <div><div class="help-item-title">Auto-scan fires once per shot</div><div class="help-item-desc">With the camera running, the app waits for the table to be still, takes <strong>one</strong> photo, and then holds it. It won't take another until the <strong>balls actually move and come to rest again</strong> &mdash; i.e. until someone plays a shot. That's deliberate: without it the screen would re-read every fraction of a second and you'd never get to look at the shot you asked for. Set the phone on a tripod, break, and it reads each new layout as the table settles.</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#9707;</div>
-          <div><div class="help-item-title">Landscape split &mdash; and turning it off</div><div class="help-item-desc">Turn the phone sideways and the table pins to one side with the advice beside it. Two round buttons sit on the divider: <strong>&#8646;</strong> swaps which side the table is on, and <strong>&#9707;</strong> turns the split off entirely if you'd rather have the normal scrolling page. Both choices are remembered.</div></div>
-        </div>
-
-        <div class="help-item">
-          <div class="help-icon">&#8505;&#65039;</div>
-          <div><div class="help-item-title">Fair use &amp; league play</div><div class="help-item-desc">A free tool built <strong>for fun and for learning</strong> the game. Its advice is a <strong>starting point, not a guarantee</strong> &mdash; it reads a photo, so angles, lighting and your own table always have the final say. <strong>Playing competitively?</strong> Many leagues and tournaments restrict electronic assistance during a match and the rules differ between organizations, so <strong>check your league or tournament rules first</strong>. Provided as-is with no warranty &mdash; Curran Opticians isn&rsquo;t responsible for missed shots or lost games.</div></div>
-        </div>
-        <div class="help-item">
-          <div class="help-icon">🌐</div>
-          <div><div class="help-item-title">Get your own billiard glasses</div><div class="help-item-desc">Custom prescription billiard eyewear, shipped to every U.S. state and just about every country, <strong>FSA/HSA eligible</strong>, and backed by a 2-year protection plan and satisfaction guarantee. See the collection at <strong>www.billiardglasses.com</strong>.</div></div>
         </div>
       </div>
-
-      <div style="height:20px"></div>
+</div>
     </div>
   </div>
-
-  
-      </div>
 
 
 <!-- RULES OVERLAY -->
@@ -10731,6 +10687,11 @@ try {
     </button>
 
   </div>
+
+  <button id="install-btn" onclick="promptInstall()" style="display:none">
+    <span style="font-size:17px">&#128242;</span>
+    <span><b>Add Shot Reader to your phone</b><br>Opens like an app, works without a signal</span>
+  </button>
 
   <div class="hub-util">
     <button onclick="closeHub(); setTimeout(startTour,220)">TOUR</button>
