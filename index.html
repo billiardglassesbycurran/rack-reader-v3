@@ -16,7 +16,18 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1a1208">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- Pinch-zoom is deliberately ALLOWED. iOS ignores user-scalable=no anyway,
+     blocking zoom fails accessibility, and on a phone at a table being able to
+     pinch into the diamond diagram or a marked-up photo is genuinely useful. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- iOS home-screen support. iPhone and iPad ignore the web manifest for this,
+     so without these three tags "Add to Home Screen" opens in a Safari shell
+     with the address bar still there - which is exactly the chrome Table Mode
+     is trying to get rid of on a stand. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shot Reader">
 <title>Curran's Shot Reader</title>
 
 <style>
@@ -318,7 +329,7 @@ body::before {
   font-family:'Barlow Condensed',sans-serif; font-weight:700;
   font-size:13px; letter-spacing:.5px; cursor:pointer;
   transition:transform .1s, opacity .1s, box-shadow .15s;
-  -webkit-tap-highlight-color:transparent; user-select:none; white-space:nowrap; flex-shrink:0;
+  -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; white-space:nowrap; flex-shrink:0;
   min-height: 44px;
   display: inline-flex; align-items: center; justify-content: center;}
 .btn:active { transform:scale(.94); }
@@ -393,7 +404,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   border:1.5px solid var(--border); background:var(--surface2);
   cursor:pointer; font-family:'Barlow Condensed',sans-serif;
   font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
-  color:var(--text-muted); transition:all .15s; -webkit-tap-highlight-color:transparent; user-select:none;
+  color:var(--text-muted); transition:all .15s; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none;
   min-height: 44px;
   display: inline-flex; align-items: center; justify-content: center;}
 .mark-chip:hover { border-color:rgba(255,255,255,.2); color:var(--text); }
@@ -826,7 +837,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   cursor: pointer;
   transition: background .18s, color .18s;
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
+  -webkit-user-select: none; user-select: none;
   min-height: 48px;
   display: inline-flex; align-items: center; justify-content: center;}
 .view-mode-pill.active {
@@ -1367,7 +1378,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .scan-step.done{ background:#12271a; border-color:#2f5a3e; }
 .scan-step.done .n{ background:#2dff8a; color:#06120b; }
 .scan-step.done .t{ color:var(--green-soft); }
-.tip-toggle{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;
+.tip-toggle{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; -webkit-user-select:none; user-select:none;
   font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.4px; font-size:11px;
   text-transform:uppercase; color:#9fe4ff; margin:2px 0; }
 .tip-toggle .caret{ transition:transform .18s ease; }   /* size/shape comes from .disc-caret */
@@ -1429,13 +1440,15 @@ body.ls-nosplit #ls-swap-btn { display: none !important; }
   #app { max-width: none; padding-bottom: 40px; }
   #table-stage { display: contents; }   /* detections + advice fall into the rail flow */
   #stage-core {
-    position: fixed; top: 0; right: 0; width: 52vw; height: 100vh;
+    position: fixed; top: 0; right: 0; width: 52vw; height: 100vh; height: 100dvh;
     background: var(--felt); border-left: 1px solid var(--border);
     z-index: 5; padding: 8px 10px 96px; overflow: hidden;
     display: flex; flex-direction: column;
   }
   #stage-core .canvas-card { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 0; }
-  #main-canvas { max-height: calc(100vh - 200px); max-width: 100%; }
+  /* dvh: iOS Safari's 100vh includes the collapsing toolbar, so a bare vh
+     value overflows the screen there. */
+  #main-canvas { max-height: calc(100vh - 200px); max-height: calc(100dvh - 200px); max-width: 100%; }
   .sticky-action-bar {
     left: auto; right: 0; transform: translateZ(0); width: 52vw; max-width: none; z-index: 6;
   }
@@ -1556,7 +1569,9 @@ body.table-mode #english-panel,
   body.table-mode #motion-bar-wrap,
   body.table-mode #pos-bar {
     position: fixed; left: 0; right: 0; z-index: 12;
-    background: rgba(5,16,10,.72); backdrop-filter: blur(2px);
+    background: rgba(5,16,10,.72);
+    /* Safari still needs the prefix for backdrop-filter. */
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   }
   body.table-mode #motion-bar-wrap { top: 46px; }
   body.table-mode #pos-bar { top: 74px; font-size: 12px !important; padding: 4px 12px !important; }
@@ -1799,8 +1814,12 @@ body.hub-mode #modes-hub {
 .hub-txt { flex:1; min-width:0; }
 .hub-txt b { display:block; font-family:'Barlow Condensed',sans-serif; font-weight:700;
   letter-spacing:.7px; font-size:clamp(15px,4.4vw,17px); color:#f2ece0; }
-.hub-txt span { display:block; font-size:12.5px; color:#8a7a66; margin-top:3px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hub-txt span {
+  /* Was one line with an ellipsis, which cut both subtitles mid-sentence on a
+     412px phone. Two lines hold the longest of them with room to spare, and the
+     clamp still stops a long live status line from pushing the row apart. */
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  overflow:hidden; font-size:12.5px; color:#8a7a66; margin-top:3px; line-height:1.35; }
 /* .hub-go is styled in the affordance pass above (brass disc). */
 .hub-row.home { background:linear-gradient(180deg,#1d2c20,#16211a); border:1px solid #2f5a3e;
   padding:16px 12px; margin-bottom:4px; box-shadow:0 2px 10px rgba(0,0,0,.3); }
@@ -1808,6 +1827,9 @@ body.hub-mode #modes-hub {
 .hub-row.home .hub-badge { border-color:#2f5a3e; background:linear-gradient(180deg,#12291c,#0d1e14); }
 .hub-row.home .hub-txt span { color:#8fbfa3; }
 .hub-row.home .hub-go { color:#39b273; }
+/* A row carrying a tag needs clear space above it, or the tag lands on the
+   border of the card above and reads as belonging to that one instead. */
+.hub-row.tagged, .hub-row:has(.hub-tag) { margin-top:16px; }
 .hub-tag { position:absolute; top:-9px; left:76px; background:#0f2318; border:1px solid #39b273;
   color:#39b273; border-radius:7px; font-size:8.5px; letter-spacing:1.2px; padding:2px 8px;
   font-family:'Barlow Condensed',sans-serif; font-weight:700; }
@@ -1910,8 +1932,8 @@ body.hist-mode #history-panel {
     <div class="hdr-inner" style="border-top:1px solid rgba(200,151,46,.2);padding-top:9px">
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
-        <div class="hdr-name"><span>Curran's Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.7.0716</span></div>
+        <div class="hdr-name"><span>Curran&rsquo;s Shot Reader</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.16.0708</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" id="hdr-tour-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -1924,7 +1946,7 @@ body.hist-mode #history-panel {
   <!-- MODEL STATUS -->
   <div class="model-banner" id="model-banner">
     <div class="model-dot" id="model-dot"></div>
-    <span id="model-msg">Loading your custom trained model...</span>
+    <span id="model-msg">Loading your custom trained model&hellip;</span>
   </div>
 
     <!-- VIEW MODE -->
@@ -1989,7 +2011,7 @@ body.hist-mode #history-panel {
       <!-- 9-BALL: must-hit lowest ball (rule: contact lowest-numbered ball first) -->
       <div id="nineball-target-row" style="display:none;margin:2px 0 8px">
         <button class="btn" id="lowest-ball-btn" onclick="lowestBallAction()" style="width:100%;background:#0d2430;color:#9fe4ff;border:1px solid #40ceff;padding:9px">🎯 Set Lowest Ball <span style="opacity:.65;font-weight:400">— the ball you must hit first</span></button>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">9-ball rule: the cue ball must contact the <strong style="color:var(--cream)">lowest-numbered ball</strong> first. The AI can't read numbers yet — tap this, then tap that ball, and the suggestion will plan it.</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4">9-ball rule: the cue ball must contact the <strong style="color:var(--cream)">lowest-numbered ball</strong> first. The AI can&rsquo;t read numbers yet — tap this, then tap that ball, and the suggestion will plan it.</div>
       </div>
       <!-- TWO-PLAYER PANEL (optional; 1 Player by default) ------------------
        Manual throughout, following the run counter's precedent: the app cannot
@@ -2005,10 +2027,10 @@ body.hist-mode #history-panel {
       <div style="display:flex;gap:6px">
         <input id="pl-name-0" type="text" maxlength="14" placeholder="Player 1"
                oninput="setPlayerName(0,this.value)"
-               style="flex:1;min-width:0;min-height:44px;background:#0b1811;border:1px solid var(--border);border-radius:9px;color:var(--cream);padding:8px 10px;font-size:14px;font-family:inherit">
+               style="flex:1;min-width:0;min-height:44px;background:#0b1811;border:1px solid var(--border);border-radius:9px;color:var(--cream);padding:8px 10px;font-size:16px;font-family:inherit">
         <input id="pl-name-1" type="text" maxlength="14" placeholder="Player 2"
                oninput="setPlayerName(1,this.value)"
-               style="flex:1;min-width:0;min-height:44px;background:#0b1811;border:1px solid var(--border);border-radius:9px;color:var(--cream);padding:8px 10px;font-size:14px;font-family:inherit">
+               style="flex:1;min-width:0;min-height:44px;background:#0b1811;border:1px solid var(--border);border-radius:9px;color:var(--cream);padding:8px 10px;font-size:16px;font-family:inherit">
       </div>
       <div id="turn-bar" style="display:flex;align-items:center;gap:8px;margin-top:7px;background:#0d2430;border:1px solid #2a4433;border-radius:10px;padding:8px 10px">
         <div id="turn-who" style="flex:1;min-width:0;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:#9fe4ff;letter-spacing:.4px">Player 1&rsquo;s shot</div>
@@ -2173,7 +2195,7 @@ body.hist-mode #history-panel {
     <div class="autoscan-row adv-only">
         <div>
           <div class="autoscan-label">💠 Diamond System <span class="info-chip" role="button" aria-label="What is the diamond system?" onclick="event.stopPropagation();showDiamondLesson();">?</span></div>
-          <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap ✨ Auto (or 📐 Align Table by hand), then the official Corner-5 rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
+          <div class="autoscan-desc"><strong style="color:var(--gold-lt)">Needs the table aligned first</strong> — tap ✨ Auto (or 📐 Align Table by hand), then the diamond rail numbers appear. A learning overlay and a starting estimate: assumes a rolling cue ball with running English; every table plays a little differently.</div>
         </div>
         <label class="toggle">
           <input type="checkbox" id="aim-diamonds" onchange="toggleDiamonds()">
@@ -2287,7 +2309,7 @@ body.hist-mode #history-panel {
     <div id="stage-core">
   <div class="status-strip">
     <div class="s-pip" id="s-pip"></div>
-    <div class="s-text" id="s-text">Loading AI model...</div>
+    <div class="s-text" id="s-text">Loading AI model&hellip;</div>
   </div>
 
     <!-- CANVAS TOOLBAR (above the image so it never blocks taps) -->
@@ -2465,7 +2487,7 @@ body.hist-mode #history-panel {
         <div class="tip-toggle" onclick="toggleTips('tips-4')"><span class="caret disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span> Before you tap Suggest Best Shot</div>
         <div class="tip-body" style="margin-top:8px">
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:13.5px;color:var(--cream);line-height:1.4">
-          <span style="flex-shrink:0">⚪</span><div><strong>Mark the cue ball</strong> — the AI usually finds it, or tap a ball until it's the white cue.</div>
+          <span style="flex-shrink:0">⚪</span><div><strong>Mark the cue ball</strong> — the AI usually finds it, or tap a ball until it&rsquo;s the white cue.</div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:13.5px;color:var(--cream);line-height:1.4">
           <span style="flex-shrink:0">🎱</span><div><strong>Mark one or more object balls</strong> — the balls you want to pot.</div>
@@ -2496,7 +2518,7 @@ body.hist-mode #history-panel {
 
     <!-- FOOTER -->
     <div id="app-footer" style="text-align:center;padding:18px 14px 8px;border-top:1px solid var(--border);margin-top:8px">
-      <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.3px">Curran's Shot Reader</div>
+      <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.3px">Curran&rsquo;s Shot Reader</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.7">
         Built by <strong style="color:var(--cream)">Adam &amp; Bill Curran</strong><br>
         William J. Curran &amp; Son Opticians &middot; Est. 1952<br>
@@ -2530,7 +2552,7 @@ body.hist-mode #history-panel {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;padding:0 5px;margin-top:-2px;font-size:10px;color:var(--muted);white-space:nowrap">
         <span>Missed some balls? Slide left</span>
-        <span>Marked things that aren't balls? Slide right</span>
+        <span>Marked things that aren&rsquo;t balls? Slide right</span>
       </div>
       <div style="display:flex;gap:8px;width:100%">
         <button class="btn btn-ai" id="ai-btn" onclick="runDetection()" disabled style="flex:1">🤖 AI Detect</button>
@@ -2620,7 +2642,7 @@ async function loadModel() {
     // Load TF.js first
     await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
     await tf.ready();
-    setModelStatus('TensorFlow ready — fetching model...', 'loading');
+    setModelStatus('TensorFlow ready — fetching model…', 'loading');
 
     // Load with custom fetch to rewrite .bin file URLs to jsDelivr
     const BASE = 'https://billiardglassesbycurran.github.io/rack-reader-v3/';
@@ -2705,8 +2727,8 @@ async function runDetection() {
   }
 
   aiBtn.disabled = true;
-  aiBtn.textContent = '🤖 Detecting...';
-  setStatus('AI scanning for balls...', 'gold');
+  aiBtn.textContent = '🤖 Detecting…';
+  setStatus('AI scanning for balls…', 'gold');
 
   try {
     let detections = [];
@@ -4336,7 +4358,7 @@ function renderCanvas() {
   // ── DIAMOND SYSTEM overlay (Advanced toggle · aligned tables only) ──
   drawDiamondSystem(ctx, W, H);
 
-  // ── DIAMOND MATH: the Corner-5 arithmetic, done for the player ──
+  // ── DIAMOND MATH: name the contact point for the player ──
   drawDiamondMath(ctx, W, H);
 
   // ── KICK LINE overlay (blocked-shot escape · both modes) ──
@@ -4829,13 +4851,21 @@ function aimToggle(id) {
   return el && el.checked;
 }
 
-/* ── DIAMOND SYSTEM (official Corner-5 numbering) ──
+/* ── DIAMOND REFERENCE GRID ──
    Requires an aligned table (window._tHf). Draws diamond markers just OUTSIDE
    the four rails, mapped from canonical table space through the homography so
-   they land on the real rail line at any camera angle. Numbering per Dr. Dave's
-   Corner-5 System: the corner pocket = 5, increasing by 1/2 per diamond along
-   the short-rail direction; the long rail carries 1..8. It's a learning overlay
-   and an APPROXIMATION (assumes rolling CB + running English), never an aim dot. */
+   they land on the real rail line at any camera angle.
+
+   NAMING: this used to be labelled "Dr. Dave's Corner-5 System", which is wrong.
+   Corner-5 is a subtraction method for TWO, THREE and FOUR-rail kicks off a long
+   rail, with its own cue-ball numbering (corner = 5, falling by 1/2 per diamond
+   along the long rail to 3 at the side pocket). Nothing here computes that. What
+   this draws is simply a reference grid for naming a spot on a cushion, and what
+   the app calculates is the one-rail mirror method.
+
+   Long rails carry 0..8 - eight equal segments - which is the universal count.
+   The short-rail labels are 5.4.3.4.5; see the note beside the array below.
+   A learning overlay and an APPROXIMATION, never an aim dot. */
 function drawDiamondSystem(ctx, W, H) {
   var t = document.getElementById('aim-diamonds');
   if (!t || !t.checked) return;
@@ -4899,7 +4929,7 @@ function drawDiamondSystem(ctx, W, H) {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
   // Build the 4 rails as canonical segments with diamond counts + outward normals.
-  // Long rails: 8 diamonds. Short rails: 4 diamonds. Corner-5: corner=5.
+  // Long rails: 8 segments. Short rails: 4 segments. Short-rail labels: corner=5.
   var OUT = (longAxis==='x' ? maxY : maxX) * 0.11;   // outward offset (~11% of width)
   var rails = [];
   if (longAxis === 'x') {
@@ -4929,9 +4959,14 @@ function drawDiamondSystem(ctx, W, H) {
         ctx.fillStyle='rgba(200,150,62,0.20)'; ctx.strokeStyle='rgba(200,150,62,0.6)'; ctx.lineWidth=1;
         ctx.fillRect(-s,-s,2*s,2*s); ctx.strokeRect(-s,-s,2*s,2*s); ctx.restore();
       }
-      // Corner-5 reference numbers: long rail 0–8 (0/8 at the corners, 4 at the
-      // side pocket); short rail 5·4·3·4·5 with the corner-pocket "5"s.
-      var num = (rl.kind==='long') ? String(i) : String([5,4,3,4,5][i]);
+      // Long rail 0-8 (0/8 at the corners, 4 at the side pocket) - this is the
+      // standard eight-segment count and is not in doubt.
+      // SHORT RAIL 0-4. It used to be 5.4.3.4.5, which put FOUR twice and FIVE
+      // twice on the same rail - so "diamond 4 on the short rail" named two
+      // different spots and could not be used to describe a shot. 0-4 counts
+      // the four segments from a corner, matching how the long rail counts its
+      // eight, and gives every spot one number. The lesson uses the same scale.
+      var num = String(i);   // long 0-8, short 0-4: both count segments from a corner
       // Numbers sit INSIDE the rail (negative offset along the outward normal):
       // photos crop tight to the table, so outside-the-rail labels get clipped
       // off the canvas. Inside placement is also the classic diagram style.
@@ -4944,7 +4979,9 @@ function drawDiamondSystem(ctx, W, H) {
   });
   ctx.restore();
 }
-function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.fill(); }
+/* Rounded rect. Fills by default; pass stroke=true to outline the same path
+   instead, so a tag's fill and border can't drift out of alignment. */
+function _rr(ctx,x,y,w,h,r,stroke){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if (stroke) ctx.stroke(); else ctx.fill(); }
 
 /* ── RACKED-TABLE CHECK ───────────────────────────────────────────────
    Before the break there is no shot to read: fifteen balls in a triangle are
@@ -5005,53 +5042,30 @@ function updateShotSelector() {
   if (lbl) lbl.textContent = 'Shot ' + (_focusRank + 1) + ' of ' + n;
 }
 
-/* ── DIAMOND MATH: do the Corner-5 arithmetic for the player ──────────
-   Reads the cue ball's rail number and the best-shot ball's rail number,
-   subtracts, and rings the diamond you'd aim through — the calculation the
-   overlay previously left to the player.
-   HONEST LIMIT: this is the classic rule of thumb, not geometry. Corner-5
-   assumes a rolling cue ball with running English, and purists read the cue
-   number along diagonals from the corner rather than straight across the
-   rail. Treat it as a starting estimate; when the gold kick line is showing,
-   that path is the geometrically exact one. */
+/* ── DIAMOND READ-OUT: name the contact point the kick actually uses ──────
+   This used to do cue-number MINUS ball-number and ring the answer. That is
+   the Corner-5 rule, and Corner-5 is a documented system for TWO, THREE and
+   FOUR-rail kicks off a long rail - there is no published one-rail
+   subtraction method. Worse, it was not gated on a kick existing, so it rang
+   a diamond on ordinary straight-in shots where no rail is involved at all.
+
+   It now reads the SAME kick the app already computes by the mirror method
+   (window._kickShot, from computeKickShot) and simply names where that path
+   meets the cushion. One calculation, one answer - no parallel arithmetic
+   that can disagree with the gold line drawn beside it. */
 function drawDiamondMath(ctx, W, H) {
   var t = document.getElementById('aim-diamonds');
   if (!t || !t.checked || !window._tHf) return;
-  // Same gates as the overlay — silent here, since drawDiamondSystem has
-  // already explained on-canvas why the diamonds aren't showing.
   if (simpleMode || viewMode !== 'overhead') return;
-  var cueM = null;
-  for (var i = 0; i < marks.length; i++) if (marks[i].type === 'cue') cueM = marks[i];
-  // Follow the shot selector — lets you compare rail numbers across the top 3.
-  var ranked = _rankedShots();
-  var tgtM = ranked[Math.min(_focusRank, Math.max(0, ranked.length - 1))] || null;
-  if (!cueM || !tgtM) return;
 
-  var longAxis = window._tCanonLong || 'x';
-  var maxX = (window._tCanonMax && window._tCanonMax.x) || (longAxis === 'x' ? 1 : 0.5);
-  var maxY = (window._tCanonMax && window._tCanonMax.y) || (longAxis === 'x' ? 0.5 : 1);
-  var c = geoP(cueM), b = geoP(tgtM);
-  if (!c || !b) return;
+  /* No kick, no aim point. A direct shot has no rail contact to name. */
+  var kick = window._kickShot;
+  if (!kick || !kick.canonBounce) return;
 
-  // Position along the long axis, expressed on the drawn 0–8 diamond scale.
-  function railNum(p) {
-    var f = (longAxis === 'x') ? (p.fx / maxX) : (p.fy / maxY);
-    if (!isFinite(f)) return null;
-    return Math.max(0, Math.min(8, f * 8));
-  }
-  var cueN = railNum(c), tgtN = railNum(b);
-  if (cueN === null || tgtN === null) return;
-  var aim = cueN - tgtN;
+  var d = window._diamondCalc || null;
 
   function CP(cx, cy) { var p = applyHomography(window._tHf, cx, cy); return [p.x * W, p.y * H]; }
-  // A point on a long rail at diamond number n. farSide picks which long rail.
-  function railPt(n, farSide) {
-    var f = Math.max(0, Math.min(8, n)) / 8;
-    if (longAxis === 'x') return CP(f * maxX, farSide ? maxY : 0);
-    return CP(farSide ? maxX : 0, f * maxY);
-  }
-  // The cue sits nearer one long rail; the aim diamond goes on the opposite one.
-  var cueOnFar = (longAxis === 'x') ? (c.fy > maxY / 2) : (c.fx > maxX / 2);
+  var ap = CP(kick.canonBounce.fx, kick.canonBounce.fy);
 
   ctx.save();
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -5063,51 +5077,44 @@ function drawDiamondMath(ctx, W, H) {
     ctx.fillStyle = 'rgba(8,20,13,0.88)';
     _rr(ctx, pt[0] - tw / 2, pt[1] - 11, tw, 22, 11);
     ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(pt[0] - tw / 2 + 5.5, pt[1] - 10);
-    ctx.arcTo(pt[0] + tw / 2, pt[1] - 10, pt[0] + tw / 2, pt[1] + 10, 10);
-    ctx.arcTo(pt[0] + tw / 2, pt[1] + 10, pt[0] - tw / 2, pt[1] + 10, 10);
-    ctx.arcTo(pt[0] - tw / 2, pt[1] + 10, pt[0] - tw / 2, pt[1] - 10, 10);
-    ctx.arcTo(pt[0] - tw / 2, pt[1] - 10, pt[0] + tw / 2, pt[1] - 10, 10);
-    ctx.stroke();
+    _rr(ctx, pt[0] - tw / 2, pt[1] - 11, tw, 22, 11, true);
     ctx.fillStyle = col; ctx.fillText(text, pt[0], pt[1]);
   }
 
-  // Cue and target numbers read off the cue's near rail — but the rail line
-  // itself is where the diamond-number ovals live, so pull each tag 12%
-  // toward the table center to sit on open felt instead of the pileup.
-  var _ctr = CP(maxX/2, maxY/2);
-  function inward(pt){ return [pt[0] + (_ctr[0]-pt[0])*0.12, pt[1] + (_ctr[1]-pt[1])*0.12]; }
-  tag(inward(railPt(cueN, cueOnFar)), 'CUE ' + cueN.toFixed(1), '#7fd4ff');
-  tag(inward(railPt(tgtN, cueOnFar)), 'BALL ' + tgtN.toFixed(1), '#ff9d7a');
+  /* Ring where the cue ball meets the cushion - the mirror contact point. */
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.arc(ap[0], ap[1], Math.max(9, W * 0.019), 0, Math.PI * 2);
+  ctx.strokeStyle = '#ffe08a'; ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(255,224,138,0.8)'; ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
 
-  // The answer: ring the aim diamond on the opposite long rail.
-  var solvable = (aim >= 0 && aim <= 8);
-  if (solvable) {
-    var ap = railPt(aim, !cueOnFar);
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.arc(ap[0], ap[1], Math.max(9, W * 0.019), 0, Math.PI * 2);
-    ctx.strokeStyle = '#ffe08a'; ctx.lineWidth = 3;
-    ctx.shadowColor = 'rgba(255,224,138,0.8)'; ctx.shadowBlur = 10;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    tag([ap[0], ap[1] - Math.max(22, W * 0.042)], 'AIM ' + aim.toFixed(1), '#ffe08a');
+  var num = d ? d.showRaw : null;
+  if (num !== null && isFinite(num)) {
+    var _ctr = CP(((window._tCanonMax && window._tCanonMax.x) || 1) / 2,
+                  ((window._tCanonMax && window._tCanonMax.y) || 0.5) / 2);
+    var lx = ap[0] + (_ctr[0] - ap[0]) * 0.14;
+    var ly = ap[1] + (_ctr[1] - ap[1]) * 0.14;
+    tag([lx, ly], 'DIAMOND ' + num.toFixed(1), '#ffe08a');
   }
 
-  // Readout: show the arithmetic explicitly so it teaches, not just answers.
-  var line = solvable
-    ? '\ud83d\udca0 ' + cueN.toFixed(1) + ' \u2212 ' + tgtN.toFixed(1) + ' = ' + aim.toFixed(1)
-    : '\ud83d\udca0 ' + aim.toFixed(1) + ' \u2014 off the rail';
+  /* Read-out: name the rail and the number, and say plainly that it is the
+     mirror line - not a subtraction the player has to trust blindly. */
+  var railName = (kick.axis === 'y') ? 'long rail' : 'short rail';
+  var line = (num !== null && isFinite(num))
+    ? '\ud83d\udca0 mirror line \u2014 ' + railName + ' ' + num.toFixed(1)
+    : '\ud83d\udca0 mirror line \u2014 aim where it meets the cushion';
   ctx.font = '700 ' + Math.max(10, Math.round(W * 0.017)) + 'px Barlow Condensed, sans-serif';
   var lw2 = Math.min(W - 12, ctx.measureText(line).width + 16);
-  // Anchor above the BOTTOM RAIL, not the canvas edge — at the canvas edge it
-  // sat in the same strip as the pocket rings, P markers and rail numbers.
-  var _brMid = (longAxis === 'x') ? CP(maxX/2, maxY) : CP(maxX, maxY/2);
+  var longAxis2 = window._tCanonLong || 'x';
+  var mX = (window._tCanonMax && window._tCanonMax.x) || 1;
+  var mY = (window._tCanonMax && window._tCanonMax.y) || 0.5;
+  var _brMid = (longAxis2 === 'x') ? CP(mX / 2, mY) : CP(mX, mY / 2);
   var by = Math.max(30, Math.min(H - 16, _brMid[1] - 34));
   ctx.fillStyle = 'rgba(8,20,13,0.86)';
   _rr(ctx, (W - lw2) / 2, by - 10, lw2, 20, 10);
-  ctx.fillStyle = solvable ? '#ffe9b8' : '#e0a98a';
+  ctx.fillStyle = '#ffe9b8';
   ctx.fillText(line, W / 2, by);
   ctx.restore();
 }
@@ -5213,14 +5220,14 @@ function kickDiamondLabel(kick) {
        computed above - it does NOT recompute anything and nothing reads it
        back into the geometry. delta is the applied shift AFTER clamping,
        which is the number worth logging against what the ball actually does. */
-    /* CORNER-5 READ-OUT. The overlay drawn on the table numbers a short rail
-       5.4.3.4.5 (corner pockets are 5), but this label was printing the raw
-       position index 0-4, so a short-rail kick was announced with a number
-       that did not match the numbers on the player's own table. Convert for
-       DISPLAY only - the spin correction above still works in position space,
-       so no physics changes. Long rails are already 0-8 and pass through. */
-    var showRaw = (kick.axis === 'y') ? raw : 3 + Math.abs(raw - 2);
-    var showAdj = (kick.axis === 'y') ? adj : 3 + Math.abs(adj - 2);
+    /* DISPLAY NUMBER. Long rails read 0-8, short rails 0-4, matching the
+       overlay drawn on the table and the lesson. The spin correction above
+       works in position space and is untouched by anything here. */
+    /* Long rail 0-8 and short rail 0-4 both come straight off the position
+       index, so no conversion is needed any more. The old folding produced the
+       5.4.3.4.5 scale, which named two spots with the same number. */
+    var showRaw = raw;
+    var showAdj = adj;
     if (note) note = ' \u00b7 ' + showAdj.toFixed(1) + ' est. w/ spin';
 
     try {
@@ -5275,8 +5282,12 @@ function dismissDiamondExplainer() {
      Reflect the target ball across the rail you want to use. Draw a straight
      line from the cue ball to that reflection. Where it crosses the rail is
      exactly where the cue ball must contact the cushion, because the angle in
-     equals the angle out. Every diamond system (Corner-5, the plus system,
-     the halving systems) is a shortcut for this same geometry.
+     equals the angle out. The one-rail systems - mirror, equal-distance and
+     the halving/2-to-1 methods - are all shortcuts for this same reflection.
+     The MULTI-RAIL systems are not: Corner-5 and the Plus System are empirical
+     subtraction formulas that depend on running english and cushion behaviour
+     over two to four rails, and do not follow simple reflection. They are named
+     in the lesson text but nothing here computes them.
 
    PRESENTATION ONLY. Nothing here is read by the shot ranker, the homography,
    or the on-table diamond overlay - this widget is self-contained. */
@@ -5284,7 +5295,7 @@ function dismissDiamondExplainer() {
 var DL_X0 = 60, DL_Y0 = 26, DL_W = 280, DL_H = 140;   // 280x140 = a true 2:1 table
 var DL_X1 = DL_X0 + DL_W, DL_Y1 = DL_Y0 + DL_H;
 var DL_STEP = DL_W / 8;                                // 35 - equal on both axes
-var DL_SHORT = [5, 4, 3, 4, 5];
+var DL_SHORT = [0, 1, 2, 3, 4];   // four segments, counted from a corner
 var DL_R = 6.3;      // ball radius to scale: 2.25" ball on a 100" bed
 var DL_POCKET = 9;   // how close to a pocket mouth counts as "no cushion there"
 
@@ -5355,8 +5366,7 @@ function dlRailNumber(rail, p) {
              (Math.abs(p.x - DL_X1) < DL_POCKET) ||
              (Math.abs(p.x - dlX(4)) < DL_POCKET);     // corners + side pocket
   } else {
-    var yc = DL_Y0 + DL_H / 2;
-    n = 3 + 2 * Math.abs(p.y - yc) / (DL_H / 2);       // 3 at centre, 5 at the corners
+    n = 4 * (p.y - DL_Y0) / DL_H;                      // 0..4 down the short rail
     pocket = (Math.abs(p.y - DL_Y0) < DL_POCKET) || (Math.abs(p.y - DL_Y1) < DL_POCKET);
   }
   return { n: n, pocket: pocket };
@@ -5412,6 +5422,21 @@ function dlObjectPath(fromHit) {
   return { dir: { x: dx, y: dy }, end: end, potted: potted, blocked: blocked };
 }
 
+/* Does a leg of the route run over a pocket mouth? Endpoints are ignored: a
+   leg ENDING at a pocket is the separate "no cushion there" case. */
+function dlCrossesPocket(a, b) {
+  var pk = dlPockets();
+  var vx = b.x - a.x, vy = b.y - a.y, L2 = vx * vx + vy * vy;
+  if (L2 < 1e-9) return null;
+  for (var i = 0; i < pk.length; i++) {
+    var t = ((pk[i].x - a.x) * vx + (pk[i].y - a.y) * vy) / L2;
+    if (t <= 0.02 || t >= 0.98) continue;
+    var dx = a.x + t * vx - pk[i].x, dy = a.y + t * vy - pk[i].y;
+    if (Math.sqrt(dx * dx + dy * dy) < DL_POCKET) return pk[i];
+  }
+  return null;
+}
+
 /* One-cushion kick off a named rail, by mirroring the target across it. */
 function dlKick(rail) {
   var m;                                        // the mirrored target
@@ -5439,10 +5464,33 @@ function dlKick(rail) {
 
   var info = dlRailNumber(rail, hit);
   var blocked = dlSegBlocked(_dlCue, hit) || dlSegBlocked(hit, _dlObj);
-  var len = Math.hypot(hit.x - _dlCue.x, hit.y - _dlCue.y) +
-            Math.hypot(_dlObj.x - hit.x, _dlObj.y - hit.y);
+  var leg1 = Math.hypot(hit.x - _dlCue.x, hit.y - _dlCue.y);
+  var len = leg1 + Math.hypot(_dlObj.x - hit.x, _dlObj.y - hit.y);
+
+  /* CAN YOU ACTUALLY GET A CUE ON IT?
+     The mirror is pure geometry and will happily put the contact point on the
+     rail the cue ball is already sitting against - which reads as "shoot into
+     the rail behind your own cue ball". On a real table you cannot: inside
+     about a ball's width of a cushion the butt has to be raised over it, and
+     at a hair's clearance there is no shot at all. Measure the perpendicular
+     gap from the cue ball to THAT rail and flag it, so a kick you can play
+     off another rail is preferred. */
+  /* WOULD THE CUE BALL SCRATCH ON THE WAY?
+     A route can be geometrically perfect and still run the cue ball straight
+     over a pocket mouth, where it drops in - a foul, and about one clean-
+     looking kick in twenty. The contact point being AT a pocket was already
+     caught; this is the pocket you pass over mid-route. */
+  var scratch = dlCrossesPocket(_dlCue, hit) || dlCrossesPocket(hit, _dlObj);
+
+  var gap = (rail === 'top')    ? (_dlCue.y - DL_Y0)
+          : (rail === 'bottom') ? (DL_Y1 - _dlCue.y)
+          : (rail === 'left')   ? (_dlCue.x - DL_X0)
+                                : (DL_X1 - _dlCue.x);
+  var tight = (gap < DL_R * 2) || (leg1 < DL_R * 2.4);
+
   return { rail: rail, hit: hit, n: info.n, pocket: info.pocket,
-           blocked: blocked, len: len };
+           blocked: blocked, len: len, leg1: leg1, gap: gap, tight: tight,
+           scratch: scratch };
 }
 
 /* Every legal kick, best first: unblocked and off a real cushion wins. */
@@ -5453,8 +5501,10 @@ function dlAllKicks() {
     if (k) out.push(k);
   }
   out.sort(function (a, b) {
-    var sa = (a.blocked ? 2 : 0) + (a.pocket ? 1 : 0);
-    var sb = (b.blocked ? 2 : 0) + (b.pocket ? 1 : 0);
+    /* blocked is worst, then a contact point you cannot get a cue to, then a
+       pocket mouth; shortest route breaks the tie. */
+    var sa = (a.blocked ? 8 : 0) + (a.tight ? 4 : 0) + (a.scratch ? 2 : 0) + (a.pocket ? 1 : 0);
+    var sb = (b.blocked ? 8 : 0) + (b.tight ? 4 : 0) + (b.scratch ? 2 : 0) + (b.pocket ? 1 : 0);
     if (sa !== sb) return sa - sb;
     return a.len - b.len;
   });
@@ -5557,7 +5607,13 @@ function dlPointerMove(evt) {
   try {
     if (!_dlDrag) return;
     var p = dlEvtPoint(evt); if (!p) return;
-    if (Math.abs(p.x - _dlDrag.x) > 2 || Math.abs(p.y - _dlDrag.y) > 2) _dlDrag.moved = true;
+    /* Tap vs drag. This was 2 diagram units - about 1.5 CSS px - so the slight
+       slide every finger makes turned a tap into a drag and tap-to-remove
+       often did nothing. Too generous the other way and a deliberate nudge
+       deletes the blocker instead, so this sits at ~5 CSS px: past normal
+       jitter, well short of an intended move. */
+    var slop = dlGrabRadius() * 0.25;
+    if (Math.abs(p.x - _dlDrag.x) > slop || Math.abs(p.y - _dlDrag.y) > slop) _dlDrag.moved = true;
     if (!_dlDrag.moved) return;
     var q = dlInside(p);
     if (_dlDrag.kind === 'cue') _dlCue = q;
@@ -5641,18 +5697,27 @@ function dlSvg() {
          'stroke-dasharray="2 4" opacity="' + (direct ? '.75' : '.85') + '"/>');
 
   if (best && !best.blocked) {
-    var col = best.pocket ? '#c46a4a' : '#c8963e';
+    var col = (best.pocket || best.scratch) ? '#c46a4a' : '#c8963e';
     p.push('<polyline points="' + _dlCue.x + ',' + _dlCue.y + ' ' + best.hit.x + ',' + best.hit.y +
            ' ' + _dlObj.x + ',' + _dlObj.y + '" fill="none" stroke="' + col +
            '" stroke-width="2.4" stroke-linejoin="round" opacity="' + (best.pocket ? '.5' : '1') + '"/>');
     var ac = best.pocket ? '#ff9d7a' : '#ffd76a';
     p.push('<circle cx="' + best.hit.x + '" cy="' + best.hit.y + '" r="6.5" fill="none" stroke="' + ac +
            '" stroke-width="2.5"' + (best.pocket ? ' stroke-dasharray="3 3"' : '') + '/>');
+    /* The contact number used to sit OUTSIDE the rail, 3-7 units from the rail's
+       own diamond numbering - so on the top, left and right rails it printed
+       straight over it and neither could be read. Put it INSIDE the cloth on a
+       dark chip instead: nothing to collide with, and it reads over the felt. */
     var lx = best.hit.x, ly = best.hit.y;
-    var off = (best.rail === 'top') ? -13 : (best.rail === 'bottom') ? 17 : 4;
-    if (best.rail === 'left')  lx -= 15;
-    if (best.rail === 'right') lx += 15;
-    txt(lx, ly + off, best.n.toFixed(1), ac, 700, 10.5);
+    if (best.rail === 'top')         ly += 15;
+    else if (best.rail === 'bottom') ly -= 9;
+    else if (best.rail === 'left')   { lx += 17; ly += 3.6; }
+    else                             { lx -= 17; ly += 3.6; }
+    var label = best.n.toFixed(1);
+    var lw = 7 + label.length * 5.4;
+    p.push('<rect x="' + (lx - lw / 2) + '" y="' + (ly - 9) + '" width="' + lw + '" height="12.5" rx="3.5" ' +
+           'fill="rgba(5,16,10,.82)" stroke="' + ac + '" stroke-width=".7"/>');
+    txt(lx, ly, label, ac, 700, 10.5);
   }
 
   /* Where the object ball ends up - dotted, so it reads as a projection
@@ -5702,13 +5767,16 @@ function dlSvg() {
          '" fill="#cc2222" stroke="#7a1414" stroke-width="1.2"/>');
 
   txt(200, 196, 'LONG RAILS &middot; 8 intervals, numbered 0&ndash;8', '#8ba394', 400, 9.5);
-  txt(200, 208, 'SHORT RAILS &middot; 4 intervals, numbered 5&middot;4&middot;3&middot;4&middot;5', '#7fa8bd', 400, 9.5);
+  txt(200, 208, 'SHORT RAILS &middot; 4 intervals, numbered 0&ndash;4', '#7fa8bd', 400, 9.5);
 
   p.push('<rect id="dl-tapzone" x="0" y="0" width="400" height="216" fill="transparent" ' +
          'pointer-events="all" style="cursor:crosshair"/>');
   /* touch-action:none so dragging a ball doesn't scroll the modal underneath. */
   return '<svg id="dl-svg" viewBox="0 0 400 216" width="100%" ' +
-         'style="display:block;touch-action:none" ' +
+         /* pinch-zoom, not none: a single finger still drags a ball (no scroll or
+     double-tap zoom stealing it), while two fingers can pinch into the
+     diagram - which is what makes precise placement workable on a phone. */
+         'style="display:block;touch-action:pinch-zoom" ' +
          'onpointerdown="dlPointerDown(event)" onpointermove="dlPointerMove(event)" ' +
          'onpointerup="dlPointerUp(event)" onpointercancel="_dlDrag=null">' + p.join('') + '</svg>';
 }
@@ -5765,6 +5833,14 @@ function dlRender() {
                        ? '<div class="dl-pocket">\u26a0 That contact point is right at a pocket mouth &mdash; ' +
                          'there&rsquo;s no cushion there to bank off. Nudge a ball and read it again.</div>'
                        : '') +
+                     (best.scratch && !best.tight
+                       ? '<div class="dl-pocket">\u26a0 That route runs the cue ball straight over ' +
+                         best.scratch.name + ' \u2014 it would drop in. A foul, even though the angle is right.</div>'
+                       : '') +
+                     (best.tight
+                       ? '<div class="dl-pocket">\u26a0 The cue ball is right up against that rail \u2014 you can&rsquo;t get a ' +
+                         'level cue behind it to shoot into it. Move the cue ball off the cushion, or play a different route.</div>'
+                       : '') +
                      (function () {
                         var o = dlObjectPath(best.hit);
                         if (!o) return '';
@@ -5787,10 +5863,17 @@ function dlRender() {
     : 'The direct line is <b>blocked</b> (red dashes) &mdash; so you go off a cushion.');
 
   if (best && !best.blocked) {
-    li.push('Pick a rail. Here the shortest clean route is off <b>' + dlRailLabel(best.rail) + '</b>.');
+    li.push(best.tight
+      ? 'The only route is off <b>' + dlRailLabel(best.rail) + '</b> \u2014 but the cue ball is sitting on that ' +
+        'cushion, so there is no room to get a cue behind it. On a real table you would move on to another shot.'
+      : 'Pick a rail. Here the shortest clean route is off <b>' + dlRailLabel(best.rail) + '</b>.');
     li.push('<b>Mirror the target</b> across that rail, then draw a line from the cue ball to the mirror image.');
     li.push('Where it crosses is your contact point &mdash; <b>diamond ' + best.n.toFixed(1) +
             '</b>. Angle out matches angle in.');
+    if (best.scratch) {
+      li.push('<b>Careful:</b> that line takes the cue ball over ' + best.scratch.name +
+              ' on the way \u2014 it would drop in. The geometry is right, the shot is a foul.');
+    }
     var op2 = dlObjectPath(best.hit);
     if (op2) {
       li.push(op2.blocked
@@ -5831,7 +5914,7 @@ function toggleDiamonds() {
     // Bring the Align buttons to the user — the warning is only useful if seen.
     try { var a = document.getElementById('step2-anchor'); if (a && sourceImg) a.scrollIntoView({ behavior:'smooth', block:'center' }); } catch (_) {}
   } else if (t && t.checked) {
-    setStatus('💠 Diamond System on — Corner-5 rail numbers (a learning estimate)', 'gold');
+    setStatus('💠 Diamond System on — rail numbers to name the contact point (a learning estimate)', 'gold');
     maybeShowDiamondExplainer();
   }
   if (typeof saveSettings === 'function') saveSettings();
@@ -8911,25 +8994,28 @@ function showInstallBanner() {
   document.body.appendChild(banner);
 }
 
-// iOS Safari specific - show manual instructions
-window.addEventListener('load', () => {
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone;
-  const dismissed = localStorage.getItem('iosDismissed');
-  if (isIOS && !isStandalone && !dismissed) {
-    setTimeout(() => {
-      const b = document.createElement('div');
-      b.id = 'ios-banner';
-      b.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--rail);border:1.5px solid var(--gold);border-radius:12px;padding:12px 16px;z-index:999;box-shadow:0 4px 24px rgba(0,0,0,.7);max-width:300px;width:90%;text-align:center;font-family:Barlow,sans-serif';
-      b.innerHTML = [
-        '<div style="font-size:24px;margin-bottom:6px">&#127922;</div>',
-        '<div style="font-weight:700;font-size:13px;color:#f0e8d5;margin-bottom:4px">Add to Home Screen</div>',
-        '<div style="font-size:11px;color:#5a8068;line-height:1.5">Tap <strong style="color:#e0ab38">Share</strong> then <strong style="color:#e0ab38">Add to Home Screen</strong></div>',
-        '<button onclick="document.getElementById(String.fromCharCode(105,111,115,45,98,97,110,110,101,114)).remove();localStorage.setItem(String.fromCharCode(105,111,115,68,105,115,109,105,115,115,101,100),String.fromCharCode(49))" style="margin-top:8px;background:none;border:1px solid #234830;color:#3a5545;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">Dismiss</button>'
-      ].join('');
-      document.body.appendChild(b);
-    }, 4000);
-  }
+/* iOS INSTALL. iPhone and iPad have no beforeinstallprompt event, so the hub's
+   install button would never appear there at all and the only route was a
+   separate floating banner - a second, inconsistent install path after install
+   moved to the hub. The hub button now shows on iOS too and explains the Share
+   sheet route, which is the only way Apple allows. */
+window.addEventListener('load', function () {
+  try {
+    var ua = navigator.userAgent || '';
+    var isIOS = /iphone|ipad|ipod/i.test(ua) ||
+                (/Macintosh/.test(ua) && 'ontouchend' in document);   // iPadOS reports as Mac
+    var standalone = window.navigator.standalone ||
+                     (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (!isIOS || standalone) return;
+    window._iosInstall = true;
+    var b = document.getElementById('install-btn');
+    if (b) {
+      b.style.display = '';
+      var t = b.querySelector('span:last-child');
+      if (t) t.innerHTML = '<b>Add Shot Reader to your phone</b><br>' +
+                           'Tap Share, then \u201cAdd to Home Screen\u201d';
+    }
+  } catch (_) {}
 });
 
 function installApp() {
@@ -9828,6 +9914,12 @@ window.addEventListener('beforeinstallprompt', function (e) {
   if (b) b.style.display = '';
 });
 function promptInstall() {
+  /* iOS gives no install API at all - the Share sheet is the only route, so
+     say so rather than doing nothing when the button is tapped. */
+  if (!_deferredInstall && window._iosInstall) {
+    setStatus('\ud83d\udcf2 Tap the Share button in Safari, then \u201cAdd to Home Screen\u201d', 'gold');
+    return;
+  }
   if (!_deferredInstall) return;
   _deferredInstall.prompt();
   _deferredInstall.userChoice.then(function () {
@@ -10159,13 +10251,13 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">3️⃣</div>
-          <div><div class="help-item-title">Align the table</div><div class="help-item-desc"><strong>Try ✨ Auto first</strong> — it finds the table on its own and is the normal path. If it can&rsquo;t, tap <strong>📐 Align Table by hand</strong>, then tap the table's 4 corners. Every pocket gets placed for you automatically.</div></div>
+          <div><div class="help-item-title">Align the table</div><div class="help-item-desc"><strong>Try ✨ Auto first</strong> — it finds the table on its own and is the normal path. If it can&rsquo;t, tap <strong>📐 Align Table by hand</strong>, then tap the table&rsquo;s 4 corners. Every pocket gets placed for you automatically.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">4️⃣</div>
-          <div><div class="help-item-title">Tap Suggest Best Shot</div><div class="help-item-desc">It's in the bar at the bottom of your screen. The app reads the shot, rates how hard it is, and coaches you through it.</div></div>
+          <div><div class="help-item-title">Tap Suggest Best Shot</div><div class="help-item-desc">It&rsquo;s in the bar at the bottom of your screen. The app reads the shot, rates how hard it is, and coaches you through it.</div></div>
         </div>
-          <div class="help-tip">💡 <strong>That's it!</strong> Everything below explains each feature in more detail.
+          <div class="help-tip">💡 <strong>That&rsquo;s it!</strong> Everything below explains each feature in more detail.
         </div>
         </div>
       
@@ -10173,7 +10265,7 @@ try {
 
       <div class="help-section">
         <div class="help-sec-head" onclick="toggleHelpSection(this)" role="button" tabindex="0">
-          <div class="help-section-title">👓 About Curran's Shot Reader</div>
+          <div class="help-section-title">👓 About Curran&rsquo;s Shot Reader</div>
           <span class="disc-caret"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8.5,5 15.5,12 8.5,19"/></svg></span>
         </div>
         <div class="help-sec-body">
@@ -10191,11 +10283,11 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🔒</div>
-          <div><div class="help-item-title">Private and free</div><div class="help-item-desc">Everything runs right on your phone — your photos are never uploaded to a server. No account, no sign-up, and it's free to use.</div></div>
+          <div><div class="help-item-title">Private and free</div><div class="help-item-desc">Everything runs right on your phone — your photos are never uploaded to a server. No account, no sign-up, and it&rsquo;s free to use.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🛠️</div>
-          <div><div class="help-item-title">A work in progress</div><div class="help-item-desc">This is a passion project we keep improving. It won't be perfect on every table or angle yet — overhead photos in good light work best. Your feedback makes it better.</div></div>
+          <div><div class="help-item-title">A work in progress</div><div class="help-item-desc">This is a passion project we keep improving. It won&rsquo;t be perfect on every table or angle yet — overhead photos in good light work best. Your feedback makes it better.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">&#9654;&#65039;</div>
@@ -10228,17 +10320,17 @@ try {
 
         <div class="help-item">
           <div class="help-icon">&#128273;</div>
-          <div><div class="help-item-title">ANGLE &amp; TABLE FILLS readout</div><div class="help-item-desc">While the camera is live, two numbers sit under the motion bar. <strong>ANGLE</strong> is your phone's tilt &mdash; 0&deg; is flat overhead, 90&deg; is upright; under 25&deg; reads best because the geometry is exact. <strong>TABLE FILLS</strong> is how much of the frame the table covers &mdash; aim for roughly 15&ndash;80%. Both are measured independently of the table finder, so they keep telling you the truth even when it's struggling. (Phone height can't be measured &mdash; there's no sensor for it &mdash; and frame fill is what actually matters anyway.)</div></div>
+          <div><div class="help-item-title">ANGLE &amp; TABLE FILLS readout</div><div class="help-item-desc">While the camera is live, two numbers sit under the motion bar. <strong>ANGLE</strong> is your phone&rsquo;s tilt &mdash; 0&deg; is flat overhead, 90&deg; is upright; under 25&deg; reads best because the geometry is exact. <strong>TABLE FILLS</strong> is how much of the frame the table covers &mdash; aim for roughly 15&ndash;80%. Both are measured independently of the table finder, so they keep telling you the truth even when it&rsquo;s struggling. (Phone height can&rsquo;t be measured &mdash; there&rsquo;s no sensor for it &mdash; and frame fill is what actually matters anyway.)</div></div>
         </div>
 
         <div class="help-item">
           <div class="help-icon">&#9201;&#65039;</div>
-          <div><div class="help-item-title">Auto-scan fires once per shot</div><div class="help-item-desc">With the camera running, the app waits for the table to be still, takes <strong>one</strong> photo, and then holds it. It won't take another until the <strong>balls actually move and come to rest again</strong> &mdash; i.e. until someone plays a shot. That's deliberate: without it the screen would re-read every fraction of a second and you'd never get to look at the shot you asked for. Set the phone on a tripod, break, and it reads each new layout as the table settles.</div></div>
+          <div><div class="help-item-title">Auto-scan fires once per shot</div><div class="help-item-desc">With the camera running, the app waits for the table to be still, takes <strong>one</strong> photo, and then holds it. It won&rsquo;t take another until the <strong>balls actually move and come to rest again</strong> &mdash; i.e. until someone plays a shot. That&rsquo;s deliberate: without it the screen would re-read every fraction of a second and you&rsquo;d never get to look at the shot you asked for. Set the phone on a tripod, break, and it reads each new layout as the table settles.</div></div>
         </div>
 
         <div class="help-item">
           <div class="help-icon">&#9707;</div>
-          <div><div class="help-item-title">Landscape split &mdash; and turning it off</div><div class="help-item-desc">Turn the phone sideways and the table pins to one side with the advice beside it. Two round buttons sit on the divider: <strong>&#8646;</strong> swaps which side the table is on, and <strong>&#9707;</strong> turns the split off entirely if you'd rather have the normal scrolling page. Both choices are remembered.</div></div>
+          <div><div class="help-item-title">Landscape split &mdash; and turning it off</div><div class="help-item-desc">Turn the phone sideways and the table pins to one side with the advice beside it. Two round buttons sit on the divider: <strong>&#8646;</strong> swaps which side the table is on, and <strong>&#9707;</strong> turns the split off entirely if you&rsquo;d rather have the normal scrolling page. Both choices are remembered.</div></div>
         </div>
 
         <div class="help-item">
@@ -10267,7 +10359,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🎛️</div>
-          <div><div class="help-item-title">Advanced View — the full read</div><div class="help-item-desc">Switch to <strong>Advanced</strong> for the complete picture: every ball's lines, cut-angle color coding, English (spin) control, coaching notes, combo shots, and all aiming aids. Drop back to Simple any time for a clean table.</div></div>
+          <div><div class="help-item-title">Advanced View — the full read</div><div class="help-item-desc">Switch to <strong>Advanced</strong> for the complete picture: every ball&rsquo;s lines, cut-angle color coding, English (spin) control, coaching notes, combo shots, and all aiming aids. Drop back to Simple any time for a clean table.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🧹</div>
@@ -10312,7 +10404,7 @@ try {
         <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🔲</div>
-          <div><div class="help-item-title">Tap the 4 corners <span style="opacity:.7;font-weight:400">(fallback)</span></div><div class="help-item-desc">Only needed when <strong>✨ Auto</strong> can&rsquo;t find the table. Tap <strong>📐 Align Table by hand</strong>, then tap the table's corners in order: top-left, top-right, bottom-right, bottom-left. The app maps the whole playing surface and places every visible pocket automatically — no manual pocket marking needed.</div></div>
+          <div><div class="help-item-title">Tap the 4 corners <span style="opacity:.7;font-weight:400">(fallback)</span></div><div class="help-item-desc">Only needed when <strong>✨ Auto</strong> can&rsquo;t find the table. Tap <strong>📐 Align Table by hand</strong>, then tap the table&rsquo;s corners in order: top-left, top-right, bottom-right, bottom-left. The app maps the whole playing surface and places every visible pocket automatically — no manual pocket marking needed.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🤏</div>
@@ -10345,11 +10437,11 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🎚️</div>
-          <div><div class="help-item-title">AI Confidence Slider</div><div class="help-item-desc">Think in symptoms, not percentages — the labels under the slider say it: <strong>missed some balls? slide left</strong>. <strong>Marked things that aren&rsquo;t balls? slide right</strong>. Left makes the AI bolder (finds more, guesses more), right makes it stricter (only what it&rsquo;s sure of).</div></div>
+          <div><div class="help-item-title">AI Confidence Slider</div><div class="help-item-desc">Think in symptoms, not percentages — the labels under the slider say it: <strong>Missed some balls? Slide left</strong>. <strong>Marked things that aren&rsquo;t balls? Slide right</strong>. Left makes the AI bolder (finds more, guesses more), right makes it stricter (only what it&rsquo;s sure of).</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">✋</div>
-          <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — or even the cue ball — especially at an angle or in tricky lighting. No problem: just <strong>tap the ball</strong> and it cycles Solid → Stripe → 8-ball → Cue until it's right. No re-scan needed. (The cue slot is skipped if you already have a cue on the table.)</div></div>
+          <div><div class="help-item-title">When the AI gets a ball wrong</div><div class="help-item-desc">The AI sometimes mixes up a <strong>solid</strong> and a <strong>stripe</strong> — or even the cue ball — especially at an angle or in tricky lighting. No problem: just <strong>tap the ball</strong> and it cycles Solid → Stripe → 8-ball → Cue until it&rsquo;s right. No re-scan needed. (The cue slot is skipped if you already have a cue on the table.)</div></div>
         </div>
           <div class="help-tip">💡 <strong>Best results:</strong> Shoot from above in good light. If the AI misses balls, lower the confidence slider or mark them by hand.
         </div>
@@ -10369,7 +10461,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🔴</div>
-          <div><div class="help-item-title">Solid &amp; Stripe</div><div class="help-item-desc">Pick the type, then tap the felt to place a ball. Already placed one that's the wrong type? Just <strong>tap it</strong> to cycle Solid → Stripe → 8-ball → Cue.</div></div>
+          <div><div class="help-item-title">Solid &amp; Stripe</div><div class="help-item-desc">Pick the type, then tap the felt to place a ball. Already placed one that&rsquo;s the wrong type? Just <strong>tap it</strong> to cycle Solid → Stripe → 8-ball → Cue.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🔍</div>
@@ -10377,11 +10469,11 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🎱</div>
-          <div><div class="help-item-title">8-Ball</div><div class="help-item-desc">Mark the black 8-ball separately so the app knows it's special.</div></div>
+          <div><div class="help-item-title">8-Ball</div><div class="help-item-desc">Mark the black 8-ball separately so the app knows it&rsquo;s special.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🕳️</div>
-          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc"><strong>✨ Auto places all the pockets for you</strong> — but in Advanced you can also place one by hand: open "Mark balls or pockets manually" and tap the felt. Pockets unlock the cut angle, aim lines, and ghost ball. To remove a pocket, <strong>tap it twice</strong>; to move it, drag it.</div></div>
+          <div><div class="help-item-title">Target Pocket</div><div class="help-item-desc"><strong>✨ Auto places all the pockets for you</strong> — but in Advanced you can also place one by hand: open &ldquo;Mark balls or pockets manually&rdquo; and tap the felt. Pockets unlock the cut angle, aim lines, and ghost ball. To remove a pocket, <strong>tap it twice</strong>; to move it, drag it.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">⛶</div>
@@ -10455,7 +10547,7 @@ try {
         <div class="help-sec-body">
         <div class="help-item">
           <div class="help-icon">🔘</div>
-          <div><div class="help-item-title">Turn it on</div><div class="help-item-desc">Toggle English/Spin Control in settings. A cue ball diagram pops up so you can choose where you'll strike the ball.</div></div>
+          <div><div class="help-item-title">Turn it on</div><div class="help-item-desc">Toggle English/Spin Control in settings. A cue ball diagram pops up so you can choose where you&rsquo;ll strike the ball.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🌀</div>
@@ -10484,7 +10576,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">💠</div>
-          <div><div class="help-item-title">Diamond System (Advanced)</div><div class="help-item-desc">Turns on the classic <strong>Corner-5 rail numbers</strong> — a learning overlay for kick and bank shots. Numbers follow Dr. Dave&rsquo;s standard: the corner pocket is <strong>5</strong>. The <strong>long rails</strong> (the length) run <strong>0–8</strong>; the <strong>short rails</strong> (the width, at each end) run <strong>5·4·3·4·5</strong>. All four rails are marked on an aligned table. The rule of thumb is <strong>cue-ball number − target number = the diamond to aim through</strong>. Honest caveat straight from the pros: it&rsquo;s a <strong>starting estimate</strong> that assumes a rolling cue ball with running English, and every table plays a little differently — feel the table and adjust. <strong>Needs a fully aligned table</strong> (all four rails in the photo); it won&rsquo;t show on a partial view.</div></div>
+          <div><div class="help-item-title">Diamond System (Advanced)</div><div class="help-item-desc">Turns on the <strong>diamond rail numbers</strong> — a learning overlay for kick and bank shots. The <strong>long rails</strong> carry <strong>0–8</strong> — eight equal segments, with 4 at the side pocket — and the <strong>short rails</strong> carry <strong>0–4</strong> — four segments. All four rails are marked once the table is aligned. These numbers <em>name</em> a spot on a cushion; the shot itself is worked out by the <strong>mirror method</strong> — reflect the ball you want to hit across the rail, and aim where that line crosses. Honest caveat straight from the pros: it&rsquo;s a <strong>starting estimate</strong>. Cushions are rubber under cloth, not mirrors, so speed, spin and the table itself pull the line short or long — fast or short kicks in particular land short of the diamond line. Feel the table and adjust. <strong>Needs a fully aligned table</strong> (all four rails in the photo); it won&rsquo;t show on a partial view.</div></div>
         </div>
 
         <div class="help-item">
@@ -10511,7 +10603,7 @@ try {
           <div class="help-icon">⇆</div>
           <div><div class="help-item-title">Landscape — swap sides</div><div class="help-item-desc">Turn the phone sideways and the table pins to one side with the advice beside it. The round <strong>⇆ button on the divider</strong> swaps which side the table sits on — handy for left-handers or whichever way you hold the phone. Your choice is remembered.</div></div>
         </div>
-          <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they're the easiest to read.
+          <div class="help-tip">💡 Turn these on or off anytime in settings. Start with Target Line and Contact Point — they&rsquo;re the easiest to read.
         </div>
         </div>
       
@@ -10573,7 +10665,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">🔗</div>
-          <div><div class="help-item-title">Combo Shots</div><div class="help-item-desc">When there's no clear direct shot (blocked, or an extreme cut), <strong>Advanced view</strong> (the Simple/Advanced switch up top) looks for a 2-ball combo — hit ball ① into ball ② to send it to the pocket. It's drawn as a cyan line and only appears as an escape, never over a makeable direct shot.</div></div>
+          <div><div class="help-item-title">Combo Shots</div><div class="help-item-desc">When there&rsquo;s no clear direct shot (blocked, or an extreme cut), <strong>Advanced view</strong> (the Simple/Advanced switch up top) looks for a 2-ball combo — hit ball ① into ball ② to send it to the pocket. It&rsquo;s drawn as a cyan line and only appears as an escape, never over a makeable direct shot.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">🎮</div>
@@ -10655,7 +10747,7 @@ try {
       <span class="hub-go">&rsaquo;</span>
     </button>
 
-    <button class="hub-row" onclick="hubGo('table')">
+    <button class="hub-row tagged" onclick="hubGo('table')">
       <span class="hub-tag gold">BEST WHILE YOU PLAY</span>
       <span class="hub-badge"><svg viewBox="0 0 64 64" aria-hidden="true">
         <defs>
@@ -10671,7 +10763,7 @@ try {
         <rect x="25" y="4" width="14" height="19" rx="3.2" fill="#141009" stroke="#e8c766" stroke-width="2.2"/>
         <rect x="27.6" y="7" width="8.8" height="11" rx="1.6" fill="#1d6b42"/>
       </svg></span>
-      <span class="hub-txt"><b>TABLE MODE</b><span id="hub-s-table">Stand the phone sideways and play &mdash; it reads every shot on its own</span></span>
+      <span class="hub-txt"><b>TABLE MODE</b><span id="hub-s-table">Phone on a stand, sideways &mdash; reads every shot on its own</span></span>
       <span class="hub-go">&rsaquo;</span>
     </button>
 
@@ -10682,7 +10774,7 @@ try {
         <path d="M12 50 L30 24 L52 48" fill="none" stroke="#e8c766" stroke-width="2.4" stroke-dasharray="4 3.5" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="30" cy="24" r="3.4" fill="#e8c766"/><circle cx="12" cy="52" r="6" fill="#f2ece0" stroke="#b9b0a0" stroke-width="1"/>
       </svg></span>
-      <span class="hub-txt"><b>LEARN THE DIAMONDS</b><span>Corner-5, worked through with real numbers</span></span>
+      <span class="hub-txt"><b>LEARN THE DIAMONDS</b><span>One-rail kicks, worked out on your own layout</span></span>
       <span class="hub-go">&rsaquo;</span>
     </button>
 
@@ -10746,13 +10838,13 @@ try {
 <div id="diamond-explainer" class="dl-modal" style="display:none" onclick="if(event.target===this)dismissDiamondExplainer()">
   <div class="dl-card">
     <div class="dl-head">
-      <span class="dl-title">&#128160; The Diamond System</span>
+      <span class="dl-title">&#128160; Kicking with the Diamonds</span>
       <button class="dl-x x-btn" id="dl-zoom-btn" onclick="toggleDlZoom()" aria-label="Enlarge the table" title="Enlarge the table">&#9974;</button>
       <button class="dl-x x-btn" onclick="dismissDiamondExplainer()" aria-label="Close">&#10005;</button>
     </div>
     <div class="dl-scroll">
-      <div class="dl-rule">mirror the ball &middot; aim where the line crosses</div>
-      <p class="dl-lead"><b>Long rails</b> run <b>0&ndash;8</b> (4 is the side pocket). <b>Short rails</b> run <b>5&middot;4&middot;3&middot;4&middot;5</b>. That&rsquo;s how you name a spot on a cushion.<br><br><b>Put the balls where yours are.</b> Tap to move them, drag to fine&#8209;tune. It finds the kick off whichever rail is cleanest, reads the contact point as a diamond number, and shows where the object ball ends up.</p>
+      <div class="dl-rule">the mirror method &middot; one&#8209;rail kicks</div>
+      <p class="dl-lead"><b>Long rails</b> run <b>0&ndash;8</b> (4 is the side pocket). <b>Short rails</b> run <b>0&ndash;4</b>. That&rsquo;s how you name a spot on a cushion.<br><br><b>Put the balls where yours are.</b> Tap to move them, drag to fine&#8209;tune. It finds the kick off whichever rail is cleanest, reads the contact point as a diamond number, and shows where the object ball ends up.</p>
       <div class="dl-diagram" id="dl-diagram"></div>
       <div class="dl-key">
         <span><i style="background:#f4efe2"></i>cue ball</span>
@@ -10773,8 +10865,8 @@ try {
       </div>
       <div class="dl-ex-head">A worked example</div>
       <ol class="dl-steps" id="dl-steps"></ol>
-      <p class="dl-note">This is the <em>mirror method</em>, and it is what every diamond system approximates: reflect the ball you want to hit across the rail, draw a line from the cue ball to that reflection, and where it crosses the cushion is your contact point &mdash; angle in equals angle out.</p>
-      <p class="dl-fine">Real cushions are not perfect mirrors. Speed, english and cloth all shift the rebound &mdash; running english opens the angle and sends it longer, reverse shortens it. Treat the number as your starting line and adjust to what the table actually does. Every pool table has the same eight intervals along the long rail and four across the short, so these numbers read the same wherever you play.</p>
+      <p class="dl-note">This is the <em>mirror method</em> (also called equal&#8209;distance): reflect the ball you want to hit across the rail, draw a line from the cue ball to that reflection, and where it crosses the cushion is your contact point &mdash; angle in equals angle out. It is the simplest of the kicking systems and the one to learn first.</p>
+      <p class="dl-fine"><b>What the table does to it.</b> Cushions are rubber under cloth, not mirrors, so the real line runs short or long with speed, spin and the table itself. Three adjustments worth knowing: <b>slow roll</b> with the target well off the cushion tracks the line of diamonds closely; <b>fast or short</b> kicks come up short of it, because the cue ball has no time to bend forward after the rebound &mdash; measure from the cushion nose or the worn rail groove instead; and running english opens the angle while reverse shortens it. Diamond&#8209;brand tables are known to kick noticeably short, so aim further down&#8209;table on those.<br><br><b>Hit versus pot.</b> Mirroring the ball itself gives you a <em>full hit</em> &mdash; which is what you want for a legal contact or a safety, and what this lesson draws. To actually pocket the ball you mirror the <em>ghost&#8209;ball</em> position instead: the spot the cue ball must arrive at to send the object ball where you want it.<br><br><b>Beyond one rail.</b> When a single cushion won&rsquo;t reach, the two named systems to look up are the <b>Plus System</b> for two&#8209;rail kicks off a short rail, and <b>Corner&#8209;5</b> for two, three and four rails off a long rail &mdash; a different, subtraction&#8209;based method with its own numbering. Neither is calculated here; this lesson covers the one&#8209;rail case.</p>
     </div>
   </div>
 </div>
@@ -10785,7 +10877,7 @@ try {
     <button class="x-btn" onclick="dismissKickExplainer()" aria-label="Close">✕</button>
   </div>
   <div style="font-size:13px;color:#cdddd0;line-height:1.55">
-    Your direct shot is blocked, so here's a <b style="color:var(--cream)">one-rail escape</b>. Aim the cue ball at the <b style="color:#ffe08a">gold dot</b> on the rail — it banks off there and follows the gold line to your ball.
+    Your direct shot is blocked, so here&rsquo;s a <b style="color:var(--cream)">one-rail escape</b>. Aim the cue ball at the <b style="color:#ffe08a">gold dot</b> on the rail — it banks off there and follows the gold line to your ball.
     <div style="margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.45">📎 A kick is an <b style="color:#cdddd0">escape, not a sure thing</b>. Rail contact adds spin and the rebound shifts with speed — treat the gold line as a starting aim and shoot with a rolling cue ball. Full details in 📖 Guide.</div>
   </div>
 </div>
@@ -10804,7 +10896,7 @@ try {
       <div class="welcome-by">Brought to you by <strong>Curran Opticians</strong></div>
       <div class="welcome-body">Three generations of crafting custom billiard glasses — now a <strong>free tool</strong> that reads your table. <strong>Snap it live with your camera</strong> or <strong>upload a photo</strong>, and we’ll help you find the shot. Want a quick tour?</div>
       <button class="welcome-go" onclick="closeHub(); setTimeout(startTour,220)">Take the quick tour &rarr;</button>
-      <button class="welcome-skip" onclick="dismissWelcome()">Skip &mdash; I'll explore on my own</button>
+      <button class="welcome-skip" onclick="dismissWelcome()">Skip &mdash; I&rsquo;ll explore on my own</button>
     </div>
   </div>
 </div>
