@@ -370,7 +370,11 @@ body::before {
 .autoscan-row { display:flex; align-items:center; gap:10px; }
 .autoscan-label { font-family:'Barlow',sans-serif; font-size:14px; font-weight:600; color:var(--text); flex:1; }
 .autoscan-desc { font-size:12px; color:var(--text-dim); margin-top:2px; line-height:1.5; }
+/* The switch is drawn 42x23, but the whole control needs a finger-sized
+   target - the :after expands the touch area only. */
 .toggle { position:relative; width:42px; height:23px; flex-shrink:0; }
+.toggle:after{ content:''; position:absolute; top:50%; left:50%; width:56px; height:44px;
+  transform:translate(-50%,-50%); }
 .toggle input { opacity:0; width:0; height:0; position:absolute; }
 .toggle-track {
   position:absolute; inset:0; background:var(--surface2);
@@ -1172,7 +1176,7 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
 .dl-modal.zoomed .dl-eq-actions{ margin-top:7px; }
 
 .dl-modes{ display:flex; gap:6px; margin:11px 0 2px; }
-.dl-modes button{ flex:1; min-height:42px; border-radius:10px; cursor:pointer;
+.dl-modes button{ flex:1; min-height:44px; border-radius:10px; cursor:pointer;
   background:#0b1811; border:1px solid var(--border); color:var(--text-muted);
   font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:12px;
   letter-spacing:.4px; padding:6px 4px; transition:background .18s ease, border-color .18s ease, color .18s ease; }
@@ -1307,13 +1311,18 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
   box-shadow:0 0 0 1px rgba(0,0,0,.25), 0 0 16px rgba(200,151,46,.3); }
 
 /* Icon-only close / action buttons in panels and modals */
+/* The visible disc stays 36px - the :after below grows the TOUCH area to
+   44px without moving a pixel on screen. */
 .x-btn{
+  position:relative;
   display:inline-flex; align-items:center; justify-content:center;
   width:36px; height:36px; border-radius:50%; cursor:pointer;
   background:rgba(255,255,255,.04); border:1px solid var(--gold-dim);
   color:var(--gold-lt); font-size:17px; line-height:1; padding:0;
   transition:background .18s ease, border-color .18s ease, color .18s ease;
 }
+.x-btn:after{ content:''; position:absolute; top:50%; left:50%; width:44px; height:44px;
+  transform:translate(-50%,-50%); }
 .x-btn:active{ background:rgba(200,151,46,.22); border-color:var(--gold); }
 .x-btn.on{ background:rgba(200,151,46,.3); border-color:var(--gold); color:var(--gold-bright); }
 
@@ -1402,8 +1411,8 @@ input[type=range] { flex:1; height:4px; accent-color:var(--green-soft); cursor:p
    default display and leaked onto the portrait page. */
 #ls-swap-btn, #ls-split-btn {
   position: fixed; transform: translateY(-50%);
-  right: calc(52vw - 20px);             /* on the seam, table-on-right default */
-  z-index: 20; width: 40px; height: 40px; border-radius: 50%;
+  right: calc(52vw - 22px);             /* on the seam, table-on-right default */
+  z-index: 20; width: 44px; height: 44px; border-radius: 50%;
   box-shadow: 0 3px 12px rgba(0,0,0,.5);
   display: none;                        /* revealed only in phone landscape */
   align-items: center; justify-content: center;
@@ -1547,7 +1556,9 @@ body.table-mode #english-panel,
   body.table-mode .hdr-sub,
   body.table-mode #model-banner { display: none !important; }
   body.table-mode .hdr-inner > div:last-child { margin-top: 0 !important; }
-  body.table-mode .help-btn { min-height: 32px; padding: 4px 10px; font-size: 12px; }
+  /* 32px was too small to hit at arm's length on a tripod, and Rules is the
+     one button Table Mode keeps - it has to be reachable. */
+  body.table-mode .help-btn { min-height: 44px; padding: 6px 12px; font-size: 12.5px; }
 
   body.table-mode .hdr { padding: 2px 10px; border-bottom-width: 1px; }
   body.table-mode #dest-bar { min-height: 38px; margin: 0; padding: 0; }
@@ -1759,6 +1770,39 @@ body.hub-mode { overflow:hidden; }
    The hub is a destination picker - the bar has no business there at all. */
 body.hub-mode #sticky-action-bar { display: none !important; }
 
+/* ══ REDUCED MOTION ════════════════════════════════════════════════════
+   37 transitions and animations, and none of them were optional. Reduce
+   Motion is among the most commonly enabled accessibility settings on iOS and
+   Android, and it exists partly because movement triggers nausea and migraine
+   for some people. Honour it: everything still changes state, it just stops
+   sliding, scaling and spinning to get there. Kept to near-zero rather than
+   zero so state changes still register as changes. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* The caret still has to point the right way, it just gets there instantly. */
+  .disc-caret.open { transform: rotate(90deg); }
+}
+
+/* ══ TABLETS FILL THE SCREEN ═══════════════════════════════════════════
+   #app is capped at 600px so the layout stays a sensible column on a desktop
+   monitor. A phone is 412px wide and never reaches the cap, so it fills the
+   screen - but an iPad is 820-1180px and got 110-290px of dead bars down each
+   side. Lift the cap on touch devices that are actually wider than it, which
+   is every iPad and Android tablet, and leaves desktop browsers alone. */
+@media (min-width: 601px) and (pointer: coarse) {
+  #app { max-width: none; }
+  .sticky-action-bar { max-width: none; }
+  /* The guide still wants a readable line length - generous, not full bleed. */
+  .help-modal { max-width: 780px; }
+  /* The table diagram can afford to be bigger with the room available. */
+  .dl-card { width: min(640px, 94vw); }
+}
+
 /* HUB BLEED-THROUGH. The hub is position:fixed inset:0 with a solid background,
    which should cover everything - but on Android the address bar collapses as
    you scroll, the visual viewport grows, and for a frame the fixed overlay does
@@ -1895,7 +1939,7 @@ body.hist-mode #history-panel {
 .hist-info span { display:block; font-size:11.5px; color:#8a7a66; margin-top:2px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .hist-act { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
-.hist-act button { min-height:38px; min-width:64px; border-radius:9px; cursor:pointer;
+.hist-act button { min-height:44px; min-width:64px; border-radius:9px; cursor:pointer;
   font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:12px; letter-spacing:.4px; }
 .hist-empty { text-align:center; padding:44px 24px; color:#8a7a66; font-size:13px; line-height:1.6; }
 .hist-empty b { display:block; font-family:'Barlow Condensed',sans-serif; font-size:16px;
@@ -1933,7 +1977,7 @@ body.hist-mode #history-panel {
       <div class="hdr-emblem">🎱</div>
       <div style="flex:1">
         <div class="hdr-name"><span>Curran&rsquo;s Shot Reader</span></div>
-        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V8.16.0708</span></div>
+        <div class="hdr-sub">See the table. Read the shot. <span style="color:var(--gold-dim);opacity:.7">· V9.17.0838</span></div>
       </div>
       <div style="flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:7px">
         <button class="help-btn" id="hdr-tour-btn" onclick="showWelcome()" title="Welcome tour"><span style="font-size:14px">👋</span> Tour</button>
@@ -2683,6 +2727,15 @@ async function tryCocoFallback() {
     aiBtn.classList.add('ready');
   } catch (e) {
     console.warn('COCO fallback also failed');
+    /* Name the real cause. Both models come over the network, so the usual
+       reason for landing here is no connection - and "AI unavailable" sends
+       people hunting for a fault that isn't theirs. */
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setModelStatus('\ud83d\udcf4 Offline \u2014 AI Detect needs a connection. Marking balls by hand still works.', 'err');
+      setStatus('No connection \u2014 mark the balls yourself and everything else works as normal', 'warn');
+    } else {
+      setModelStatus('\u26a0 Couldn\u2019t load the AI \u2014 mark the balls by hand and carry on', 'err');
+    }
     /* Stage 7: both models are gone. Previously this was a console warning
        and nothing else - the AI button stayed disabled with no explanation,
        and in Table Mode there is no status line to read anyway. */
@@ -5437,76 +5490,133 @@ function dlCrossesPocket(a, b) {
   return null;
 }
 
-/* One-cushion kick off a named rail, by mirroring the target across it. */
-function dlKick(rail) {
-  var m;                                        // the mirrored target
-  if (rail === 'top')         m = { x: _dlObj.x, y: 2 * DL_Y0 - _dlObj.y };
-  else if (rail === 'bottom') m = { x: _dlObj.x, y: 2 * DL_Y1 - _dlObj.y };
-  else if (rail === 'left')   m = { x: 2 * DL_X0 - _dlObj.x, y: _dlObj.y };
-  else                        m = { x: 2 * DL_X1 - _dlObj.x, y: _dlObj.y };
 
+
+
+
+
+
+/* ── MULTI-RAIL KICKS ────────────────────────────────────────────────
+   One cushion cannot always reach: in about one layout in ten every
+   single-rail route is blocked or has the cue ball frozen to the rail it
+   would have to strike. Two and three cushion routes are found the same
+   exact way, by mirroring repeatedly.
+
+   For rails r1..rn, reflect the target across rn, reflect THAT across
+   r(n-1), and so on back to r1. A straight line from the cue ball to the
+   final image crosses r1 exactly where the cue ball must contact it; from
+   there a line to the previous image gives the next contact, and so on.
+   Angle in equals angle out at every cushion, by construction.
+
+   This is geometry, not an empirical system - no assumption about english
+   or cushion response beyond a perfect mirror, which the lesson text is
+   explicit about. */
+
+function dlMirror(p, rail) {
+  if (rail === 'top')    return { x: p.x, y: 2 * DL_Y0 - p.y };
+  if (rail === 'bottom') return { x: p.x, y: 2 * DL_Y1 - p.y };
+  if (rail === 'left')   return { x: 2 * DL_X0 - p.x, y: p.y };
+  return { x: 2 * DL_X1 - p.x, y: p.y };
+}
+
+/* Where does the segment a->b meet the given rail line? Null if it does not
+   reach it, runs parallel to it, or lands outside the cushion's span. */
+function dlRailHit(a, b, rail) {
   var t, hit;
   if (rail === 'top' || rail === 'bottom') {
     var yr = (rail === 'top') ? DL_Y0 : DL_Y1;
-    if (Math.abs(m.y - _dlCue.y) < 1e-6) return null;
-    t = (yr - _dlCue.y) / (m.y - _dlCue.y);
-    if (t <= 0 || t >= 1) return null;                 // the line never reaches that rail
-    hit = { x: _dlCue.x + t * (m.x - _dlCue.x), y: yr };
-    if (hit.x < DL_X0 || hit.x > DL_X1) return null;   // crosses beyond the table
+    if (Math.abs(b.y - a.y) < 1e-9) return null;
+    t = (yr - a.y) / (b.y - a.y);
+    if (t <= 1e-6 || t >= 1 - 1e-6) return null;
+    hit = { x: a.x + t * (b.x - a.x), y: yr };
+    if (hit.x < DL_X0 - 1e-6 || hit.x > DL_X1 + 1e-6) return null;
   } else {
     var xr = (rail === 'left') ? DL_X0 : DL_X1;
-    if (Math.abs(m.x - _dlCue.x) < 1e-6) return null;
-    t = (xr - _dlCue.x) / (m.x - _dlCue.x);
-    if (t <= 0 || t >= 1) return null;
-    hit = { x: xr, y: _dlCue.y + t * (m.y - _dlCue.y) };
-    if (hit.y < DL_Y0 || hit.y > DL_Y1) return null;
+    if (Math.abs(b.x - a.x) < 1e-9) return null;
+    t = (xr - a.x) / (b.x - a.x);
+    if (t <= 1e-6 || t >= 1 - 1e-6) return null;
+    hit = { x: xr, y: a.y + t * (b.y - a.y) };
+    if (hit.y < DL_Y0 - 1e-6 || hit.y > DL_Y1 + 1e-6) return null;
   }
-
-  var info = dlRailNumber(rail, hit);
-  var blocked = dlSegBlocked(_dlCue, hit) || dlSegBlocked(hit, _dlObj);
-  var leg1 = Math.hypot(hit.x - _dlCue.x, hit.y - _dlCue.y);
-  var len = leg1 + Math.hypot(_dlObj.x - hit.x, _dlObj.y - hit.y);
-
-  /* CAN YOU ACTUALLY GET A CUE ON IT?
-     The mirror is pure geometry and will happily put the contact point on the
-     rail the cue ball is already sitting against - which reads as "shoot into
-     the rail behind your own cue ball". On a real table you cannot: inside
-     about a ball's width of a cushion the butt has to be raised over it, and
-     at a hair's clearance there is no shot at all. Measure the perpendicular
-     gap from the cue ball to THAT rail and flag it, so a kick you can play
-     off another rail is preferred. */
-  /* WOULD THE CUE BALL SCRATCH ON THE WAY?
-     A route can be geometrically perfect and still run the cue ball straight
-     over a pocket mouth, where it drops in - a foul, and about one clean-
-     looking kick in twenty. The contact point being AT a pocket was already
-     caught; this is the pocket you pass over mid-route. */
-  var scratch = dlCrossesPocket(_dlCue, hit) || dlCrossesPocket(hit, _dlObj);
-
-  var gap = (rail === 'top')    ? (_dlCue.y - DL_Y0)
-          : (rail === 'bottom') ? (DL_Y1 - _dlCue.y)
-          : (rail === 'left')   ? (_dlCue.x - DL_X0)
-                                : (DL_X1 - _dlCue.x);
-  var tight = (gap < DL_R * 2) || (leg1 < DL_R * 2.4);
-
-  return { rail: rail, hit: hit, n: info.n, pocket: info.pocket,
-           blocked: blocked, len: len, leg1: leg1, gap: gap, tight: tight,
-           scratch: scratch };
+  return hit;
 }
 
-/* Every legal kick, best first: unblocked and off a real cushion wins. */
-function dlAllKicks() {
-  var out = [], rails = ['top', 'bottom', 'left', 'right'];
-  for (var i = 0; i < rails.length; i++) {
-    var k = dlKick(rails[i]);
-    if (k) out.push(k);
+/* A full route off the given sequence of rails, or null if impossible. */
+function dlKickPath(rails) {
+  var n = rails.length, i;
+  for (i = 1; i < n; i++) if (rails[i] === rails[i - 1]) return null;  // can't hit the same cushion twice running
+
+  // images[i] = the target mirrored across rails i..n-1
+  var images = new Array(n);
+  images[n - 1] = dlMirror(_dlObj, rails[n - 1]);
+  for (i = n - 2; i >= 0; i--) images[i] = dlMirror(images[i + 1], rails[i]);
+
+  var hits = [], from = _dlCue;
+  for (i = 0; i < n; i++) {
+    var h = dlRailHit(from, images[i], rails[i]);
+    if (!h) return null;
+    hits.push(h);
+    from = h;
   }
-  out.sort(function (a, b) {
-    /* blocked is worst, then a contact point you cannot get a cue to, then a
-       pocket mouth; shortest route breaks the tie. */
-    var sa = (a.blocked ? 8 : 0) + (a.tight ? 4 : 0) + (a.scratch ? 2 : 0) + (a.pocket ? 1 : 0);
-    var sb = (b.blocked ? 8 : 0) + (b.tight ? 4 : 0) + (b.scratch ? 2 : 0) + (b.pocket ? 1 : 0);
-    if (sa !== sb) return sa - sb;
-    return a.len - b.len;
+
+  // legs, in order, ending at the object ball
+  var pts = [_dlCue].concat(hits, [_dlObj]);
+  var len = 0, blocked = false, scratch = null;
+  for (i = 0; i < pts.length - 1; i++) {
+    len += Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+    if (dlSegBlocked(pts[i], pts[i + 1])) blocked = true;
+    if (!scratch) scratch = dlCrossesPocket(pts[i], pts[i + 1]);
+  }
+
+  /* Can a cue be got on it? Only the FIRST cushion matters - after that the
+     cue ball is already travelling. */
+  var gap = (rails[0] === 'top')    ? (_dlCue.y - DL_Y0)
+          : (rails[0] === 'bottom') ? (DL_Y1 - _dlCue.y)
+          : (rails[0] === 'left')   ? (_dlCue.x - DL_X0)
+                                    : (DL_X1 - _dlCue.x);
+  var leg1 = Math.hypot(hits[0].x - _dlCue.x, hits[0].y - _dlCue.y);
+  var tight = (gap < DL_R * 2) || (leg1 < DL_R * 2.4);
+
+  // any contact point sitting in a pocket mouth rather than on cushion
+  var pocket = false, nums = [];
+  for (i = 0; i < n; i++) {
+    var info = dlRailNumber(rails[i], hits[i]);
+    nums.push(info.n);
+    if (info.pocket) pocket = true;
+  }
+
+  return { rails: rails.slice(), hits: hits, pts: pts, n: nums[0], nums: nums,
+           cushions: n, pocket: pocket, blocked: blocked, scratch: scratch,
+           tight: tight, gap: gap, leg1: leg1, len: len,
+           rail: rails[0], hit: hits[0] };
+}
+
+var DL_RAILS = ['top', 'bottom', 'left', 'right'];
+
+/* Every route worth showing, best first. Fewer cushions always wins when it
+   is clean: a one-rail kick is easier to hit than a three-railer. */
+function dlAllKicks(maxCushions) {
+  var max = maxCushions || 3, out = [], i, j, k;
+  for (i = 0; i < 4; i++) {
+    var a = dlKickPath([DL_RAILS[i]]);
+    if (a) out.push(a);
+  }
+  if (max >= 2) for (i = 0; i < 4; i++) for (j = 0; j < 4; j++) {
+    if (i === j) continue;
+    var b = dlKickPath([DL_RAILS[i], DL_RAILS[j]]);
+    if (b) out.push(b);
+  }
+  if (max >= 3) for (i = 0; i < 4; i++) for (j = 0; j < 4; j++) for (k = 0; k < 4; k++) {
+    if (i === j || j === k) continue;
+    var c = dlKickPath([DL_RAILS[i], DL_RAILS[j], DL_RAILS[k]]);
+    if (c) out.push(c);
+  }
+  out.sort(function (p, q) {
+    var sp = (p.blocked ? 40 : 0) + (p.tight ? 20 : 0) + (p.scratch ? 10 : 0) + (p.pocket ? 5 : 0);
+    var sq = (q.blocked ? 40 : 0) + (q.tight ? 20 : 0) + (q.scratch ? 10 : 0) + (q.pocket ? 5 : 0);
+    if (sp !== sq) return sp - sq;
+    if (p.cushions !== q.cushions) return p.cushions - q.cushions;   // simplest route wins
+    return p.len - q.len;
   });
   return out;
 }
@@ -5677,6 +5787,20 @@ function dlSvg() {
   for (var q = 0; q < pk.length; q++)
     p.push('<circle cx="' + pk[q][0] + '" cy="' + pk[q][1] + '" r="' + pk[q][2] + '" fill="#05100a"/>');
 
+  /* Diamond grid, as the reference apps draw it: faint lines joining opposite
+     diamonds, so a contact point can be read against the cloth instead of
+     being eyeballed back to the rail. */
+  var g, gy;
+  for (g = 1; g <= 7; g++)
+    p.push('<line x1="' + dlX(g) + '" y1="' + DL_Y0 + '" x2="' + dlX(g) + '" y2="' + DL_Y1 +
+           '" stroke="#2a7d4d" stroke-width="' + (g === 4 ? '.8' : '.6') +
+           '" stroke-dasharray="3 5" opacity="' + (g === 4 ? '.7' : '.45') + '"/>');
+  for (g = 1; g <= 3; g++) {
+    gy = DL_Y0 + g * (DL_H / 4);
+    p.push('<line x1="' + DL_X0 + '" y1="' + gy + '" x2="' + DL_X1 + '" y2="' + gy +
+           '" stroke="#2a7d4d" stroke-width=".6" stroke-dasharray="3 5" opacity=".45"/>');
+  }
+
   var i, y;
   for (i = 1; i <= 7; i++) { if (i === 4) continue; dia(dlX(i), DL_Y0 - 8); dia(dlX(i), DL_Y1 + 11); }
   for (i = 1; i <= 3; i++) { y = DL_Y0 + i * (DL_H / 4); dia(DL_X0 - 8, y + 3.2); dia(DL_X1 + 8, y + 3.2); }
@@ -5698,12 +5822,24 @@ function dlSvg() {
 
   if (best && !best.blocked) {
     var col = (best.pocket || best.scratch) ? '#c46a4a' : '#c8963e';
-    p.push('<polyline points="' + _dlCue.x + ',' + _dlCue.y + ' ' + best.hit.x + ',' + best.hit.y +
-           ' ' + _dlObj.x + ',' + _dlObj.y + '" fill="none" stroke="' + col +
-           '" stroke-width="2.4" stroke-linejoin="round" opacity="' + (best.pocket ? '.5' : '1') + '"/>');
+    /* The whole route, however many cushions it uses. */
+    p.push('<polyline points="' + best.pts.map(function (q) { return q.x + ',' + q.y; }).join(' ') +
+           '" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linejoin="round" opacity="' +
+           (best.pocket ? '.5' : '1') + '"/>');
     var ac = best.pocket ? '#ff9d7a' : '#ffd76a';
-    p.push('<circle cx="' + best.hit.x + '" cy="' + best.hit.y + '" r="6.5" fill="none" stroke="' + ac +
-           '" stroke-width="2.5"' + (best.pocket ? ' stroke-dasharray="3 3"' : '') + '/>');
+    /* Ring every cushion contact, numbered in order so a three-railer can be
+       followed: 1, 2, 3 around the table. */
+    for (var _c = 0; _c < best.hits.length; _c++) {
+      var _h = best.hits[_c];
+      p.push('<circle cx="' + _h.x + '" cy="' + _h.y + '" r="6.5" fill="none" stroke="' + ac +
+             '" stroke-width="2.5"' + (best.pocket ? ' stroke-dasharray="3 3"' : '') + '/>');
+      if (best.hits.length > 1) {
+        var _ix = _h.x + (200 - _h.x) * 0.06, _iy = _h.y + (96 - _h.y) * 0.06;
+        p.push('<circle cx="' + _ix + '" cy="' + _iy + '" r="5.6" fill="rgba(5,16,10,.85)" stroke="' +
+               ac + '" stroke-width=".8"/>');
+        txt(_ix, _iy + 3, String(_c + 1), ac, 700, 8);
+      }
+    }
     /* The contact number used to sit OUTSIDE the rail, 3-7 units from the rail's
        own diamond numbering - so on the top, left and right rails it printed
        straight over it and neither could be read. Put it INSIDE the cloth on a
@@ -5825,10 +5961,11 @@ function dlRender() {
                      'You&rsquo;d need two cushions, or a different route.</div>';
     } else {
       eq.className = 'dl-eq';
-      eq.innerHTML = '<span class="c"><b>' + (best.rail === 'top' || best.rail === 'bottom' ? 'LONG' : 'SHORT') +
-                     '</b><small>' + dlRailLabel(best.rail).replace('the ', '').toUpperCase() + '</small></span>' +
+      eq.innerHTML = '<span class="c"><b>' + best.cushions + '</b><small>' +
+                     (best.cushions === 1 ? 'CUSHION' : 'CUSHIONS') + '</small></span>' +
                      '<span class="op">&rarr;</span>' +
-                     '<span class="a"><b>' + best.n.toFixed(1) + '</b><small>AIM DIAMOND</small></span>' +
+                     '<span class="a"><b>' + best.nums.map(function (v) { return v.toFixed(1); }).join(' &middot; ') +
+                     '</b><small>' + (best.cushions === 1 ? 'AIM DIAMOND' : 'IN ORDER') + '</small></span>' +
                      (best.pocket
                        ? '<div class="dl-pocket">\u26a0 That contact point is right at a pocket mouth &mdash; ' +
                          'there&rsquo;s no cushion there to bank off. Nudge a ball and read it again.</div>'
@@ -5863,13 +6000,21 @@ function dlRender() {
     : 'The direct line is <b>blocked</b> (red dashes) &mdash; so you go off a cushion.');
 
   if (best && !best.blocked) {
+    var _route = best.rails.map(function (r) { return dlRailLabel(r).replace('the ', ''); }).join(', then ');
     li.push(best.tight
-      ? 'The only route is off <b>' + dlRailLabel(best.rail) + '</b> \u2014 but the cue ball is sitting on that ' +
+      ? 'The only route starts off <b>' + dlRailLabel(best.rails[0]) + '</b> \u2014 but the cue ball is sitting on that ' +
         'cushion, so there is no room to get a cue behind it. On a real table you would move on to another shot.'
-      : 'Pick a rail. Here the shortest clean route is off <b>' + dlRailLabel(best.rail) + '</b>.');
+      : (best.cushions === 1
+          ? 'Pick a rail. Here the shortest clean route is off <b>' + dlRailLabel(best.rails[0]) + '</b>.'
+          : 'One cushion will not reach, so this is a <b>' + best.cushions + '-cushion</b> route: ' +
+            '<b>' + _route + '</b>. The rings are numbered in the order you hit them.'));
     li.push('<b>Mirror the target</b> across that rail, then draw a line from the cue ball to the mirror image.');
-    li.push('Where it crosses is your contact point &mdash; <b>diamond ' + best.n.toFixed(1) +
-            '</b>. Angle out matches angle in.');
+    li.push(best.cushions === 1
+      ? 'Where it crosses is your contact point &mdash; <b>diamond ' + best.n.toFixed(1) +
+        '</b>. Angle out matches angle in.'
+      : 'Mirroring once per cushion gives every contact point at once: <b>diamond ' +
+        best.nums.map(function (v) { return v.toFixed(1); }).join('</b>, then <b>') +
+        '</b>. Angle out matches angle in at each one.');
     if (best.scratch) {
       li.push('<b>Careful:</b> that line takes the cue ball over ' + best.scratch.name +
               ' on the way \u2014 it would drop in. The geometry is right, the shot is a foul.');
@@ -8310,6 +8455,23 @@ function syncStickyReserve() {
   } catch (_) {}
 }
 
+/* Finish a pending service-worker update. A plain reload is not enough on its
+   own: if a new worker is sitting in "waiting", the old one still controls the
+   page and the reload just serves the old build again. Tell the waiting worker
+   to take over first, then reload. Harmless when there is nothing waiting. */
+function finishUpdate() {
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      navigator.serviceWorker.getRegistration().then(function (reg) {
+        if (reg && reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+        setTimeout(function () { location.reload(); }, 120);
+      }).catch(function () { location.reload(); });
+      return;
+    }
+  } catch (_) {}
+  location.reload();
+}
+
 function setPageTitle(t) {
   var el = document.getElementById('page-title');
   if (el) el.textContent = t;
@@ -10625,7 +10787,7 @@ try {
         </div>
         <div class="help-item">
           <div class="help-icon">📲</div>
-          <div><div class="help-item-title">Install to your home screen</div><div class="help-item-desc">Shot Reader can live on your phone like a real app. <strong>Android:</strong> tap 📲 Install up top (or Chrome menu → Add to Home screen). <strong>iPhone:</strong> Safari Share button → <strong>Add to Home Screen</strong>. Once installed, the app — and after your first online session, even the AI — keeps working with no signal. Updates load automatically whenever you&rsquo;re online — nothing to manage. If a 🔄 &ldquo;new version ready&rdquo; note ever appears, one tap on <strong>Refresh</strong> finishes it. Offline, the status line tells you you&rsquo;re on your saved copy.</div></div>
+          <div><div class="help-item-title">Install to your home screen</div><div class="help-item-desc">Shot Reader can live on your phone like a real app. <strong>Android:</strong> tap 📲 Install up top (or Chrome menu → Add to Home screen). <strong>iPhone:</strong> Safari Share button → <strong>Add to Home Screen</strong>. Once installed, the app keeps working with no signal. <strong>AI Detect needs one online session first</strong> — the model is several megabytes and is saved the first time it loads, so run a scan while you have a connection and it is yours from then on. Without that first load everything still works except AI Detect: mark the balls by hand and the reading is exactly the same. Updates load automatically whenever you&rsquo;re online — nothing to manage. If a 🔄 &ldquo;new version ready&rdquo; note ever appears, one tap on <strong>Refresh</strong> finishes it. Offline, the status line tells you you&rsquo;re on your saved copy.</div></div>
         </div>
         <div class="help-item">
           <div class="help-icon">📏</div>
@@ -10782,7 +10944,7 @@ try {
 
   <button id="install-btn" onclick="promptInstall()" style="display:none">
     <span style="font-size:17px">&#128242;</span>
-    <span><b>Add Shot Reader to your phone</b><br>Opens like an app, works without a signal</span>
+    <span><b>Add Shot Reader to your phone</b><br>Opens full screen, straight from your home screen</span>
   </button>
 
   <div class="hub-util">
@@ -10883,7 +11045,7 @@ try {
 </div>
 <div id="update-toast" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));z-index:9960;background:linear-gradient(180deg,#13271b,#0a1710);border:1px solid #9c7a34;border-radius:14px;padding:10px 14px;align-items:center;gap:12px;box-shadow:0 10px 34px rgba(0,0,0,.6);font-family:'Barlow Condensed',sans-serif;max-width:92vw">
   <span style="font-size:13.5px;color:#eadfc8">🔄 A new version of Shot Reader is ready</span>
-  <button onclick="location.reload()" style="background:#c8963e;color:#0b1811;font-weight:700;border:none;border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:'Barlow Condensed'">Refresh</button>
+  <button onclick="finishUpdate()" style="background:#c8963e;color:#0b1811;font-weight:700;border:none;border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:'Barlow Condensed'">Refresh</button>
   <button class="x-btn" onclick="this.parentElement.style.display='none'" aria-label="Close">✕</button>
 </div>
 <!-- WELCOME + TOUR OVERLAYS -->
